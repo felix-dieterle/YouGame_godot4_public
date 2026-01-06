@@ -1,0 +1,80 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Godot
+      uses: chickensoft-games/setup-godot@v1
+      with:
+        version: 4.3.0
+        use-dotnet: false
+    
+    - name: Verify project structure
+      run: |
+        echo "Checking project structure..."
+        ls -la
+        cat project.godot
+    
+    - name: Run tests
+      run: |
+        echo "Running Godot tests..."
+        godot --headless --path . res://tests/test_scene.tscn
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Godot
+      uses: chickensoft-games/setup-godot@v1
+      with:
+        version: 4.3.0
+        use-dotnet: false
+        include-templates: true
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Create export directory
+      run: mkdir -p export
+    
+    - name: Build APK
+      run: |
+        echo "Building Android APK..."
+        # Note: This requires proper Android export templates and signing
+        # For now, we just verify the export preset exists
+        if [ -f export_presets.cfg ]; then
+          echo "Export presets found"
+        else
+          echo "Warning: No export presets found"
+        fi
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: YouGame-APK
+        path: export/*.apk
+        if-no-files-found: warn
