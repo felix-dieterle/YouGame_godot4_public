@@ -38,6 +38,7 @@ func _update_chunks():
 	var chunks_to_keep = {}
 	
 	# Determine which chunks should be loaded
+	# Note: Vector2i.x stores world x-coord, Vector2i.y stores world z-coord
 	for x in range(player_chunk.x - VIEW_DISTANCE, player_chunk.x + VIEW_DISTANCE + 1):
 		for z in range(player_chunk.y - VIEW_DISTANCE, player_chunk.y + VIEW_DISTANCE + 1):
 			var chunk_pos = Vector2i(x, z)
