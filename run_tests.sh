@@ -31,7 +31,7 @@ echo "Using Godot: $GODOT_CMD"
 
 # Run tests
 echo "Running tests..."
-$GODOT_CMD --headless --script "$TEST_SCENE"
+$GODOT_CMD --headless --path "$PROJECT_PATH" "$TEST_SCENE"
 
 if [ $? -eq 0 ]; then
     echo "=== Tests Completed ==="

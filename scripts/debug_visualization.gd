@@ -8,12 +8,6 @@ var world_manager: WorldManager
 func _ready():
 	world_manager = get_tree().get_first_node_in_group("WorldManager")
 
-func _process(_delta):
-	queue_redraw()
-
-func _draw():
-	pass  # 3D drawing done in _process with ImmediateMesh
-
 func draw_chunk_borders(chunk: Chunk):
 	if not show_chunk_borders:
 		return
