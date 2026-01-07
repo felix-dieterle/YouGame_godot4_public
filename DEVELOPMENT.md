@@ -97,11 +97,23 @@ godot --headless res://tests/test_scene.tscn
 
 ### Building for Android
 
+The project is configured to build signed APKs that can be installed on Android devices.
+
 ```bash
 ./build.sh
 ```
 
 The APK will be created in `export/YouGame.apk`
+
+**Important Notes:**
+- The build script uses debug export with automatic keystore signing
+- Debug builds are suitable for testing and development
+- For production/Play Store releases, configure a release keystore (see QUICKSTART.md)
+- All APKs must be signed to install on Android devices
+
+**Configuration:**
+- Architecture: arm64-v8a
+- Package signing: Enabled (APKs are signed with debug keystore automatically)
 
 ## Testing
 

@@ -63,7 +63,8 @@ jobs:
     - name: Build APK
       run: |
         echo "Building Android APK..."
-        godot --headless --export-release "Android" export/YouGame.apk || { echo "Godot export failed"; exit 1; }
+        echo "Using debug export with automatic debug keystore signing"
+        godot --headless --export-debug "Android" export/YouGame.apk || { echo "Godot export failed"; exit 1; }
         
         # Verify the APK was created
         if [ -f export/YouGame.apk ]; then

@@ -70,6 +70,35 @@ PASS: All chunks meet minimum walkability requirement
 1. Install Android SDK and set `ANDROID_SDK_ROOT` environment variable
 2. Install Java JDK 17+
 3. Download Android export templates in Godot
+4. **Create a debug keystore** (for testing) or use a release keystore (for distribution)
+
+### Setting Up Android Keystore
+
+Android requires all APKs to be signed. For development/testing, Godot will use a debug keystore automatically if no custom keystore is specified.
+
+#### Option 1: Use Godot's Debug Keystore (Recommended for Testing)
+Godot will automatically generate and use a debug keystore. No additional setup needed!
+
+**Important**: The keystore fields in `export_presets.cfg` should remain empty for debug builds - Godot handles everything automatically.
+
+#### Option 2: Create Your Own Keystore (For Distribution)
+```bash
+# Create a release keystore (valid for 25 years - Google Play Store requirement)
+keytool -genkeypair -v -keystore YouGame-release.keystore -alias yougame \
+  -keyalg RSA -keysize 2048 -validity 9125
+
+# Enter passwords and information when prompted
+```
+
+Then in Godot Editor:
+1. Go to **Project → Export**
+2. Select the **Android** preset
+3. Under **Keystore**, set:
+   - **Release**: Path to your `.keystore` file
+   - **Release User**: Your alias (e.g., `yougame`)
+   - **Release Password**: Your keystore password
+
+**Note**: Never commit your keystore or passwords to version control!
 
 ### Build Command
 ```bash
@@ -81,6 +110,10 @@ The APK will be created at: `export/YouGame.apk`
 
 ### Manual Build
 ```bash
+# For debug build (uses debug keystore automatically)
+godot --headless --export-debug "Android" export/YouGame-debug.apk
+
+# For release build (requires keystore configuration)
 godot --headless --export-release "Android" export/YouGame.apk
 ```
 
@@ -220,6 +253,23 @@ if chunk:
 - Open Godot Editor
 - Go to Editor → Manage Export Templates
 - Download templates for your Godot version
+
+### "Package invalid" when installing APK on Android
+This error occurs when the APK is not properly signed. **Solution:**
+
+1. **For testing/development**: Use debug build (automatically signed)
+   ```bash
+   ./build.sh
+   # or
+   godot --headless --export-debug "Android" export/YouGame-debug.apk
+   ```
+
+2. **For release**: Configure a keystore in Godot Editor
+   - Project → Export → Android → Keystore section
+   - See "Building for Android" section above for keystore setup
+
+3. **Verify package signing is enabled** in `export_presets.cfg`:
+   - `package/signed=true`
 
 ### Terrain not generating
 - Check console for errors
