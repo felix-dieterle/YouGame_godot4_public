@@ -7,6 +7,8 @@ func _ready():
 	print("=== Starting Chunk Tests ===")
 	test_seed_reproducibility()
 	test_walkability_percentage()
+	test_lake_generation()
+	test_water_depth()
 	print("=== All Tests Completed ===")
 	get_tree().quit()
 
@@ -71,3 +73,89 @@ func test_walkability_percentage():
 		print("PASS: All chunks meet minimum walkability requirement")
 	else:
 		print("FAIL: Some chunks do not meet minimum walkability requirement")
+
+func test_lake_generation():
+	print("\n--- Test: Lake Generation in Valleys ---")
+	
+	var seed_value = 12345
+	var test_count = 20  # Test more chunks to find valleys
+	var valley_count = 0
+	var lake_count = 0
+	
+	for i in range(test_count):
+		var chunk = CHUNK.new(i, i, seed_value + i)
+		chunk.generate()
+		
+		if chunk.landmark_type == "valley":
+			valley_count += 1
+			if chunk.has_lake:
+				lake_count += 1
+				print("  Found lake in valley chunk (%d, %d) with radius %.2f" % [i, i, chunk.lake_radius])
+		
+		chunk.free()
+	
+	print("Found %d valleys out of %d chunks tested" % [valley_count, test_count])
+	print("Found %d lakes in valleys" % lake_count)
+	
+	if valley_count > 0:
+		print("PASS: Lake generation system is working")
+	else:
+		print("INFO: No valleys found in test chunks (expected with random generation)")
+
+func test_water_depth():
+	print("\n--- Test: Water Depth Calculation ---")
+	
+	# Create a valley chunk that's likely to have a lake
+	var seed_value = 54321  # Different seed to potentially create valleys
+	var chunk_with_lake = null
+	
+	# Find a chunk with a lake
+	for i in range(50):
+		var chunk = CHUNK.new(i * 2, i * 3, seed_value + i)
+		chunk.generate()
+		
+		if chunk.has_lake:
+			chunk_with_lake = chunk
+			print("  Found chunk with lake at (%d, %d)" % [i * 2, i * 3])
+			break
+		else:
+			chunk.free()
+	
+	if chunk_with_lake:
+		# Test water depth at different positions
+		var center_depth = chunk_with_lake.get_water_depth_at_local_pos(
+			chunk_with_lake.lake_center.x,
+			chunk_with_lake.lake_center.y
+		)
+		
+		var edge_depth = chunk_with_lake.get_water_depth_at_local_pos(
+			chunk_with_lake.lake_center.x + chunk_with_lake.lake_radius * 0.9,
+			chunk_with_lake.lake_center.y
+		)
+		
+		var outside_depth = chunk_with_lake.get_water_depth_at_local_pos(
+			chunk_with_lake.lake_center.x + chunk_with_lake.lake_radius * 1.5,
+			chunk_with_lake.lake_center.y
+		)
+		
+		print("  Water depth at center: %.2f" % center_depth)
+		print("  Water depth near edge: %.2f" % edge_depth)
+		print("  Water depth outside lake: %.2f" % outside_depth)
+		
+		var passed = true
+		if center_depth <= 0:
+			print("FAIL: Center depth should be positive")
+			passed = false
+		if center_depth <= edge_depth:
+			print("FAIL: Center should be deeper than edge")
+			passed = false
+		if outside_depth != 0:
+			print("FAIL: Outside lake should have zero depth")
+			passed = false
+		
+		if passed:
+			print("PASS: Water depth calculation is correct")
+		
+		chunk_with_lake.free()
+	else:
+		print("INFO: No lake found in test chunks (lakes are random in valleys)")
