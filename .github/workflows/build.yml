@@ -66,6 +66,10 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     
+    - name: Install Android SDK components
+      run: |
+        sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+    
     - name: Create export directory
       run: mkdir -p export
     
