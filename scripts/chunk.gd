@@ -21,6 +21,7 @@ var chunk_z: int = 0
 var heightmap: PackedFloat32Array = []
 var walkable_map: PackedByteArray = []
 var noise: FastNoiseLite
+var biome_noise: FastNoiseLite  # Noise for regional biome variation
 var seed_value: int = 0
 
 # Metadata
@@ -68,15 +69,15 @@ func _setup_noise():
 	noise.fractal_octaves = 4
 	noise.fractal_lacunarity = 2.0
 	noise.fractal_gain = 0.5
-
-func _generate_heightmap():
-	heightmap.resize((RESOLUTION + 1) * (RESOLUTION + 1))
 	
-	# Create a biome noise for regional variation
-	var biome_noise = FastNoiseLite.new()
+	# Setup biome noise for regional variation
+	biome_noise = FastNoiseLite.new()
 	biome_noise.seed = seed_value + 1000
 	biome_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	biome_noise.frequency = 0.008  # Lower frequency for larger regions
+
+func _generate_heightmap():
+	heightmap.resize((RESOLUTION + 1) * (RESOLUTION + 1))
 	
 	for z in range(RESOLUTION + 1):
 		for x in range(RESOLUTION + 1):

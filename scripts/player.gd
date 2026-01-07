@@ -256,37 +256,43 @@ func _play_footstep_sound():
 	generator.buffer_length = FOOTSTEP_DURATION
 	
 	footstep_player.stream = generator
+	
+	# Start playback to get access to the playback buffer
 	footstep_player.play()
 	
+	# Wait one frame for the stream to initialize
+	await get_tree().process_frame
+	
 	# Generate the sound waveform in the playback buffer
-	# This is a simplified approach - in production you'd use pre-recorded samples
 	var playback = footstep_player.get_stream_playback() as AudioStreamGeneratorPlayback
-	if playback:
-		var frames_available = playback.get_frames_available()
-		var frames_to_fill = int(generator.mix_rate * FOOTSTEP_DURATION)
-		var frequency = 100.0  # Base frequency
-		var noise_amount = 0.5
+	if not playback:
+		return  # Stream not ready, skip this footstep
+	
+	var frames_available = playback.get_frames_available()
+	var frames_to_fill = roundi(generator.mix_rate * FOOTSTEP_DURATION)
+	var frequency = 100.0  # Base frequency
+	var noise_amount = 0.5
+	
+	# Adjust sound characteristics based on material
+	match terrain_material:
+		"stone":
+			frequency = 150.0
+			noise_amount = 0.8  # More noise for hard surface
+		"rock":
+			frequency = 120.0
+			noise_amount = 0.6
+		"grass":
+			frequency = 80.0
+			noise_amount = 0.4  # Softer, less noise
+	
+	# Generate audio frames
+	for i in range(min(frames_to_fill, frames_available)):
+		var t = float(i) / generator.mix_rate
+		var envelope = exp(-t * 15.0)  # Exponential decay
 		
-		# Adjust sound characteristics based on material
-		match terrain_material:
-			"stone":
-				frequency = 150.0
-				noise_amount = 0.8  # More noise for hard surface
-			"rock":
-				frequency = 120.0
-				noise_amount = 0.6
-			"grass":
-				frequency = 80.0
-				noise_amount = 0.4  # Softer, less noise
+		# Mix tone with noise
+		var tone = sin(2.0 * PI * frequency * t) * (1.0 - noise_amount)
+		var noise_val = (randf() * 2.0 - 1.0) * noise_amount
+		var sample = (tone + noise_val) * envelope * 0.3
 		
-		# Generate audio frames
-		for i in range(min(frames_to_fill, frames_available)):
-			var t = float(i) / generator.mix_rate
-			var envelope = exp(-t * 15.0)  # Exponential decay
-			
-			# Mix tone with noise
-			var tone = sin(2.0 * PI * frequency * t) * (1.0 - noise_amount)
-			var noise = (randf() * 2.0 - 1.0) * noise_amount
-			var sample = (tone + noise) * envelope * 0.3
-			
-			playback.push_frame(Vector2(sample, sample))
+		playback.push_frame(Vector2(sample, sample))

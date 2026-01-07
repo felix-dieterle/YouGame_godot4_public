@@ -60,11 +60,11 @@ func test_terrain_materials():
 	# Sample multiple positions in the chunk
 	var materials_found = {}
 	var sample_count = 10
-	var chunk_center = CHUNK.CHUNK_SIZE / 2.0
 	
 	for i in range(sample_count):
-		var x = (i * CHUNK.CHUNK_SIZE / sample_count) + chunk_center
-		var z = chunk_center
+		# Sample evenly across the chunk width
+		var x = (i * CHUNK.CHUNK_SIZE / (sample_count - 1)) if sample_count > 1 else CHUNK.CHUNK_SIZE / 2.0
+		var z = CHUNK.CHUNK_SIZE / 2.0
 		var material = chunk.get_terrain_material_at_world_pos(x, z)
 		
 		if not materials_found.has(material):
