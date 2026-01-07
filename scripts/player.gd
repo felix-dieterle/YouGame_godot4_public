@@ -17,6 +17,12 @@ var camera: Camera3D
 var is_first_person: bool = false
 var head_bob_time: float = 0.0
 
+# Footstep sound system
+var footstep_player: AudioStreamPlayer
+var footstep_timer: float = 0.0
+var footstep_interval: float = 0.5  # Time between footsteps when moving
+var last_terrain_material: String = "grass"
+
 # World reference
 var world_manager: WorldManager
 
@@ -39,6 +45,9 @@ func _ready():
 	# Find mobile controls
 	mobile_controls = get_parent().get_node_or_null("MobileControls")
 	
+	# Setup footstep audio
+	_setup_footstep_audio()
+	
 	# Create visual representation - Simple Robot
 	_create_robot_body()
 
@@ -56,6 +65,7 @@ func _physics_process(delta):
 		input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	
 	var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
+	var is_moving = direction.length() > 0.1
 	
 	if direction:
 		velocity.x = direction.x * move_speed
@@ -68,6 +78,9 @@ func _physics_process(delta):
 		# Update head bob when moving in first-person
 		if is_first_person:
 			head_bob_time += delta * head_bob_frequency
+		
+		# Handle footstep sounds
+		_update_footsteps(delta)
 	else:
 		velocity.x = move_toward(velocity.x, 0, move_speed * delta)
 		velocity.z = move_toward(velocity.z, 0, move_speed * delta)
@@ -75,6 +88,9 @@ func _physics_process(delta):
 		# Reset head bob when not moving
 		if is_first_person:
 			head_bob_time = 0.0
+		
+		# Reset footstep timer when not moving
+		footstep_timer = 0.0
 	
 	move_and_slide()
 	
@@ -212,3 +228,64 @@ func _create_eye(eye_position: Vector3) -> MeshInstance3D:
 	eye.set_surface_override_material(0, eye_material)
 	
 	return eye
+
+func _setup_footstep_audio():
+	# Create audio player for footstep sounds
+	footstep_player = AudioStreamPlayer.new()
+	footstep_player.volume_db = -10.0  # Slightly quieter
+	add_child(footstep_player)
+
+func _update_footsteps(delta: float):
+	# Update footstep timer
+	footstep_timer += delta
+	
+	# Play footstep sound at regular intervals
+	if footstep_timer >= footstep_interval:
+		footstep_timer = 0.0
+		_play_footstep_sound()
+
+func _play_footstep_sound():
+	# Get terrain material at current position
+	var terrain_material = "grass"
+	if world_manager:
+		terrain_material = world_manager.get_terrain_material_at_position(global_position)
+	
+	# Create a simple procedural footstep sound based on material
+	var generator = AudioStreamGenerator.new()
+	generator.mix_rate = 22050.0
+	generator.buffer_length = 0.15  # 150ms sound
+	
+	footstep_player.stream = generator
+	footstep_player.play()
+	
+	# Generate the sound waveform in the playback buffer
+	# This is a simplified approach - in production you'd use pre-recorded samples
+	var playback = footstep_player.get_stream_playback() as AudioStreamGeneratorPlayback
+	if playback:
+		var frames_to_fill = int(generator.mix_rate * 0.15)
+		var frequency = 100.0  # Base frequency
+		var noise_amount = 0.5
+		
+		# Adjust sound characteristics based on material
+		match terrain_material:
+			"stone":
+				frequency = 150.0
+				noise_amount = 0.8  # More noise for hard surface
+			"rock":
+				frequency = 120.0
+				noise_amount = 0.6
+			"grass":
+				frequency = 80.0
+				noise_amount = 0.4  # Softer, less noise
+		
+		# Generate audio frames
+		for i in range(min(frames_to_fill, playback.get_frames_available())):
+			var t = float(i) / generator.mix_rate
+			var envelope = exp(-t * 15.0)  # Exponential decay
+			
+			# Mix tone with noise
+			var tone = sin(2.0 * PI * frequency * t) * (1.0 - noise_amount)
+			var noise = (randf() * 2.0 - 1.0) * noise_amount
+			var sample = (tone + noise) * envelope * 0.3
+			
+			playback.push_frame(Vector2(sample, sample))

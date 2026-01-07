@@ -8,19 +8,33 @@ var joystick_active: bool = false
 var joystick_touch_index: int = -1
 var joystick_vector: Vector2 = Vector2.ZERO
 
+# Camera toggle button
+var camera_toggle_button: Button
+
 # Configuration
 const JOYSTICK_RADIUS: float = 80.0
 const STICK_RADIUS: float = 30.0
 const DEADZONE: float = 0.2
+const BUTTON_SIZE: float = 60.0
 @export var joystick_margin_x: float = 120.0
 @export var joystick_margin_y: float = 120.0
+@export var button_margin_x: float = 80.0
+
+# Player reference for camera toggle
+var player: Node = null
 
 func _ready():
+	# Find player reference
+	player = get_parent().get_node_or_null("Player")
+	
 	# Create virtual joystick (bottom left)
 	joystick_base = Control.new()
 	joystick_base.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
 	joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
 	add_child(joystick_base)
+	
+	# Create camera toggle button (bottom right)
+	_create_camera_toggle_button()
 	
 	# Update position when viewport size changes
 	_update_joystick_position()
@@ -67,6 +81,7 @@ func _update_joystick_position():
 	# Position joystick in bottom-left corner with margin
 	var viewport_size = get_viewport().size
 	joystick_base.position = Vector2(joystick_margin_x, viewport_size.y - joystick_margin_y)
+	_update_button_position()
 
 func _input(event: InputEvent):
 	# Handle touch input for virtual joystick
@@ -114,3 +129,44 @@ func _update_joystick(touch_pos: Vector2):
 
 func get_input_vector() -> Vector2:
 	return joystick_vector
+
+func _create_camera_toggle_button():
+	camera_toggle_button = Button.new()
+	camera_toggle_button.text = "👁"  # Eye emoji for camera view
+	camera_toggle_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+	camera_toggle_button.add_theme_font_size_override("font_size", 30)
+	
+	# Style the button
+	var button_style = StyleBoxFlat.new()
+	button_style.bg_color = Color(0.3, 0.3, 0.3, 0.7)
+	button_style.corner_radius_top_left = int(BUTTON_SIZE / 2)
+	button_style.corner_radius_top_right = int(BUTTON_SIZE / 2)
+	button_style.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
+	button_style.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
+	camera_toggle_button.add_theme_stylebox_override("normal", button_style)
+	
+	var button_style_pressed = StyleBoxFlat.new()
+	button_style_pressed.bg_color = Color(0.5, 0.5, 0.5, 0.9)
+	button_style_pressed.corner_radius_top_left = int(BUTTON_SIZE / 2)
+	button_style_pressed.corner_radius_top_right = int(BUTTON_SIZE / 2)
+	button_style_pressed.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
+	button_style_pressed.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
+	camera_toggle_button.add_theme_stylebox_override("pressed", button_style_pressed)
+	
+	# Connect button to toggle function
+	camera_toggle_button.pressed.connect(_on_camera_toggle_pressed)
+	
+	add_child(camera_toggle_button)
+	_update_button_position()
+
+func _update_button_position():
+	# Position button in bottom-right corner with margin
+	var viewport_size = get_viewport().size
+	var button_x = viewport_size.x - button_margin_x - BUTTON_SIZE
+	var button_y = viewport_size.y - joystick_margin_y - BUTTON_SIZE / 2
+	camera_toggle_button.position = Vector2(button_x, button_y)
+
+func _on_camera_toggle_pressed():
+	# Toggle camera view on player
+	if player and player.has_method("_toggle_camera_view"):
+		player._toggle_camera_view()

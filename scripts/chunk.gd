@@ -72,12 +72,35 @@ func _setup_noise():
 func _generate_heightmap():
 	heightmap.resize((RESOLUTION + 1) * (RESOLUTION + 1))
 	
+	# Create a biome noise for regional variation
+	var biome_noise = FastNoiseLite.new()
+	biome_noise.seed = seed_value + 1000
+	biome_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	biome_noise.frequency = 0.008  # Lower frequency for larger regions
+	
 	for z in range(RESOLUTION + 1):
 		for x in range(RESOLUTION + 1):
 			var world_x = chunk_x * CHUNK_SIZE + x * CELL_SIZE
 			var world_z = chunk_z * CHUNK_SIZE + z * CELL_SIZE
 			
-			var height = noise.get_noise_2d(world_x, world_z) * 10.0
+			# Get biome value to determine if this is a mountain or flat region
+			var biome_value = biome_noise.get_noise_2d(world_x, world_z)
+			
+			# Mountains in regions where biome_value > 0.3
+			# Flat areas in regions where biome_value < -0.2
+			var height_multiplier = 10.0
+			var height_offset = 0.0
+			
+			if biome_value > 0.3:
+				# Mountain region - higher elevation and more variation
+				height_multiplier = 20.0
+				height_offset = 10.0
+			elif biome_value < -0.2:
+				# Flat region - lower elevation and less variation
+				height_multiplier = 5.0
+				height_offset = -3.0
+			
+			var height = noise.get_noise_2d(world_x, world_z) * height_multiplier + height_offset
 			heightmap[z * (RESOLUTION + 1) + x] = height
 
 func _calculate_walkability():
@@ -155,14 +178,23 @@ func _create_mesh():
 			var h01 = heightmap[(z + 1) * (RESOLUTION + 1) + x]
 			var h11 = heightmap[(z + 1) * (RESOLUTION + 1) + (x + 1)]
 			
-			# Use subtle color variation based on height for terrain depth
-			# Higher areas are lighter, lower areas are darker
-			# Height range is ±HEIGHT_RANGE, so divide by 4x to normalize around 0.5
-			var height_factor = (h00 + h10 + h01 + h11) / HEIGHT_COLOR_DIVISOR + 0.5
-			height_factor = clamp(height_factor, 0.3, 0.8)
+			# Calculate average height for this cell
+			var avg_height = (h00 + h10 + h01 + h11) / 4.0
 			
-			# Base terrain color (earthy green-brown)
-			var base_color = Color(0.4 * height_factor, 0.5 * height_factor, 0.3 * height_factor)
+			# Determine material color based on height (biome)
+			var base_color: Color
+			if avg_height > 8.0:
+				# Mountain - stone/rocky gray color
+				var height_factor = clamp((avg_height - 8.0) / 15.0, 0.0, 1.0)
+				base_color = Color(0.5 + height_factor * 0.2, 0.5 + height_factor * 0.2, 0.55 + height_factor * 0.15)
+			elif avg_height > 5.0:
+				# Rocky hills - brown-gray mix
+				var height_factor = clamp((avg_height - 5.0) / 3.0, 0.0, 1.0)
+				base_color = Color(0.45 + height_factor * 0.1, 0.42 + height_factor * 0.08, 0.35 + height_factor * 0.1)
+			else:
+				# Grassland - green-brown earthy color
+				var height_factor = clamp((avg_height + 5.0) / 10.0, 0.3, 0.8)
+				base_color = Color(0.4 * height_factor, 0.5 * height_factor, 0.3 * height_factor)
 			
 			# Optional: Tint non-walkable areas slightly (for subtle indication)
 			var is_walkable = walkable_map[z * RESOLUTION + x] == 1
@@ -213,12 +245,18 @@ func _calculate_metadata():
 	# More variance = less open (mountains/hills), less variance = more open (plains)
 	openness = clamp(1.0 - (variance / 10.0), 0.0, 1.0)
 	
-	# Determine landmark type based on height and variance
-	if avg_height > 5.0:
+	# Determine biome and landmark type based on height and variance
+	if avg_height > 8.0:
+		biome = "mountain"
+		landmark_type = "mountain"
+	elif avg_height > 5.0:
+		biome = "rocky_hills"
 		landmark_type = "hill"
 	elif avg_height < -5.0:
+		biome = "grassland"
 		landmark_type = "valley"
 	else:
+		biome = "grassland"
 		landmark_type = ""
 
 func _generate_lake_if_valley():
@@ -437,6 +475,18 @@ func _create_marker_for_chunk(index: int, rng: RandomNumberGenerator) -> Narrati
 
 func get_narrative_markers() -> Array:
 	return narrative_markers
+
+func get_terrain_material_at_world_pos(world_x: float, world_z: float) -> String:
+	# Get height at position to determine material type
+	var height = get_height_at_world_pos(world_x, world_z)
+	
+	if height > 8.0:
+		return "stone"
+	elif height > 5.0:
+		return "rock"
+	else:
+		return "grass"
+
 func get_water_depth_at_local_pos(local_x: float, local_z: float) -> float:
 	# Check if position is in lake
 	if not has_lake:

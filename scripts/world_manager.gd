@@ -131,3 +131,9 @@ func get_water_depth_at_position(world_pos: Vector3) -> float:
 		var local_z = world_pos.z - chunk.chunk_z * CHUNK_SIZE
 		return chunk.get_water_depth_at_local_pos(local_x, local_z)
 	return 0.0
+
+func get_terrain_material_at_position(world_pos: Vector3) -> String:
+	var chunk = get_chunk_at_position(world_pos)
+	if chunk:
+		return chunk.get_terrain_material_at_world_pos(world_pos.x, world_pos.z)
+	return "grass"

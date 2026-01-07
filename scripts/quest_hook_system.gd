@@ -228,3 +228,6 @@ func print_marker_summary():
 			marker.importance,
 			marker.world_position
 		])
+
+func get_total_marker_count() -> int:
+	return available_markers.size()
