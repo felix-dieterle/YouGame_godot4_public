@@ -265,7 +265,8 @@ func _generate_narrative_markers():
 	# Performance-optimized: Only generate 1-3 markers per chunk based on importance
 	
 	var rng = RandomNumberGenerator.new()
-	rng.seed = hash(str(chunk_x) + "_" + str(chunk_z) + "_" + str(seed_value))
+	# Use efficient hash of chunk coordinates and seed
+	rng.seed = hash(Vector2i(chunk_x, chunk_z)) ^ seed_value
 	
 	# Determine number of markers based on landmark and openness
 	var marker_count = 0

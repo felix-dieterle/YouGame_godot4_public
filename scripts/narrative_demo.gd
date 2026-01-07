@@ -18,8 +18,12 @@ var current_demo_quest: Dictionary = {}
 var check_timer: Timer
 
 func _ready():
-	# Find required nodes
-	var root = get_tree().root.get_child(get_tree().root.get_child_count() - 1)
+	# Find required nodes using current scene as root
+	var root = get_tree().current_scene
+	if not root:
+		# Fallback to traditional method
+		root = get_tree().root.get_child(get_tree().root.get_child_count() - 1)
+	
 	quest_hook_system = root.get_node_or_null("QuestHookSystem")
 	world_manager = root.get_node_or_null("WorldManager")
 	player = root.get_node_or_null("Player")

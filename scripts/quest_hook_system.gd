@@ -162,9 +162,10 @@ func create_demo_quest() -> Dictionary:
 		print("QuestHookSystem: No markers available for demo quest")
 		return {}
 	
-	# Use deterministic seed for consistent demo experience
+	# Use deterministic but varied seed for demo quest randomization
+	# This ensures demo quests are random but reproducible per session
 	var rng = RandomNumberGenerator.new()
-	rng.seed = Time.get_ticks_msec()  # Still random but explicit
+	rng.seed = Time.get_ticks_msec()
 	
 	# Select 1-3 random markers for the quest
 	var quest_markers = []

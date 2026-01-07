@@ -13,9 +13,8 @@ func test_chunk_generates_narrative_markers():
 	
 	var markers = chunk.get_narrative_markers()
 	
-	# Chunks may or may not generate markers depending on terrain
-	# Just verify the return value is valid
-	assert_true(markers.size() >= 0, "Chunk marker count should be non-negative")
+	# Verify we get an array (not null) - markers may or may not be generated
+	assert_not_null(markers, "Should return a markers array")
 	
 	# Check marker properties if markers exist
 	if markers.size() > 0:
