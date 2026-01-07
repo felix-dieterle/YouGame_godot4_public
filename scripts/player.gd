@@ -109,30 +109,11 @@ func _create_robot_body():
 	head.set_surface_override_material(0, head_material)
 	add_child(head)
 	
-	# Left eye - glowing sphere
-	var left_eye = MeshInstance3D.new()
-	var eye_mesh_left = SphereMesh.new()
-	eye_mesh_left.radius = 0.12
-	eye_mesh_left.height = 0.24
-	left_eye.mesh = eye_mesh_left
-	left_eye.position = Vector3(-0.15, 1.3, 0.25)
-	
-	var eye_material = StandardMaterial3D.new()
-	eye_material.albedo_color = Color(0.2, 0.8, 1.0)  # Cyan/blue
-	eye_material.emission_enabled = true
-	eye_material.emission = Color(0.2, 0.8, 1.0)
-	eye_material.emission_energy_multiplier = 2.0
-	left_eye.set_surface_override_material(0, eye_material)
+	# Create eyes - positioned at front of head to show facing direction
+	var left_eye = _create_eye(Vector3(-0.15, 1.3, 0.25))
 	add_child(left_eye)
 	
-	# Right eye - glowing sphere
-	var right_eye = MeshInstance3D.new()
-	var eye_mesh_right = SphereMesh.new()
-	eye_mesh_right.radius = 0.12
-	eye_mesh_right.height = 0.24
-	right_eye.mesh = eye_mesh_right
-	right_eye.position = Vector3(0.15, 1.3, 0.25)
-	right_eye.set_surface_override_material(0, eye_material)
+	var right_eye = _create_eye(Vector3(0.15, 1.3, 0.25))
 	add_child(right_eye)
 	
 	# Add a small antenna on top for character
@@ -165,3 +146,21 @@ func _create_robot_body():
 	tip_material.emission_energy_multiplier = 1.5
 	antenna_tip.set_surface_override_material(0, tip_material)
 	add_child(antenna_tip)
+
+func _create_eye(eye_position: Vector3) -> MeshInstance3D:
+	# Helper function to create a glowing eye at the specified position
+	var eye = MeshInstance3D.new()
+	var eye_mesh = SphereMesh.new()
+	eye_mesh.radius = 0.12
+	eye_mesh.height = 0.24
+	eye.mesh = eye_mesh
+	eye.position = eye_position
+	
+	var eye_material = StandardMaterial3D.new()
+	eye_material.albedo_color = Color(0.2, 0.8, 1.0)  # Cyan/blue
+	eye_material.emission_enabled = true
+	eye_material.emission = Color(0.2, 0.8, 1.0)
+	eye_material.emission_energy_multiplier = 2.0
+	eye.set_surface_override_material(0, eye_material)
+	
+	return eye

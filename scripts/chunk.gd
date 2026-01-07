@@ -7,6 +7,8 @@ const RESOLUTION = 32  # Number of cells per side
 const CELL_SIZE = CHUNK_SIZE / float(RESOLUTION)
 const MAX_SLOPE_WALKABLE = 30.0  # degrees
 const MIN_WALKABLE_PERCENTAGE = 0.8
+const HEIGHT_RANGE = 10.0  # Maximum height variation from noise (±10 units)
+const HEIGHT_COLOR_DIVISOR = HEIGHT_RANGE * 4.0  # Normalizes height to color range
 
 # Chunk position in grid
 var chunk_x: int = 0
@@ -137,7 +139,8 @@ func _create_mesh():
 			
 			# Use subtle color variation based on height for terrain depth
 			# Higher areas are lighter, lower areas are darker
-			var height_factor = (h00 + h10 + h01 + h11) / 40.0 + 0.5  # Normalize around 0.5
+			# Height range is ±HEIGHT_RANGE, so divide by 4x to normalize around 0.5
+			var height_factor = (h00 + h10 + h01 + h11) / HEIGHT_COLOR_DIVISOR + 0.5
 			height_factor = clamp(height_factor, 0.3, 0.8)
 			
 			# Base terrain color (earthy green-brown)
