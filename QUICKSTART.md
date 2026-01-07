@@ -268,8 +268,7 @@ This error occurs when the APK is not properly signed. **Solution:**
    - Project → Export → Android → Keystore section
    - See "Building for Android" section above for keystore setup
 
-3. **Verify Gradle build is enabled** in `export_presets.cfg`:
-   - `gradle_build/use_gradle_build=true`
+3. **Verify package signing is enabled** in `export_presets.cfg`:
    - `package/signed=true`
 
 ### Terrain not generating

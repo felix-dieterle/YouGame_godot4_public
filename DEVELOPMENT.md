@@ -112,10 +112,8 @@ The APK will be created in `export/YouGame.apk`
 - All APKs must be signed to install on Android devices
 
 **Configuration:**
-- Minimum SDK: API 21 (Android 5.0)
-- Target SDK: API 34 (Android 14)
 - Architecture: arm64-v8a
-- Gradle build: Enabled for modern Android compatibility
+- Package signing: Enabled (APKs are signed with debug keystore automatically)
 
 ## Testing
 
