@@ -41,9 +41,16 @@ func _create_toggle_button():
 	toggle_button = Button.new()
 	toggle_button.text = "🐛"  # Bug emoji for debug
 	toggle_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+	toggle_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
 	toggle_button.add_theme_font_size_override("font_size", 25)
 	
-	# Style the button
+	# Set focus mode to prevent focus issues on mobile
+	toggle_button.focus_mode = Control.FOCUS_NONE
+	
+	# Ensure button is above other UI elements
+	toggle_button.z_index = 10
+	
+	# Style the button - normal state
 	var button_style = StyleBoxFlat.new()
 	button_style.bg_color = Color(0.2, 0.2, 0.2, 0.8)
 	button_style.corner_radius_top_left = 8
@@ -52,6 +59,16 @@ func _create_toggle_button():
 	button_style.corner_radius_bottom_right = 8
 	toggle_button.add_theme_stylebox_override("normal", button_style)
 	
+	# Style the button - hover state (for desktop/mouse support)
+	var button_style_hover = StyleBoxFlat.new()
+	button_style_hover.bg_color = Color(0.3, 0.3, 0.3, 0.9)
+	button_style_hover.corner_radius_top_left = 8
+	button_style_hover.corner_radius_top_right = 8
+	button_style_hover.corner_radius_bottom_left = 8
+	button_style_hover.corner_radius_bottom_right = 8
+	toggle_button.add_theme_stylebox_override("hover", button_style_hover)
+	
+	# Style the button - pressed state
 	var button_style_pressed = StyleBoxFlat.new()
 	button_style_pressed.bg_color = Color(0.4, 0.6, 0.4, 0.9)
 	button_style_pressed.corner_radius_top_left = 8
@@ -59,6 +76,17 @@ func _create_toggle_button():
 	button_style_pressed.corner_radius_bottom_left = 8
 	button_style_pressed.corner_radius_bottom_right = 8
 	toggle_button.add_theme_stylebox_override("pressed", button_style_pressed)
+	
+	# Style the button - focus state
+	var button_style_focus = StyleBoxFlat.new()
+	button_style_focus.bg_color = Color(0.3, 0.3, 0.3, 0.9)
+	button_style_focus.corner_radius_top_left = 8
+	button_style_focus.corner_radius_top_right = 8
+	button_style_focus.corner_radius_bottom_left = 8
+	button_style_focus.corner_radius_bottom_right = 8
+	button_style_focus.border_width_all = 2
+	button_style_focus.border_color = Color(0.5, 0.7, 0.5, 1.0)
+	toggle_button.add_theme_stylebox_override("focus", button_style_focus)
 	
 	# Connect button
 	toggle_button.pressed.connect(_on_toggle_pressed)
