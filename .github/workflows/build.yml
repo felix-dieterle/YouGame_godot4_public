@@ -68,7 +68,7 @@ jobs:
     
     - name: Install Android SDK components
       run: |
-        sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.0"
     
     - name: Create export directory
       run: mkdir -p export
@@ -76,7 +76,7 @@ jobs:
     - name: Build APK
       run: |
         echo "Building Android APK..."
-        godot --headless --export-release "Android" export/YouGame.apk
+        godot --headless --export-release "Android" export/YouGame.apk || { echo "Godot export failed"; exit 1; }
         
         # Verify the APK was created
         if [ -f export/YouGame.apk ]; then
