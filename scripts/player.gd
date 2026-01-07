@@ -22,6 +22,7 @@ var footstep_player: AudioStreamPlayer
 var footstep_timer: float = 0.0
 var footstep_interval: float = 0.5  # Time between footsteps when moving
 var last_terrain_material: String = "grass"
+const FOOTSTEP_DURATION: float = 0.15  # Sound duration in seconds
 
 # World reference
 var world_manager: WorldManager
@@ -65,7 +66,6 @@ func _physics_process(delta):
 		input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	
 	var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
-	var is_moving = direction.length() > 0.1
 	
 	if direction:
 		velocity.x = direction.x * move_speed
@@ -253,7 +253,7 @@ func _play_footstep_sound():
 	# Create a simple procedural footstep sound based on material
 	var generator = AudioStreamGenerator.new()
 	generator.mix_rate = 22050.0
-	generator.buffer_length = 0.15  # 150ms sound
+	generator.buffer_length = FOOTSTEP_DURATION
 	
 	footstep_player.stream = generator
 	footstep_player.play()
@@ -262,7 +262,8 @@ func _play_footstep_sound():
 	# This is a simplified approach - in production you'd use pre-recorded samples
 	var playback = footstep_player.get_stream_playback() as AudioStreamGeneratorPlayback
 	if playback:
-		var frames_to_fill = int(generator.mix_rate * 0.15)
+		var frames_available = playback.get_frames_available()
+		var frames_to_fill = int(generator.mix_rate * FOOTSTEP_DURATION)
 		var frequency = 100.0  # Base frequency
 		var noise_amount = 0.5
 		
@@ -279,7 +280,7 @@ func _play_footstep_sound():
 				noise_amount = 0.4  # Softer, less noise
 		
 		# Generate audio frames
-		for i in range(min(frames_to_fill, playback.get_frames_available())):
+		for i in range(min(frames_to_fill, frames_available)):
 			var t = float(i) / generator.mix_rate
 			var envelope = exp(-t * 15.0)  # Exponential decay
 			

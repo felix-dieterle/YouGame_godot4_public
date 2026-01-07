@@ -17,6 +17,7 @@ const PANEL_WIDTH: float = 400.0
 const PANEL_HEIGHT: float = 300.0
 const BUTTON_SIZE: float = 50.0
 const UPDATE_INTERVAL: float = 0.5
+const NEARBY_CHUNK_RADIUS: int = 5  # Search radius in chunks for nearby markers
 
 # Update timer
 var update_timer: float = 0.0
@@ -142,7 +143,7 @@ func _update_debug_info():
 	
 	# Narrative markers nearby
 	debug_text += "--- Nearby Markers ---\n"
-	var nearby_markers = _get_nearby_markers(5)  # Within 5 chunks
+	var nearby_markers = _get_nearby_markers(NEARBY_CHUNK_RADIUS)
 	if nearby_markers.size() > 0:
 		for i in range(min(5, nearby_markers.size())):
 			var marker = nearby_markers[i]
@@ -162,7 +163,7 @@ func _update_debug_info():
 	
 	debug_label.text = debug_text
 
-func _get_nearby_markers(chunk_radius: int = 3) -> Array:
+func _get_nearby_markers(chunk_radius: int = NEARBY_CHUNK_RADIUS) -> Array:
 	var markers = []
 	
 	if not world_manager or not player:
