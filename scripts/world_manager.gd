@@ -16,6 +16,9 @@ var player: Node3D
 # UI reference
 var ui_manager: Node = null
 
+# Quest hook system reference
+var quest_hook_system: QuestHookSystem = null
+
 # Initial loading state
 var initial_loading_done: bool = false
 var initial_loading_timer: Timer
@@ -28,6 +31,9 @@ func _ready():
 	
 	# Find UI manager
 	ui_manager = get_parent().get_node_or_null("UIManager")
+	
+	# Find quest hook system
+	quest_hook_system = get_parent().get_node_or_null("QuestHookSystem")
 	
 	# Create initial loading timer
 	initial_loading_timer = Timer.new()
@@ -89,6 +95,12 @@ func _load_chunk(chunk_pos: Vector2i):
 	add_child(chunk)
 	chunk.generate()
 	chunks[chunk_pos] = chunk
+	
+	# Register narrative markers with quest hook system
+	if quest_hook_system:
+		var markers = chunk.get_narrative_markers()
+		for marker in markers:
+			quest_hook_system.register_marker(marker)
 	
 	# Notify UI manager
 	if ui_manager and initial_loading_done:

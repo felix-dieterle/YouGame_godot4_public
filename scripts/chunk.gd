@@ -25,6 +25,9 @@ var biome: String = "grassland"
 var openness: float = 0.5  # 0 = closed/forest, 1 = open/plains
 var landmark_type: String = ""  # e.g., "hill", "valley", ""
 
+# Narrative markers
+var narrative_markers: Array = []  # Array of NarrativeMarker
+
 # Mesh
 var mesh_instance: MeshInstance3D
 
@@ -41,6 +44,7 @@ func generate():
 	_ensure_walkable_area()
 	_create_mesh()
 	_calculate_metadata()
+	_generate_narrative_markers()
 
 func _setup_noise():
 	noise = FastNoiseLite.new()
@@ -252,3 +256,82 @@ func blend_edges_with_neighbor(neighbor_chunk):
 	
 	# This would be implemented based on which edge to blend
 	pass
+
+func _generate_narrative_markers():
+	# Generate markers based on chunk metadata
+	# Performance-optimized: Only generate 1-3 markers per chunk based on importance
+	
+	var rng = RandomNumberGenerator.new()
+	rng.seed = hash(str(chunk_x) + "_" + str(chunk_z) + "_" + str(seed_value))
+	
+	# Determine number of markers based on landmark and openness
+	var marker_count = 0
+	if landmark_type != "":
+		marker_count = 2  # Landmarks are important, get 2 markers
+	elif openness > 0.7:
+		marker_count = 1  # Open areas get 1 marker (discovery point)
+	elif rng.randf() > 0.7:
+		marker_count = 1  # 30% chance for regular chunks
+	
+	for i in range(marker_count):
+		var marker = _create_marker_for_chunk(i, rng)
+		if marker:
+			narrative_markers.append(marker)
+
+func _create_marker_for_chunk(index: int, rng: RandomNumberGenerator) -> NarrativeMarker:
+	# Find a suitable walkable position for the marker
+	var attempts = 0
+	var max_attempts = 10
+	var marker_pos: Vector3
+	
+	while attempts < max_attempts:
+		var rand_x = rng.randi_range(2, RESOLUTION - 3)
+		var rand_z = rng.randi_range(2, RESOLUTION - 3)
+		
+		# Check if position is walkable
+		if walkable_map[rand_z * RESOLUTION + rand_x] == 1:
+			var world_x = chunk_x * CHUNK_SIZE + rand_x * CELL_SIZE
+			var world_z = chunk_z * CHUNK_SIZE + rand_z * CELL_SIZE
+			var height = get_height_at_world_pos(world_x, world_z)
+			marker_pos = Vector3(world_x, height, world_z)
+			break
+		attempts += 1
+	
+	if attempts >= max_attempts:
+		return null  # Couldn't find walkable position
+	
+	# Determine marker type based on chunk metadata
+	var marker_type: String
+	var importance: float
+	
+	if landmark_type == "hill":
+		marker_type = "landmark"
+		importance = 0.8
+	elif landmark_type == "valley":
+		marker_type = "discovery"
+		importance = 0.7
+	elif openness > 0.7:
+		marker_type = "encounter"
+		importance = 0.6
+	else:
+		marker_type = "discovery"
+		importance = 0.5
+	
+	# Create marker without fixed story text
+	var marker_id = "marker_%d_%d_%d" % [chunk_x, chunk_z, index]
+	var chunk_pos = Vector2i(chunk_x, chunk_z)
+	var marker = NarrativeMarker.new(marker_id, chunk_pos, marker_pos, marker_type)
+	marker.importance = importance
+	
+	# Add flexible metadata instead of fixed story
+	marker.metadata = {
+		"biome": biome,
+		"landmark_type": landmark_type,
+		"openness": openness,
+		"chunk_seed": seed_value
+	}
+	
+	return marker
+
+func get_narrative_markers() -> Array:
+	return narrative_markers
