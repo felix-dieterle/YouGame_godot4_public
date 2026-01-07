@@ -31,6 +31,10 @@ var lake_center: Vector2 = Vector2.ZERO
 var lake_radius: float = 0.0
 var lake_depth: float = 1.5  # Knee-deep water depth
 
+# Lake generation constants
+const WATER_LEVEL_SAMPLE_RADIUS = 2
+const LAKE_MESH_SEGMENTS = 16
+
 # Mesh
 var mesh_instance: MeshInstance3D
 var water_mesh_instance: MeshInstance3D = null
@@ -244,8 +248,8 @@ func _create_water_mesh():
 	var sample_count = 0
 	
 	# Sample heights around lake center
-	for i in range(-2, 3):
-		for j in range(-2, 3):
+	for i in range(-WATER_LEVEL_SAMPLE_RADIUS, WATER_LEVEL_SAMPLE_RADIUS + 1):
+		for j in range(-WATER_LEVEL_SAMPLE_RADIUS, WATER_LEVEL_SAMPLE_RADIUS + 1):
 			var sample_x = int(lake_center.x / CELL_SIZE) + i
 			var sample_z = int(lake_center.y / CELL_SIZE) + j
 			if sample_x >= 0 and sample_x <= RESOLUTION and sample_z >= 0 and sample_z <= RESOLUTION:
@@ -258,14 +262,13 @@ func _create_water_mesh():
 	var surface_tool = SurfaceTool.new()
 	surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
-	var segments = 16
-	var angle_step = 2.0 * PI / segments
+	var angle_step = 2.0 * PI / LAKE_MESH_SEGMENTS
 	
 	# Center vertex
 	var center_pos = Vector3(lake_center.x, water_level, lake_center.y)
 	
 	# Create triangular segments
-	for i in range(segments):
+	for i in range(LAKE_MESH_SEGMENTS):
 		var angle1 = i * angle_step
 		var angle2 = (i + 1) * angle_step
 		

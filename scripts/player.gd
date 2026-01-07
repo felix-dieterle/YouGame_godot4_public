@@ -61,14 +61,9 @@ func _physics_process(delta):
 		velocity.x = direction.x * move_speed
 		velocity.z = direction.z * move_speed
 		
-		# Rotate towards movement direction (only in third-person)
-		if not is_first_person:
-			var target_rotation = atan2(direction.x, direction.z)
-			rotation.y = lerp_angle(rotation.y, target_rotation, rotation_speed * delta)
-		else:
-			# In first-person, rotate camera based on movement
-			var target_rotation = atan2(direction.x, direction.z)
-			rotation.y = lerp_angle(rotation.y, target_rotation, rotation_speed * delta)
+		# Rotate towards movement direction
+		var target_rotation = atan2(direction.x, direction.z)
+		rotation.y = lerp_angle(rotation.y, target_rotation, rotation_speed * delta)
 		
 		# Update head bob when moving in first-person
 		if is_first_person:

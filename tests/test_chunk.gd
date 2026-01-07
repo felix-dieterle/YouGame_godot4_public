@@ -105,12 +105,14 @@ func test_lake_generation():
 func test_water_depth():
 	print("\n--- Test: Water Depth Calculation ---")
 	
+	const MAX_SEARCH_ITERATIONS = 50
+	
 	# Create a valley chunk that's likely to have a lake
 	var seed_value = 54321  # Different seed to potentially create valleys
 	var chunk_with_lake = null
 	
 	# Find a chunk with a lake
-	for i in range(50):
+	for i in range(MAX_SEARCH_ITERATIONS):
 		var chunk = CHUNK.new(i * 2, i * 3, seed_value + i)
 		chunk.generate()
 		
