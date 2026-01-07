@@ -1,11 +1,15 @@
 extends Node
 class_name NarrativeDemo
 
+# Preload dependencies
+const QuestHookSystem = preload("res://scripts/quest_hook_system.gd")
+const WorldManager = preload("res://scripts/world_manager.gd")
+
 # Demo script to showcase the narrative marker and quest hook system
 # This script demonstrates how to use the system to generate and manage quests
 
-var quest_hook_system: QuestHookSystem
-var world_manager: WorldManager
+var quest_hook_system
+var world_manager
 var player: Node3D
 
 # Demo state

@@ -17,7 +17,7 @@ var player: Node3D
 var ui_manager: Node = null
 
 # Quest hook system reference
-var quest_hook_system: QuestHookSystem = null
+var quest_hook_system = null
 
 # Initial loading state
 var initial_loading_done: bool = false

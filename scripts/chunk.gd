@@ -1,6 +1,9 @@
 extends Node3D
 class_name Chunk
 
+# Preload dependencies
+const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
+
 # Chunk configuration
 const CHUNK_SIZE = 32  # Size in world units
 const RESOLUTION = 32  # Number of cells per side
