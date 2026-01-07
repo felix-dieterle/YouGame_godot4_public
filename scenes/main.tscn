@@ -1,8 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://djkmwvr3o85qr"]
+[gd_scene load_steps=8 format=3 uid="uid://djkmwvr3o85qr"]
 
 [ext_resource type="Script" path="res://scripts/world_manager.gd" id="1_4f8k2"]
 [ext_resource type="Script" path="res://scripts/debug_visualization.gd" id="2_3h7j5"]
 [ext_resource type="Script" path="res://scripts/quest_hook_system.gd" id="3_2k9l1"]
+[ext_resource type="Script" path="res://scripts/player.gd" id="4_player"]
+[ext_resource type="Script" path="res://scripts/ui_manager.gd" id="5_ui"]
+[ext_resource type="Script" path="res://scripts/mobile_controls.gd" id="6_mobile"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -10,6 +13,8 @@ background_color = Color(0.53, 0.81, 0.92, 1)
 ambient_light_source = 2
 ambient_light_color = Color(1, 1, 1, 1)
 ambient_light_energy = 0.5
+tonemap_mode = 2
+tonemap_exposure = 1.2
 
 [node name="Main" type="Node3D"]
 
@@ -18,11 +23,17 @@ environment = SubResource("Environment_1")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 50, 0)
+light_energy = 1.2
 shadow_enabled = true
+shadow_bias = 0.05
+directional_shadow_mode = 1
+directional_shadow_split_1 = 0.1
+directional_shadow_blend_splits = true
+directional_shadow_max_distance = 200.0
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 30, 30)
-fov = 75.0
+[node name="Player" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+script = ExtResource("4_player")
 
 [node name="WorldManager" type="Node3D" parent="." groups=["WorldManager"]]
 script = ExtResource("1_4f8k2")
@@ -32,3 +43,23 @@ script = ExtResource("2_3h7j5")
 
 [node name="QuestHookSystem" type="Node" parent="."]
 script = ExtResource("3_2k9l1")
+
+[node name="UIManager" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_ui")
+
+[node name="MobileControls" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("6_mobile")
