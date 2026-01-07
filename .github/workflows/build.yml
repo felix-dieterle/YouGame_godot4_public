@@ -57,19 +57,6 @@ jobs:
         use-dotnet: false
         include-templates: true
     
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-    
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-    
-    - name: Install Android SDK components
-      run: |
-        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.0"
-    
     - name: Create export directory
       run: mkdir -p export
     
