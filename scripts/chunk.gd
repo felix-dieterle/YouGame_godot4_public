@@ -30,9 +30,19 @@ var landmark_type: String = ""  # e.g., "hill", "valley", ""
 
 # Narrative markers
 var narrative_markers: Array = []  # Array of NarrativeMarker
+# Lake data
+var has_lake: bool = false
+var lake_center: Vector2 = Vector2.ZERO
+var lake_radius: float = 0.0
+var lake_depth: float = 1.5  # Knee-deep water depth
+
+# Lake generation constants
+const WATER_LEVEL_SAMPLE_RADIUS = 2
+const LAKE_MESH_SEGMENTS = 16
 
 # Mesh
 var mesh_instance: MeshInstance3D
+var water_mesh_instance: MeshInstance3D = null
 
 func _init(x: int, z: int, world_seed: int):
 	chunk_x = x
@@ -45,9 +55,10 @@ func generate():
 	_generate_heightmap()
 	_calculate_walkability()
 	_ensure_walkable_area()
-	_create_mesh()
 	_calculate_metadata()
 	_generate_narrative_markers()
+	_generate_lake_if_valley()
+	_create_mesh()
 
 func _setup_noise():
 	noise = FastNoiseLite.new()
@@ -210,6 +221,93 @@ func _calculate_metadata():
 	else:
 		landmark_type = ""
 
+func _generate_lake_if_valley():
+	# Only generate lakes in valleys with some randomness
+	if landmark_type != "valley":
+		return
+	
+	# Use chunk position for random seed
+	var rng = RandomNumberGenerator.new()
+	rng.seed = hash(Vector2i(chunk_x, chunk_z)) + seed_value
+	
+	# 30% chance of lake in valley
+	if rng.randf() > 0.3:
+		return
+	
+	has_lake = true
+	
+	# Lake is positioned at chunk center
+	lake_center = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
+	
+	# Lake radius varies
+	lake_radius = rng.randf_range(8.0, 14.0)
+	
+	# Create water mesh
+	_create_water_mesh()
+
+func _create_water_mesh():
+	if not has_lake:
+		return
+	
+	# Calculate water level (average height at center)
+	var water_level = 0.0
+	var sample_count = 0
+	
+	# Sample heights around lake center
+	for i in range(-WATER_LEVEL_SAMPLE_RADIUS, WATER_LEVEL_SAMPLE_RADIUS + 1):
+		for j in range(-WATER_LEVEL_SAMPLE_RADIUS, WATER_LEVEL_SAMPLE_RADIUS + 1):
+			var sample_x = int(lake_center.x / CELL_SIZE) + i
+			var sample_z = int(lake_center.y / CELL_SIZE) + j
+			if sample_x >= 0 and sample_x <= RESOLUTION and sample_z >= 0 and sample_z <= RESOLUTION:
+				water_level += heightmap[sample_z * (RESOLUTION + 1) + sample_x]
+				sample_count += 1
+	
+	water_level /= sample_count
+	
+	# Create a circular water plane
+	var surface_tool = SurfaceTool.new()
+	surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	
+	var angle_step = 2.0 * PI / LAKE_MESH_SEGMENTS
+	
+	# Center vertex
+	var center_pos = Vector3(lake_center.x, water_level, lake_center.y)
+	
+	# Create triangular segments
+	for i in range(LAKE_MESH_SEGMENTS):
+		var angle1 = i * angle_step
+		var angle2 = (i + 1) * angle_step
+		
+		var p1 = center_pos + Vector3(cos(angle1) * lake_radius, 0, sin(angle1) * lake_radius)
+		var p2 = center_pos + Vector3(cos(angle2) * lake_radius, 0, sin(angle2) * lake_radius)
+		
+		# Water color (semi-transparent blue)
+		var water_color = Color(0.2, 0.4, 0.8, 0.6)
+		
+		surface_tool.set_color(water_color)
+		surface_tool.add_vertex(center_pos)
+		surface_tool.add_vertex(p1)
+		surface_tool.add_vertex(p2)
+	
+	surface_tool.generate_normals()
+	
+	var water_mesh = surface_tool.commit()
+	water_mesh_instance = MeshInstance3D.new()
+	water_mesh_instance.mesh = water_mesh
+	
+	# Create water material
+	var water_material = StandardMaterial3D.new()
+	water_material.vertex_color_use_as_albedo = true
+	water_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	water_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+	water_material.specular_mode = BaseMaterial3D.SPECULAR_SCHLICK_GGX
+	water_material.metallic = 0.0
+	water_material.roughness = 0.1
+	water_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Visible from both sides
+	
+	water_mesh_instance.set_surface_override_material(0, water_material)
+	add_child(water_mesh_instance)
+
 func get_height_at_world_pos(world_x: float, world_z: float) -> float:
 	# Convert world position to local chunk position
 	var local_x = world_x - chunk_x * CHUNK_SIZE
@@ -339,3 +437,17 @@ func _create_marker_for_chunk(index: int, rng: RandomNumberGenerator) -> Narrati
 
 func get_narrative_markers() -> Array:
 	return narrative_markers
+func get_water_depth_at_local_pos(local_x: float, local_z: float) -> float:
+	# Check if position is in lake
+	if not has_lake:
+		return 0.0
+	
+	var dist_to_center = Vector2(local_x, local_z).distance_to(lake_center)
+	
+	# Outside lake
+	if dist_to_center > lake_radius:
+		return 0.0
+	
+	# Water gets deeper towards center (knee-deep at center)
+	var depth_factor = 1.0 - (dist_to_center / lake_radius)
+	return depth_factor * lake_depth
