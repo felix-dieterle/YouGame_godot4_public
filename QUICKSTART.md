@@ -131,8 +131,14 @@ The project includes a player controller. To enable it:
 8. Save the scene
 
 **Controls:**
-- **Arrow Keys** or **WASD**: Move
-- **Mouse Wheel**: Zoom camera in/out
+- **Desktop:**
+  - **Arrow Keys** or **WASD**: Move
+  - **V Key**: Toggle camera view (first-person/third-person)
+  - **Mouse Wheel**: Zoom camera in/out (third-person only)
+- **Mobile:**
+  - **Virtual Joystick** (bottom-left): Move character
+  - **Camera Button** 👁 (bottom-right): Toggle camera view
+  - **Debug Button** 🐛 (top-right): Toggle debug narrative panel
 
 ## Adding NPCs
 
@@ -163,8 +169,14 @@ YouGame_godot4/
 ### Terrain Generation
 - Chunks are **32x32 world units**
 - Each chunk has **32x32 cells**
-- Height generated using **Perlin noise**
+- Height generated using **Perlin noise** with regional biome variation
 - Same seed = same terrain (reproducible)
+
+### Biome System
+Three distinct biome types with unique characteristics:
+- **Mountains**: High elevation (>8.0), stone/gray appearance, dramatic terrain
+- **Rocky Hills**: Medium elevation (5.0-8.0), brown-gray, moderate slopes
+- **Grasslands**: Low elevation (<5.0), green-brown, gentle slopes, may have lakes
 
 ### Chunk Loading
 - Chunks load dynamically around the camera/player
@@ -179,11 +191,18 @@ YouGame_godot4/
 - Minimum 80% of each chunk must be walkable
 - Auto-smoothing if requirement not met
 
+### Audio System
+- **Footstep Sounds**: Procedurally generated based on terrain material
+  - Stone surfaces: Crisp, hard sounds (150Hz)
+  - Rocky terrain: Moderate hardness (120Hz)
+  - Grass: Soft, muffled sounds (80Hz)
+- Sounds trigger automatically when moving
+
 ### Metadata System
 Each chunk stores:
-- **Biome**: Type of terrain (currently "grassland")
+- **Biome**: Type of terrain ("mountain", "rocky_hills", "grassland")
 - **Openness**: 0 (closed/forest) to 1 (open/plains)
-- **Landmark Type**: "hill", "valley", or empty
+- **Landmark Type**: "hill", "valley", "mountain", or empty
 
 ### Quest System
 - **Narrative Markers**: Points of interest in the world
@@ -248,12 +267,42 @@ For more details, see `NARRATIVE_SYSTEM.md`
 
 ## Debugging
 
+### Debug Narrative UI (New!)
+The game includes a comprehensive debug UI for Android and desktop:
+
+1. **Toggle the Debug Panel**:
+   - Tap/click the 🐛 button in the top-right corner
+   - Panel shows real-time information about:
+     - Current position and chunk
+     - Active biome and landmark
+     - Terrain material under player
+     - Nearby narrative markers
+     - Total marker count
+
+2. **Using Debug Info**:
+   - Monitor biome transitions as you move
+   - Check terrain materials for footstep sound testing
+   - Find narrative markers for quest testing
+   - Verify chunk loading/unloading
+
 ### Enable Debug Visualizations
 In `scenes/main.tscn`, the DebugVisualization node is already set up.
 
 **Toggle options:**
 - `show_chunk_borders`: Yellow lines around chunks
 - `show_walkability`: Green/red vertex colors (always on)
+
+### Testing New Features
+
+Run the new features test suite:
+```bash
+godot --headless --path . res://tests/test_new_features.tscn
+```
+
+Expected output includes:
+- Biome distribution across test chunks
+- Terrain material detection validation
+- Confirmation of multiple biome types
 
 ### Viewing Chunk Data
 In a script, access chunk data:
@@ -264,6 +313,10 @@ if chunk:
     print("Biome: ", chunk.biome)
     print("Openness: ", chunk.openness)
     print("Landmark: ", chunk.landmark_type)
+    
+    # Get terrain material at position
+    var material = world_manager.get_terrain_material_at_position(Vector3(10, 0, 10))
+    print("Material: ", material)
 ```
 
 ## Performance Tips

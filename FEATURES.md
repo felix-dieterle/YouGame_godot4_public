@@ -91,13 +91,108 @@ The Player node is now fully integrated:
 - Mobile controls use efficient touch event handling
 - No performance impact on terrain generation
 
+## First-Person Camera Toggle (Mobile)
+
+A camera view toggle button has been added for mobile devices:
+
+### Features
+- **Toggle Button**: Positioned in the bottom-right corner next to the movement joystick
+- **Visual Indicator**: Eye emoji (👁) for easy recognition
+- **Touch-Friendly**: Large circular button optimized for mobile screens
+- **Seamless Integration**: Works with the existing first-person/third-person camera system
+
+### Usage
+- Tap the camera button to switch between third-person and first-person views
+- Robot body automatically hides in first-person mode
+- Head bobbing effect active in first-person when moving
+
+## Terrain Biome System
+
+The world now features distinct biome regions with varied terrain types:
+
+### Biome Types
+
+1. **Mountain Regions**
+   - High elevation (>8.0 units)
+   - Stone/rocky gray appearance
+   - Steep slopes and dramatic elevation changes
+   - Landmark type: "mountain"
+
+2. **Rocky Hills**
+   - Medium elevation (5.0-8.0 units)
+   - Brown-gray mixed coloring
+   - Moderate slopes
+   - Landmark type: "hill"
+
+3. **Grasslands**
+   - Low elevation (<5.0 units)
+   - Green-brown earthy colors
+   - Gentle slopes and valleys
+   - May contain lakes in valley areas
+
+### Technical Details
+- Biome noise layer controls regional variation
+- Seamless transitions between biomes
+- Metadata tracking for each chunk's biome type
+- Terrain material detection for gameplay systems
+
+## Footstep Sound System
+
+Dynamic footstep sounds that vary based on terrain material:
+
+### Features
+- **Procedural Sound Generation**: Uses AudioStreamGenerator for real-time synthesis
+- **Material-Based Variation**:
+  - **Stone**: Higher frequency (150Hz), crisp and hard sound
+  - **Rock**: Medium frequency (120Hz), moderate hardness
+  - **Grass**: Lower frequency (80Hz), soft and muffled
+- **Movement Detection**: Sounds trigger only when moving
+- **Timing**: Regular intervals based on movement speed
+
+### Technical Details
+- Exponential decay envelope for natural sound falloff
+- Mix of tone and noise for realistic texture
+- Lightweight procedural generation (no audio file loading)
+- Integrates with terrain material detection system
+
+## Debug Narrative UI (Android-Friendly)
+
+A comprehensive debug overlay for narrative system inspection:
+
+### Features
+- **Toggle Button**: Bug emoji (🐛) in top-right corner
+- **Debug Panel**: Semi-transparent overlay with:
+  - Current player position and chunk coordinates
+  - Active biome and landmark type
+  - Current terrain material
+  - Nearby narrative markers with distances
+  - Total marker count in quest system
+- **Auto-Update**: Refreshes every 0.5 seconds when visible
+- **Touch-Optimized**: Large buttons and clear text for mobile devices
+
+### Usage
+1. Tap the debug button (🐛) to show/hide the panel
+2. View real-time information about the narrative system
+3. Check terrain properties at current position
+4. Monitor nearby markers for quest development
+
+### Technical Details
+- Mouse filter settings prevent interference with gameplay
+- Efficient update cycle minimizes performance impact
+- Works seamlessly on Android devices
+- Integrates with quest hook system for live data
+
 ## Future Enhancements
 
 Potential improvements for these features:
 
+- [ ] Pre-recorded footstep sound samples for better quality
 - [ ] Customizable joystick position and size
 - [ ] Multiple control schemes (swipe-to-move, tap-to-move)
 - [ ] More detailed UI with minimap
 - [ ] Settings menu for adjusting shadow quality
 - [ ] Day/night cycle with dynamic shadows
 - [ ] Tutorial messages for first-time players
+- [ ] Additional biome types (desert, snow, forest)
+- [ ] Weather effects that affect footstep sounds
+- [ ] Debug UI customization options
