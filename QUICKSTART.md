@@ -79,11 +79,13 @@ Android requires all APKs to be signed. For development/testing, Godot will use 
 #### Option 1: Use Godot's Debug Keystore (Recommended for Testing)
 Godot will automatically generate and use a debug keystore. No additional setup needed!
 
+**Important**: The keystore fields in `export_presets.cfg` should remain empty for debug builds - Godot handles everything automatically.
+
 #### Option 2: Create Your Own Keystore (For Distribution)
 ```bash
-# Create a release keystore
+# Create a release keystore (valid for 25 years - Google Play Store requirement)
 keytool -genkeypair -v -keystore YouGame-release.keystore -alias yougame \
-  -keyalg RSA -keysize 2048 -validity 10000
+  -keyalg RSA -keysize 2048 -validity 9125
 
 # Enter passwords and information when prompted
 ```
