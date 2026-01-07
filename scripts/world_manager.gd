@@ -13,14 +13,38 @@ var player_chunk: Vector2i = Vector2i(0, 0)
 # Player reference
 var player: Node3D
 
+# UI reference
+var ui_manager: Node = null
+
+# Initial loading state
+var initial_loading_done: bool = false
+var initial_loading_timer: Timer
+
 func _ready():
 	# Find player or create a simple camera for testing
 	player = get_parent().get_node_or_null("Player")
 	if not player:
 		player = get_parent().get_node_or_null("Camera3D")
 	
+	# Find UI manager
+	ui_manager = get_parent().get_node_or_null("UIManager")
+	
+	# Create initial loading timer
+	initial_loading_timer = Timer.new()
+	initial_loading_timer.one_shot = true
+	initial_loading_timer.timeout.connect(_on_initial_loading_complete)
+	add_child(initial_loading_timer)
+	
 	# Initial chunk loading
 	_update_chunks()
+	
+	# Mark initial loading as complete after a short delay
+	initial_loading_timer.start(0.5)
+
+func _on_initial_loading_complete():
+	initial_loading_done = true
+	if ui_manager:
+		ui_manager.on_initial_loading_complete()
 
 func _process(_delta):
 	if player:
@@ -65,6 +89,10 @@ func _load_chunk(chunk_pos: Vector2i):
 	add_child(chunk)
 	chunk.generate()
 	chunks[chunk_pos] = chunk
+	
+	# Notify UI manager
+	if ui_manager and initial_loading_done:
+		ui_manager.on_chunk_generated(chunk_pos)
 
 func _unload_chunk(chunk_pos: Vector2i):
 	if chunks.has(chunk_pos):

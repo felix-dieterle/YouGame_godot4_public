@@ -13,6 +13,9 @@ var camera: Camera3D
 # World reference
 var world_manager: WorldManager
 
+# Mobile controls reference
+var mobile_controls: Node = null
+
 func _ready():
 	# Setup camera
 	camera = Camera3D.new()
@@ -22,6 +25,9 @@ func _ready():
 	
 	# Find world manager
 	world_manager = get_tree().get_first_node_in_group("WorldManager")
+	
+	# Find mobile controls
+	mobile_controls = get_parent().get_node_or_null("MobileControls")
 	
 	# Create visual representation
 	var mesh_instance = MeshInstance3D.new()
@@ -37,8 +43,18 @@ func _ready():
 	add_child(mesh_instance)
 
 func _physics_process(delta):
-	# Get input
-	var input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	# Get input - support both keyboard and mobile controls
+	var input_dir = Vector2.ZERO
+	
+	# Try mobile controls first
+	if mobile_controls:
+		input_dir = mobile_controls.get_input_vector()
+	
+	# Fall back to keyboard if no mobile input
+	# Note: ui_left/right/up/down are default Godot actions that work with arrow keys and WASD
+	if input_dir.length() < 0.1:
+		input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	
 	var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
 	
 	if direction:
