@@ -29,18 +29,8 @@ func _ready():
 	# Find mobile controls
 	mobile_controls = get_parent().get_node_or_null("MobileControls")
 	
-	# Create visual representation
-	var mesh_instance = MeshInstance3D.new()
-	var capsule = CapsuleMesh.new()
-	capsule.height = 2.0
-	capsule.radius = 0.5
-	mesh_instance.mesh = capsule
-	
-	var material = StandardMaterial3D.new()
-	material.albedo_color = Color(0.2, 0.5, 0.8)
-	mesh_instance.set_surface_override_material(0, material)
-	
-	add_child(mesh_instance)
+	# Create visual representation - Simple Robot
+	_create_robot_body()
 
 func _physics_process(delta):
 	# Get input - support both keyboard and mobile controls
@@ -89,3 +79,89 @@ func _update_camera():
 	if camera:
 		camera.position = Vector3(0, camera_height, camera_distance)
 		camera.look_at(global_position, Vector3.UP)
+
+func _create_robot_body():
+	# Robot body (main torso) - a box
+	var body = MeshInstance3D.new()
+	var body_mesh = BoxMesh.new()
+	body_mesh.size = Vector3(0.8, 1.0, 0.6)
+	body.mesh = body_mesh
+	body.position = Vector3(0, 0.5, 0)
+	
+	var body_material = StandardMaterial3D.new()
+	body_material.albedo_color = Color(0.3, 0.3, 0.35)  # Dark gray
+	body_material.metallic = 0.7
+	body_material.roughness = 0.3
+	body.set_surface_override_material(0, body_material)
+	add_child(body)
+	
+	# Robot head - smaller box on top
+	var head = MeshInstance3D.new()
+	var head_mesh = BoxMesh.new()
+	head_mesh.size = Vector3(0.6, 0.5, 0.5)
+	head.mesh = head_mesh
+	head.position = Vector3(0, 1.25, 0)
+	
+	var head_material = StandardMaterial3D.new()
+	head_material.albedo_color = Color(0.4, 0.4, 0.45)  # Lighter gray
+	head_material.metallic = 0.6
+	head_material.roughness = 0.4
+	head.set_surface_override_material(0, head_material)
+	add_child(head)
+	
+	# Left eye - glowing sphere
+	var left_eye = MeshInstance3D.new()
+	var eye_mesh_left = SphereMesh.new()
+	eye_mesh_left.radius = 0.12
+	eye_mesh_left.height = 0.24
+	left_eye.mesh = eye_mesh_left
+	left_eye.position = Vector3(-0.15, 1.3, 0.25)
+	
+	var eye_material = StandardMaterial3D.new()
+	eye_material.albedo_color = Color(0.2, 0.8, 1.0)  # Cyan/blue
+	eye_material.emission_enabled = true
+	eye_material.emission = Color(0.2, 0.8, 1.0)
+	eye_material.emission_energy_multiplier = 2.0
+	left_eye.set_surface_override_material(0, eye_material)
+	add_child(left_eye)
+	
+	# Right eye - glowing sphere
+	var right_eye = MeshInstance3D.new()
+	var eye_mesh_right = SphereMesh.new()
+	eye_mesh_right.radius = 0.12
+	eye_mesh_right.height = 0.24
+	right_eye.mesh = eye_mesh_right
+	right_eye.position = Vector3(0.15, 1.3, 0.25)
+	right_eye.set_surface_override_material(0, eye_material)
+	add_child(right_eye)
+	
+	# Add a small antenna on top for character
+	var antenna = MeshInstance3D.new()
+	var antenna_mesh = CylinderMesh.new()
+	antenna_mesh.height = 0.3
+	antenna_mesh.top_radius = 0.03
+	antenna_mesh.bottom_radius = 0.03
+	antenna.mesh = antenna_mesh
+	antenna.position = Vector3(0, 1.65, 0)
+	
+	var antenna_material = StandardMaterial3D.new()
+	antenna_material.albedo_color = Color(0.8, 0.2, 0.2)  # Red
+	antenna_material.metallic = 0.9
+	antenna.set_surface_override_material(0, antenna_material)
+	add_child(antenna)
+	
+	# Add antenna tip (small glowing sphere)
+	var antenna_tip = MeshInstance3D.new()
+	var tip_mesh = SphereMesh.new()
+	tip_mesh.radius = 0.08
+	tip_mesh.height = 0.16
+	antenna_tip.mesh = tip_mesh
+	antenna_tip.position = Vector3(0, 1.8, 0)
+	
+	var tip_material = StandardMaterial3D.new()
+	tip_material.albedo_color = Color(1.0, 0.3, 0.3)
+	tip_material.emission_enabled = true
+	tip_material.emission = Color(1.0, 0.3, 0.3)
+	tip_material.emission_energy_multiplier = 1.5
+	antenna_tip.set_surface_override_material(0, tip_material)
+	add_child(antenna_tip)

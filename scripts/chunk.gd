@@ -135,11 +135,21 @@ func _create_mesh():
 			var h01 = heightmap[(z + 1) * (RESOLUTION + 1) + x]
 			var h11 = heightmap[(z + 1) * (RESOLUTION + 1) + (x + 1)]
 			
+			# Use subtle color variation based on height for terrain depth
+			# Higher areas are lighter, lower areas are darker
+			var height_factor = (h00 + h10 + h01 + h11) / 40.0 + 0.5  # Normalize around 0.5
+			height_factor = clamp(height_factor, 0.3, 0.8)
+			
+			# Base terrain color (earthy green-brown)
+			var base_color = Color(0.4 * height_factor, 0.5 * height_factor, 0.3 * height_factor)
+			
+			# Optional: Tint non-walkable areas slightly (for subtle indication)
 			var is_walkable = walkable_map[z * RESOLUTION + x] == 1
-			var color = Color.GREEN if is_walkable else Color.RED
+			if not is_walkable:
+				base_color = base_color.lerp(Color(0.5, 0.4, 0.3), 0.2)  # Subtle brownish tint
 			
 			# First triangle
-			surface_tool.set_color(color)
+			surface_tool.set_color(base_color)
 			surface_tool.add_vertex(Vector3(x0, h00, z0))
 			surface_tool.add_vertex(Vector3(x1, h10, z0))
 			surface_tool.add_vertex(Vector3(x0, h01, z1))
@@ -155,9 +165,14 @@ func _create_mesh():
 	mesh_instance = MeshInstance3D.new()
 	mesh_instance.mesh = mesh
 	
-	# Create simple material
+	# Create terrain material with proper shading and shadow receiving
 	var material = StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+	material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	material.roughness = 0.9
+	# Enable shadow receiving to show terrain depth
+	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mesh_instance.set_surface_override_material(0, material)
 	
 	add_child(mesh_instance)
