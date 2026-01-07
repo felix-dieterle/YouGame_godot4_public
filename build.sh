@@ -35,7 +35,8 @@ mkdir -p export
 
 # Export the project
 echo "Exporting project to APK..."
-$GODOT_CMD --headless --export-release "$EXPORT_PRESET" "$OUTPUT_PATH"
+echo "Note: Using debug export which will be automatically signed with debug keystore"
+$GODOT_CMD --headless --export-debug "$EXPORT_PRESET" "$OUTPUT_PATH"
 
 if [ $? -eq 0 ]; then
     echo "=== Build Successful ==="

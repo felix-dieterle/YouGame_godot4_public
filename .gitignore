@@ -29,6 +29,11 @@ export/
 *.exe
 *.pck
 
+# Android keystore files (sensitive!)
+*.keystore
+*.jks
+keystore.properties
+
 # Temporary files
 /tmp/
 *.tmp
