@@ -190,6 +190,62 @@ Each chunk stores:
 - **Quest Hooks**: Generate quests from markers
 - Types: Discovery, Encounter, Landmark
 
+## Running the Narrative Marker Demo
+
+The project includes a demo mode to showcase the narrative marker and quest hook system:
+
+### Option 1: Demo Scene (Recommended)
+```bash
+# Run the demo scene
+godot --path . scenes/demo_narrative.tscn
+```
+
+This will:
+1. Generate terrain with narrative markers
+2. Automatically enable demo mode after 2 seconds
+3. Print marker summary to console
+4. Create a demo quest with generated story elements
+5. Track player progress toward quest objectives
+
+### Option 2: Enable Demo in Main Scene
+Add the `NarrativeDemo` node to `scenes/main.tscn`:
+
+1. Open `scenes/main.tscn` in Godot
+2. Right-click on the root node → Add Child Node
+3. Add a **Node** and name it "NarrativeDemo"
+4. Attach the script `scripts/narrative_demo.gd`
+5. Save and run the scene
+
+### Expected Demo Output
+```
+========================================
+NARRATIVE MARKER DEMO MODE ACTIVATED
+========================================
+
+QuestHookSystem: 12 markers available
+  - marker_0_0_0 (type: discovery, importance: 0.50) at (15.3, 2.1, 18.7)
+  - marker_1_1_0 (type: landmark, importance: 0.80) at (45.2, 8.3, 52.1)
+  ...
+
+--- Creating new demo quest ---
+Quest created successfully!
+Quest ID: demo_quest_123456789
+Title: Demo Quest: Journey Through the Land
+Number of objectives: 3
+  Objective 1: Explore the unknown area in the grassland near the elevated hill...
+  Objective 2: Meet someone at this location in the grassland (open terrain)...
+  Objective 3: Investigate the mysterious location in the grassland...
+```
+
+### Understanding the Demo
+- **Markers** are generated automatically based on chunk metadata (biome, landmark, openness)
+- **No fixed story text** - stories are generated from flexible metadata
+- **Quests** automatically select 1-3 markers as objectives
+- **Demo mode** showcases dummy story element generation
+- **Mobile-optimized** - lightweight marker generation (~200 bytes per marker)
+
+For more details, see `NARRATIVE_SYSTEM.md`
+
 ## Debugging
 
 ### Enable Debug Visualizations
