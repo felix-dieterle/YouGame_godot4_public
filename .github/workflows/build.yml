@@ -57,27 +57,21 @@ jobs:
         use-dotnet: false
         include-templates: true
     
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-    
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-    
     - name: Create export directory
       run: mkdir -p export
     
     - name: Build APK
       run: |
         echo "Building Android APK..."
-        # Note: This requires proper Android export templates and signing
-        # For now, we just verify the export preset exists
-        if [ -f export_presets.cfg ]; then
-          echo "Export presets found"
+        godot --headless --export-release "Android" export/YouGame.apk || { echo "Godot export failed"; exit 1; }
+        
+        # Verify the APK was created
+        if [ -f export/YouGame.apk ]; then
+          echo "APK created successfully!"
+          ls -lh export/YouGame.apk
         else
-          echo "Warning: No export presets found"
+          echo "Error: APK was not created"
+          exit 1
         fi
     
     - name: Upload APK artifact
