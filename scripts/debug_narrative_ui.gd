@@ -77,17 +77,6 @@ func _create_toggle_button():
 	button_style_pressed.corner_radius_bottom_right = 8
 	toggle_button.add_theme_stylebox_override("pressed", button_style_pressed)
 	
-	# Style the button - focus state
-	var button_style_focus = StyleBoxFlat.new()
-	button_style_focus.bg_color = Color(0.3, 0.3, 0.3, 0.9)
-	button_style_focus.corner_radius_top_left = 8
-	button_style_focus.corner_radius_top_right = 8
-	button_style_focus.corner_radius_bottom_left = 8
-	button_style_focus.corner_radius_bottom_right = 8
-	button_style_focus.border_width_all = 2
-	button_style_focus.border_color = Color(0.5, 0.7, 0.5, 1.0)
-	toggle_button.add_theme_stylebox_override("focus", button_style_focus)
-	
 	# Connect button
 	toggle_button.pressed.connect(_on_toggle_pressed)
 	

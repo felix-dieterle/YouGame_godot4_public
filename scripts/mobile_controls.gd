@@ -170,17 +170,6 @@ func _create_camera_toggle_button():
 	button_style_pressed.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
 	camera_toggle_button.add_theme_stylebox_override("pressed", button_style_pressed)
 	
-	# Style the button - focus state
-	var button_style_focus = StyleBoxFlat.new()
-	button_style_focus.bg_color = Color(0.4, 0.4, 0.4, 0.8)
-	button_style_focus.corner_radius_top_left = int(BUTTON_SIZE / 2)
-	button_style_focus.corner_radius_top_right = int(BUTTON_SIZE / 2)
-	button_style_focus.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
-	button_style_focus.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
-	button_style_focus.border_width_all = 2
-	button_style_focus.border_color = Color(0.7, 0.7, 0.7, 1.0)
-	camera_toggle_button.add_theme_stylebox_override("focus", button_style_focus)
-	
 	# Connect button to toggle function
 	camera_toggle_button.pressed.connect(_on_camera_toggle_pressed)
 	
