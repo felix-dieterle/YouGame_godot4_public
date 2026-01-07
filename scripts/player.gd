@@ -51,6 +51,7 @@ func _physics_process(delta):
 		input_dir = mobile_controls.get_input_vector()
 	
 	# Fall back to keyboard if no mobile input
+	# Note: ui_left/right/up/down are default Godot actions that work with arrow keys and WASD
 	if input_dir.length() < 0.1:
 		input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	

@@ -12,14 +12,19 @@ var joystick_vector: Vector2 = Vector2.ZERO
 const JOYSTICK_RADIUS: float = 80.0
 const STICK_RADIUS: float = 30.0
 const DEADZONE: float = 0.2
+@export var joystick_margin_x: float = 120.0
+@export var joystick_margin_y: float = 120.0
 
 func _ready():
 	# Create virtual joystick (bottom left)
 	joystick_base = Control.new()
-	joystick_base.position = Vector2(120, get_viewport().size.y - 120)
 	joystick_base.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
 	joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
 	add_child(joystick_base)
+	
+	# Update position when viewport size changes
+	_update_joystick_position()
+	get_viewport().size_changed.connect(_update_joystick_position)
 	
 	# Base circle
 	var base_panel = Panel.new()
@@ -57,6 +62,11 @@ func _ready():
 	stick_style.corner_radius_bottom_left = int(STICK_RADIUS)
 	stick_style.corner_radius_bottom_right = int(STICK_RADIUS)
 	stick_panel.add_theme_stylebox_override("panel", stick_style)
+
+func _update_joystick_position():
+	# Position joystick in bottom-left corner with margin
+	var viewport_size = get_viewport().size
+	joystick_base.position = Vector2(joystick_margin_x, viewport_size.y - joystick_margin_y)
 
 func _input(event: InputEvent):
 	# Handle touch input for virtual joystick

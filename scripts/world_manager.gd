@@ -18,6 +18,7 @@ var ui_manager: Node = null
 
 # Initial loading state
 var initial_loading_done: bool = false
+var initial_loading_timer: Timer
 
 func _ready():
 	# Find player or create a simple camera for testing
@@ -28,11 +29,19 @@ func _ready():
 	# Find UI manager
 	ui_manager = get_parent().get_node_or_null("UIManager")
 	
+	# Create initial loading timer
+	initial_loading_timer = Timer.new()
+	initial_loading_timer.one_shot = true
+	initial_loading_timer.timeout.connect(_on_initial_loading_complete)
+	add_child(initial_loading_timer)
+	
 	# Initial chunk loading
 	_update_chunks()
 	
 	# Mark initial loading as complete after a short delay
-	await get_tree().create_timer(0.5).timeout
+	initial_loading_timer.start(0.5)
+
+func _on_initial_loading_complete():
 	initial_loading_done = true
 	if ui_manager:
 		ui_manager.on_initial_loading_complete()
