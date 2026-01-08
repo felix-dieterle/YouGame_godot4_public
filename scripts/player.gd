@@ -83,14 +83,19 @@ func _physics_process(delta):
 				# Get the slope gradient (direction of steepest ascent)
 				var slope_gradient = world_manager.get_slope_gradient_at_position(intended_position)
 				
-				# Check if we're moving uphill by checking dot product
-				# If dot product > 0, we're moving in the uphill direction
-				var uphill_component = direction.dot(slope_gradient.normalized())
-				
-				# Only block movement if we're moving uphill (positive dot product)
-				# Allow movement if going sideways (near 0) or downhill (negative)
-				if uphill_component > 0.1:  # Small threshold to allow slight angles
-					can_move = false
+				# Normalize gradient once for dot product calculation
+				var gradient_length = slope_gradient.length()
+				if gradient_length > 0.001:  # Avoid division by zero
+					var normalized_gradient = slope_gradient / gradient_length
+					
+					# Check if we're moving uphill by checking dot product
+					# If dot product > 0, we're moving in the uphill direction
+					var uphill_component = direction.dot(normalized_gradient)
+					
+					# Only block movement if we're moving uphill (positive dot product)
+					# Allow movement if going sideways (near 0) or downhill (negative)
+					if uphill_component > 0.1:  # Small threshold to allow slight angles
+						can_move = false
 		
 		if can_move:
 			velocity.x = direction.x * move_speed

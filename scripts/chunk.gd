@@ -559,6 +559,6 @@ func get_slope_gradient_at_world_pos(world_x: float, world_z: float) -> Vector3:
 	var dx = (h10 - h00) / CELL_SIZE  # height change in x direction
 	var dz = (h01 - h00) / CELL_SIZE  # height change in z direction
 	
-	# Return normalized gradient vector (direction of steepest ascent)
+	# Return gradient vector (direction of steepest ascent)
 	# In 3D space: gradient points uphill
 	return Vector3(dx, 0, dz)
