@@ -8,6 +8,11 @@ class_name Player
 @export var camera_height: float = 5.0
 @export var max_slope_angle: float = 30.0  # Maximum walkable slope in degrees
 
+# Slope detection settings - distances to look ahead when checking for steep slopes
+@export var slope_check_near: float = 0.3   # Near check - about one step ahead
+@export var slope_check_medium: float = 1.0 # Medium check - a few steps ahead
+@export var slope_check_far: float = 2.5    # Far check - catch steep edges from a distance
+
 # First-person settings
 @export var first_person_height: float = 1.6
 @export var head_bob_frequency: float = 2.0
@@ -77,13 +82,8 @@ func _physics_process(delta):
 		
 		if world_manager:
 			# Check multiple points along the movement path to catch steep edges
-			# Use fixed lookahead distances to ensure consistent behavior across frame rates
-			# These distances are tuned to catch steep edges before the player reaches them
-			var check_distances = [
-				0.3,  # Near check - about one step ahead
-				1.0,  # Medium check - a few steps ahead
-				2.5   # Far check - catch steep edges from a distance
-			]
+			# Use configurable lookahead distances to ensure consistent behavior
+			var check_distances = [slope_check_near, slope_check_medium, slope_check_far]
 			
 			for check_dist in check_distances:
 				var check_position = global_position + direction * check_dist
