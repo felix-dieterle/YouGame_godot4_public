@@ -91,20 +91,26 @@ The Player node is now fully integrated:
 - Mobile controls use efficient touch event handling
 - No performance impact on terrain generation
 
-## First-Person Camera Toggle (Mobile)
+## Mobile Settings Menu
 
-A camera view toggle button has been added for mobile devices:
+A comprehensive settings menu has been added for mobile devices:
 
 ### Features
-- **Toggle Button**: Positioned in the bottom-right corner next to the movement joystick
-- **Visual Indicator**: Eye emoji (👁) for easy recognition
-- **Touch-Friendly**: Large circular button optimized for mobile screens
-- **Seamless Integration**: Works with the existing first-person/third-person camera system
+- **Menu Button**: Positioned in the bottom-right corner with hamburger icon (☰)
+- **Settings Panel**: Popup menu with various options and actions
+- **Touch-Friendly**: Large buttons optimized for mobile screens
+- **Seamless Integration**: Works with the existing mobile control system
+
+### Available Settings
+- **Toggle First Person View**: Switch between third-person and first-person camera views
+  - Robot body automatically hides in first-person mode
+  - Head bobbing effect active in first-person when moving
+- **Actions Section**: Placeholder for future game actions
 
 ### Usage
-- Tap the camera button to switch between third-person and first-person views
-- Robot body automatically hides in first-person mode
-- Head bobbing effect active in first-person when moving
+- Tap the menu button (☰) in the bottom-right to open settings
+- Select "Toggle First Person View" to switch camera modes
+- Tap "Close" or press the menu button again to close the settings panel
 
 ## Terrain Biome System
 
