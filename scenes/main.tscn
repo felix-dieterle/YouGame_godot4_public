@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://djkmwvr3o85qr"]
+[gd_scene load_steps=11 format=3 uid="uid://djkmwvr3o85qr"]
 
 [ext_resource type="Script" path="res://scripts/world_manager.gd" id="1_4f8k2"]
 [ext_resource type="Script" path="res://scripts/debug_visualization.gd" id="2_3h7j5"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/mobile_controls.gd" id="6_mobile"]
 [ext_resource type="Script" path="res://scripts/debug_narrative_ui.gd" id="7_debug_narrative"]
 [ext_resource type="Script" path="res://scripts/debug_log_overlay.gd" id="8_debug_log"]
+[ext_resource type="Script" path="res://scripts/weather_system.gd" id="9_weather"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -33,12 +34,15 @@ directional_shadow_split_1 = 0.1
 directional_shadow_blend_splits = true
 directional_shadow_max_distance = 200.0
 
-[node name="Player" type="CharacterBody3D" parent="."]
+[node name="Player" type="CharacterBody3D" parent="." groups=["Player"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 script = ExtResource("4_player")
 
 [node name="WorldManager" type="Node3D" parent="." groups=["WorldManager"]]
 script = ExtResource("1_4f8k2")
+
+[node name="WeatherSystem" type="Node3D" parent="."]
+script = ExtResource("9_weather")
 
 [node name="DebugVisualization" type="Node3D" parent="."]
 script = ExtResource("2_3h7j5")
