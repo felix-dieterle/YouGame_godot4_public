@@ -358,12 +358,9 @@ func _update_button_position():
 		var global_pos = menu_button.global_position
 		DebugLogOverlay.add_log("Menu button global_position: (%.0f, %.0f)" % [global_pos.x, global_pos.y], "cyan")
 		
-		# Use helper function to check bounds
+		# Use helper function to check bounds and log results
 		var bounds_check = _check_button_bounds(global_pos, viewport_size)
-		DebugLogOverlay.add_log("Button top-left in viewport: %s" % str(bounds_check.top_left_in_bounds), 
-		                        "green" if bounds_check.top_left_in_bounds else "red")
-		DebugLogOverlay.add_log("Button fully in viewport: %s (may extend beyond due to centering)" % str(bounds_check.fully_in_bounds), 
-		                        "green" if bounds_check.fully_in_bounds else "yellow")
+		_log_button_bounds_check(bounds_check)
 
 func _check_button_bounds(button_global_pos: Vector2, viewport_size: Vector2) -> Dictionary:
 	# Helper function to check if button is within viewport bounds
@@ -385,6 +382,16 @@ func _check_button_bounds(button_global_pos: Vector2, viewport_size: Vector2) ->
 		"button_right": button_right,
 		"button_bottom": button_bottom
 	}
+
+func _log_button_bounds_check(bounds_check: Dictionary):
+	# Helper function to log button bounds checking results with appropriate colors
+	var top_left_color = "green" if bounds_check.top_left_in_bounds else "red"
+	var fully_color = "green" if bounds_check.fully_in_bounds else "yellow"
+	
+	DebugLogOverlay.add_log("Button top-left in viewport: %s" % str(bounds_check.top_left_in_bounds), 
+	                        top_left_color)
+	DebugLogOverlay.add_log("Button fully in viewport: %s (may extend beyond due to centering)" % str(bounds_check.fully_in_bounds), 
+	                        fully_color)
 
 func _update_settings_panel_position():
 	if not settings_panel:
@@ -436,8 +443,5 @@ func _log_control_info():
 			bounds_check.button_right, bounds_check.button_bottom
 		], "cyan")
 		
-		# Log visibility checks
-		DebugLogOverlay.add_log("Button top-left in viewport: %s" % str(bounds_check.top_left_in_bounds), 
-		                        "green" if bounds_check.top_left_in_bounds else "red")
-		DebugLogOverlay.add_log("Button fully in viewport: %s (may extend due to centering)" % str(bounds_check.fully_in_bounds), 
-		                        "green" if bounds_check.fully_in_bounds else "yellow")
+		# Log visibility checks using helper
+		_log_button_bounds_check(bounds_check)
