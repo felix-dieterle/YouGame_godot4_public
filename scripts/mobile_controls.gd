@@ -41,18 +41,7 @@ func _ready():
 	add_child(joystick_base)
 	DebugLogOverlay.add_log("Joystick base created", "green")
 	
-	# Create menu button (bottom right)
-	_create_menu_button()
-	
-	# Create settings panel (initially hidden)
-	_create_settings_panel()
-	
-	# Update position when viewport size changes
-	_update_joystick_position()
-	get_viewport().size_changed.connect(_update_joystick_position)
-	
-	DebugLogOverlay.add_log("MobileControls._ready() completed", "green")
-	
+	# Create joystick visuals
 	# Base circle
 	var base_panel = Panel.new()
 	base_panel.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
@@ -89,6 +78,20 @@ func _ready():
 	stick_style.corner_radius_bottom_left = int(STICK_RADIUS)
 	stick_style.corner_radius_bottom_right = int(STICK_RADIUS)
 	stick_panel.add_theme_stylebox_override("panel", stick_style)
+	
+	DebugLogOverlay.add_log("Joystick visuals created", "green")
+	
+	# Create menu button (bottom right)
+	_create_menu_button()
+	
+	# Create settings panel (initially hidden)
+	_create_settings_panel()
+	
+	# Update position when viewport size changes
+	_update_joystick_position()
+	get_viewport().size_changed.connect(_update_joystick_position)
+	
+	DebugLogOverlay.add_log("MobileControls._ready() completed", "green")
 
 func _update_joystick_position():
 	# Position joystick in bottom-left corner with margin
