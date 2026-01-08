@@ -143,3 +143,9 @@ func get_slope_at_position(world_pos: Vector3) -> float:
 	if chunk:
 		return chunk.get_slope_at_world_pos(world_pos.x, world_pos.z)
 	return 0.0
+
+func get_slope_gradient_at_position(world_pos: Vector3) -> Vector3:
+	var chunk = get_chunk_at_position(world_pos)
+	if chunk:
+		return chunk.get_slope_gradient_at_world_pos(world_pos.x, world_pos.z)
+	return Vector3.ZERO

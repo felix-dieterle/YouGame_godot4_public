@@ -531,3 +531,34 @@ func get_slope_at_world_pos(world_x: float, world_z: float) -> float:
 	var max_height_diff = max(max(abs(h10 - h00), abs(h01 - h00)), abs(h11 - h00))
 	var slope_rad = atan(max_height_diff / CELL_SIZE)
 	return rad_to_deg(slope_rad)
+
+func get_slope_gradient_at_world_pos(world_x: float, world_z: float) -> Vector3:
+	# Returns the gradient vector (direction of steepest ascent) at the given position
+	# Convert world position to local chunk position
+	var local_x = world_x - chunk_x * CHUNK_SIZE
+	var local_z = world_z - chunk_z * CHUNK_SIZE
+	
+	# Convert to cell coordinates
+	var cell_x = local_x / CELL_SIZE
+	var cell_z = local_z / CELL_SIZE
+	
+	# Clamp to valid cell range
+	var x = int(clamp(cell_x, 0, RESOLUTION - 1))
+	var z = int(clamp(cell_z, 0, RESOLUTION - 1))
+	
+	# Ensure we can safely access x+1 and z+1
+	var x1 = min(x + 1, RESOLUTION)
+	var z1 = min(z + 1, RESOLUTION)
+	
+	# Get heights of the cell corners
+	var h00 = heightmap[z * (RESOLUTION + 1) + x]
+	var h10 = heightmap[z * (RESOLUTION + 1) + x1]
+	var h01 = heightmap[z1 * (RESOLUTION + 1) + x]
+	
+	# Calculate gradient (change in height per unit distance)
+	var dx = (h10 - h00) / CELL_SIZE  # height change in x direction
+	var dz = (h01 - h00) / CELL_SIZE  # height change in z direction
+	
+	# Return normalized gradient vector (direction of steepest ascent)
+	# In 3D space: gradient points uphill
+	return Vector3(dx, 0, dz)

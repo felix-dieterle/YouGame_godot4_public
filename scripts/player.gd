@@ -78,9 +78,19 @@ func _physics_process(delta):
 		
 		if world_manager:
 			var slope_at_position = world_manager.get_slope_at_position(intended_position)
-			# Only allow movement if slope is walkable
+			# Only restrict movement if slope is too steep AND we're moving uphill
 			if slope_at_position > max_slope_angle:
-				can_move = false
+				# Get the slope gradient (direction of steepest ascent)
+				var slope_gradient = world_manager.get_slope_gradient_at_position(intended_position)
+				
+				# Check if we're moving uphill by checking dot product
+				# If dot product > 0, we're moving in the uphill direction
+				var uphill_component = direction.dot(slope_gradient.normalized())
+				
+				# Only block movement if we're moving uphill (positive dot product)
+				# Allow movement if going sideways (near 0) or downhill (negative)
+				if uphill_component > 0.1:  # Small threshold to allow slight angles
+					can_move = false
 		
 		if can_move:
 			velocity.x = direction.x * move_speed
