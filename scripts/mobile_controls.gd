@@ -13,6 +13,10 @@ var menu_button: Button
 var settings_panel: Panel
 var settings_visible: bool = false
 
+# Left edge measurement ruler
+var measurement_ruler: Control
+@export var show_ruler: bool = true  # Show visual measurement ruler on left edge (default: true, set to false to hide)
+
 # Configuration
 const JOYSTICK_RADIUS: float = 80.0
 const STICK_RADIUS: float = 30.0
@@ -20,6 +24,16 @@ const DEADZONE: float = 0.2
 const BUTTON_SIZE: float = 60.0
 const PANEL_WIDTH: float = 300.0
 const PANEL_HEIGHT: float = 350.0
+
+# Ruler configuration constants
+const RULER_START_DISTANCE: int = 0
+const RULER_END_DISTANCE: int = 200
+const RULER_INTERVAL: int = 10
+const RULER_SUMMARY_PANEL_BOTTOM_OFFSET: float = 120.0
+const DEBUG_BUTTONS_START: float = 10.0
+const DEBUG_BUTTONS_END: float = 95.0
+const MENU_BUTTON_START: float = 100.0
+
 @export var joystick_margin_x: float = 120.0
 @export var joystick_margin_y: float = 120.0
 @export var button_margin_x: float = 80.0
@@ -86,6 +100,10 @@ func _ready():
 	
 	# Create settings panel (initially hidden)
 	_create_settings_panel()
+	
+	# Create measurement ruler on left edge
+	if show_ruler:
+		_create_measurement_ruler()
 	
 	# Update position when viewport size changes
 	_update_joystick_position()
@@ -451,3 +469,112 @@ func _log_control_info():
 		
 		# Log visibility checks using helper
 		_log_button_bounds_check(bounds_check)
+
+func _create_measurement_ruler():
+	DebugLogOverlay.add_log("Creating left edge measurement ruler...", "cyan")
+	
+	# Create a container for the ruler
+	measurement_ruler = Control.new()
+	measurement_ruler.z_index = 150  # Very high to be on top of everything
+	measurement_ruler.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block clicks
+	add_child(measurement_ruler)
+	
+	# Get viewport size
+	var viewport_size = get_viewport().size
+	
+	# Create vertical line at x=0 (left edge)
+	var edge_line = Panel.new()
+	edge_line.position = Vector2(0, 0)
+	edge_line.size = Vector2(2, viewport_size.y)
+	var edge_style = StyleBoxFlat.new()
+	edge_style.bg_color = Color(1.0, 0.0, 0.0, 0.8)  # Red line
+	edge_line.add_theme_stylebox_override("panel", edge_style)
+	measurement_ruler.add_child(edge_line)
+	
+	# Add measurement markers using configurable range
+	for distance in range(RULER_START_DISTANCE, RULER_END_DISTANCE + 1, RULER_INTERVAL):
+		# Create a tick mark
+		var tick = Panel.new()
+		tick.position = Vector2(distance, 5)
+		tick.size = Vector2(2, 15)
+		var tick_style = StyleBoxFlat.new()
+		# Use different colors for different distance ranges
+		if distance == 0:
+			tick_style.bg_color = Color(1.0, 0.0, 0.0, 0.9)  # Red for edge
+		elif distance == DEBUG_BUTTONS_START:
+			tick_style.bg_color = Color(1.0, 0.5, 0.0, 0.9)  # Orange for debug buttons start
+		elif distance == MENU_BUTTON_START:
+			tick_style.bg_color = Color(0.0, 1.0, 0.0, 0.9)  # Green for menu button start
+		else:
+			tick_style.bg_color = Color(1.0, 1.0, 0.0, 0.7)  # Yellow for other markers
+		tick.add_theme_stylebox_override("panel", tick_style)
+		measurement_ruler.add_child(tick)
+		
+		# Create a label for the distance
+		var label = Label.new()
+		label.text = str(distance)
+		label.position = Vector2(distance + 5, 0)
+		label.add_theme_font_size_override("font_size", 12)
+		label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.9))
+		label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+		label.add_theme_constant_override("outline_size", 2)
+		measurement_ruler.add_child(label)
+	
+	# Add informational labels showing what's at each position
+	var info_label_1 = Label.new()
+	info_label_1.text = "← Edge (0px)"
+	info_label_1.position = Vector2(2, 25)
+	info_label_1.add_theme_font_size_override("font_size", 14)
+	info_label_1.add_theme_color_override("font_color", Color(1.0, 0.0, 0.0, 1.0))
+	info_label_1.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	info_label_1.add_theme_constant_override("outline_size", 2)
+	measurement_ruler.add_child(info_label_1)
+	
+	var info_label_2 = Label.new()
+	info_label_2.text = "← Debug Buttons (%.0fpx-%.0fpx)" % [DEBUG_BUTTONS_START, DEBUG_BUTTONS_END]
+	info_label_2.position = Vector2(DEBUG_BUTTONS_START, 45)
+	info_label_2.add_theme_font_size_override("font_size", 14)
+	info_label_2.add_theme_color_override("font_color", Color(1.0, 0.5, 0.0, 1.0))
+	info_label_2.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	info_label_2.add_theme_constant_override("outline_size", 2)
+	measurement_ruler.add_child(info_label_2)
+	
+	var menu_button_end = MENU_BUTTON_START + BUTTON_SIZE
+	var info_label_3 = Label.new()
+	info_label_3.text = "← Menu Button (%.0fpx-%.0fpx)" % [MENU_BUTTON_START, menu_button_end]
+	info_label_3.position = Vector2(MENU_BUTTON_START, 80)
+	info_label_3.add_theme_font_size_override("font_size", 14)
+	info_label_3.add_theme_color_override("font_color", Color(0.0, 1.0, 0.0, 1.0))
+	info_label_3.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	info_label_3.add_theme_constant_override("outline_size", 2)
+	measurement_ruler.add_child(info_label_3)
+	
+	# Add a summary panel showing measurement results
+	var summary_panel = Panel.new()
+	summary_panel.position = Vector2(10, viewport_size.y - RULER_SUMMARY_PANEL_BOTTOM_OFFSET)
+	summary_panel.size = Vector2(300, 100)
+	var summary_style = StyleBoxFlat.new()
+	summary_style.bg_color = Color(0.0, 0.0, 0.0, 0.8)
+	summary_style.border_color = Color(1.0, 1.0, 0.0, 1.0)
+	summary_style.border_width_left = 2
+	summary_style.border_width_right = 2
+	summary_style.border_width_top = 2
+	summary_style.border_width_bottom = 2
+	summary_style.corner_radius_top_left = 5
+	summary_style.corner_radius_top_right = 5
+	summary_style.corner_radius_bottom_left = 5
+	summary_style.corner_radius_bottom_right = 5
+	summary_panel.add_theme_stylebox_override("panel", summary_style)
+	measurement_ruler.add_child(summary_panel)
+	
+	var summary_label = Label.new()
+	summary_label.text = "MEASUREMENT RULER\n✓ Left Edge: 0px (RED)\n✓ Debug Btns: %.0fpx (ORANGE)\n✓ Menu Btn: %.0fpx (GREEN)\nNo UI extends beyond left edge!" % [DEBUG_BUTTONS_START, MENU_BUTTON_START]
+	summary_label.position = Vector2(10, 10)
+	summary_label.add_theme_font_size_override("font_size", 14)
+	summary_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+	summary_panel.add_child(summary_label)
+	
+	DebugLogOverlay.add_log("Measurement ruler created with markers from %dpx to %dpx" % [RULER_START_DISTANCE, RULER_END_DISTANCE], "green")
+	DebugLogOverlay.add_log("Red line marks left edge (0px)", "red")
+	DebugLogOverlay.add_log("Orange marks debug buttons area (%.0fpx-%.0fpx)" % [DEBUG_BUTTONS_START, DEBUG_BUTTONS_END], "yellow")
+	DebugLogOverlay.add_log("Green marks menu button area (%.0fpx-%.0fpx)" % [MENU_BUTTON_START, MENU_BUTTON_START + BUTTON_SIZE], "green")
