@@ -99,8 +99,11 @@ To disable the ruler:
 - **New Function**: `_create_measurement_ruler()`
 - **New Variables**:
   - `measurement_ruler: Control` - Container for ruler elements
-  - `ruler_labels: Array[Label]` - Array of distance labels
-  - `show_ruler: bool` - Toggle for ruler visibility
+  - `show_ruler: bool` - Toggle for ruler visibility (exported)
+- **New Constants**:
+  - `RULER_START_DISTANCE`, `RULER_END_DISTANCE`, `RULER_INTERVAL` - Configurable measurement range
+  - `RULER_SUMMARY_PANEL_BOTTOM_OFFSET` - Panel positioning
+  - `DEBUG_BUTTONS_START`, `DEBUG_BUTTONS_END`, `MENU_BUTTON_START` - UI element positions
 - **Z-Index**: 150 (highest in the scene, renders on top of everything)
 - **Mouse Filter**: `IGNORE` (doesn't block touch/click events)
 

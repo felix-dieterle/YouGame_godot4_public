@@ -15,7 +15,7 @@ var settings_visible: bool = false
 
 # Left edge measurement ruler
 var measurement_ruler: Control
-@export var show_ruler: bool = true  # Set to false to hide the ruler
+@export var show_ruler: bool = true  # Show visual measurement ruler on left edge (default: true, set to false to hide)
 
 # Configuration
 const JOYSTICK_RADIUS: float = 80.0
