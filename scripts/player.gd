@@ -77,11 +77,12 @@ func _physics_process(delta):
 		
 		if world_manager:
 			# Check multiple points along the movement path to catch steep edges
-			# Look ahead at multiple distances to detect steep slopes early
+			# Use fixed lookahead distances to ensure consistent behavior across frame rates
+			# These distances are tuned to catch steep edges before the player reaches them
 			var check_distances = [
-				move_speed * delta * 0.5,  # Near check (half a frame ahead)
-				move_speed * delta * 2.0,   # Medium check (two frames ahead)
-				move_speed * delta * 4.0    # Far check (four frames ahead) to catch steep edges
+				0.3,  # Near check - about one step ahead
+				1.0,  # Medium check - a few steps ahead
+				2.5   # Far check - catch steep edges from a distance
 			]
 			
 			for check_dist in check_distances:
