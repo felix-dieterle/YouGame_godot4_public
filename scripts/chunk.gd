@@ -517,6 +517,7 @@ func get_slope_at_world_pos(world_x: float, world_z: float) -> float:
 	var z = int(clamp(cell_z, 0, RESOLUTION - 1))
 	
 	# Ensure we can safely access x+1 and z+1
+	# Note: heightmap is (RESOLUTION+1) x (RESOLUTION+1), so RESOLUTION is a valid index
 	var x1 = min(x + 1, RESOLUTION)
 	var z1 = min(z + 1, RESOLUTION)
 	

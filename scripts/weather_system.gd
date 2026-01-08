@@ -144,8 +144,8 @@ func _start_weather_transition():
 	
 	# Don't transition to the same weather
 	if target_weather == current_weather:
-		# Try next weather state
-		target_weather = (current_weather + 1) % WeatherState.size()
+		# Try next weather state (cycle through 5 states: CLEAR, LIGHT_FOG, HEAVY_FOG, LIGHT_RAIN, HEAVY_RAIN)
+		target_weather = (current_weather + 1) % 5
 	
 	# Start transition
 	transition_progress = 0.0
