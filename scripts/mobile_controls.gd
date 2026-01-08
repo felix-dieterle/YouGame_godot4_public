@@ -358,12 +358,20 @@ func _update_button_position():
 		var global_pos = menu_button.global_position
 		DebugLogOverlay.add_log("Menu button global_position: (%.0f, %.0f)" % [global_pos.x, global_pos.y], "cyan")
 		
-		# Check if button is within viewport bounds
-		var in_bounds = (global_pos.x >= 0 and global_pos.y >= 0 and 
-		                 global_pos.x + BUTTON_SIZE <= viewport_size.x and 
-		                 global_pos.y + BUTTON_SIZE <= viewport_size.y)
-		DebugLogOverlay.add_log("Menu button in viewport bounds: %s" % str(in_bounds), 
-		                        "green" if in_bounds else "red")
+		# Check if button top-left is within viewport (button may extend beyond)
+		# Note: Y position uses (BUTTON_SIZE/2) offset to align with joystick center,
+		# so button may intentionally extend beyond viewport bottom edge
+		var top_left_in_bounds = (global_pos.x >= 0 and global_pos.y >= 0 and 
+		                          global_pos.x < viewport_size.x and 
+		                          global_pos.y < viewport_size.y)
+		var fully_in_bounds = (global_pos.x >= 0 and global_pos.y >= 0 and 
+		                       global_pos.x + BUTTON_SIZE <= viewport_size.x and 
+		                       global_pos.y + BUTTON_SIZE <= viewport_size.y)
+		
+		DebugLogOverlay.add_log("Button top-left in viewport: %s" % str(top_left_in_bounds), 
+		                        "green" if top_left_in_bounds else "red")
+		DebugLogOverlay.add_log("Button fully in viewport: %s (may extend beyond due to centering)" % str(fully_in_bounds), 
+		                        "green" if fully_in_bounds else "yellow")
 
 func _update_settings_panel_position():
 	if not settings_panel:
@@ -416,10 +424,18 @@ func _log_control_info():
 			button_right, button_bottom
 		], "cyan")
 		
-		# Check if fully in viewport
+		# Check visibility in viewport
+		# Note: Button may extend beyond viewport due to vertical centering with joystick
+		var top_left_visible = (menu_button.global_position.x >= 0 and 
+		                        menu_button.global_position.y >= 0 and 
+		                        menu_button.global_position.x < viewport_size.x and 
+		                        menu_button.global_position.y < viewport_size.y)
 		var fully_visible = (menu_button.global_position.x >= 0 and 
 		                     menu_button.global_position.y >= 0 and 
 		                     button_right <= viewport_size.x and 
 		                     button_bottom <= viewport_size.y)
-		DebugLogOverlay.add_log("Button fully in viewport: %s" % str(fully_visible), 
-		                        "green" if fully_visible else "red")
+		
+		DebugLogOverlay.add_log("Button top-left in viewport: %s" % str(top_left_visible), 
+		                        "green" if top_left_visible else "red")
+		DebugLogOverlay.add_log("Button fully in viewport: %s (may extend due to centering)" % str(fully_visible), 
+		                        "green" if fully_visible else "yellow")

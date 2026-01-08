@@ -83,16 +83,20 @@ Button is_visible_in_tree: true             ← Should be true
 Button modulate: (1, 1, 1, 1)              ← Should be (1, 1, 1, 1) - fully opaque
 Button self_modulate: (1, 1, 1, 1)         ← Should be (1, 1, 1, 1) - fully opaque
 Button bounds: (1300, 2890) to (1360, 2950) ← Should be within viewport
-Button fully in viewport: true              ← Should be true (GREEN)
+Button top-left in viewport: true              ← Should be true (GREEN)
+Button fully in viewport: true                  ← May be false (YELLOW) if extends beyond
 ```
 
 **What to Check:**
 - ✅ `visible` should be `true`
 - ✅ `is_visible_in_tree` should be `true`
 - ✅ `modulate` should be `(1, 1, 1, 1)` - any value less than 1 for the alpha (4th value) makes it transparent
-- ✅ `Button fully in viewport` should be `true` (shown in GREEN)
-- ❌ If `Button fully in viewport` is `false` (RED), the button is off-screen
+- ✅ `Button top-left in viewport` should be `true` (shown in GREEN) - this is the critical check
+- ⚠️ `Button fully in viewport` may be `false` (YELLOW) - this is OK if button extends slightly beyond bottom edge
+- ❌ If `Button top-left in viewport` is `false` (RED), the button is off-screen
 - ❌ If modulate alpha is 0, the button is invisible
+
+**Important Note:** The button is positioned to vertically align its center with the joystick center. This means it may extend slightly beyond the bottom edge of the viewport. This is intentional and should not affect visibility. The important check is `Button top-left in viewport`.
 
 #### Section 3: Button Positioning Updates
 ```
@@ -187,8 +191,8 @@ After reviewing the logs, check:
 - [ ] Button visible is true
 - [ ] Button is_visible_in_tree is true
 - [ ] Button modulate is (1, 1, 1, 1)
-- [ ] Button global_position is within viewport
-- [ ] Button fully in viewport is true (GREEN)
+- [ ] Button top-left in viewport is true (GREEN) ← CRITICAL
+- [ ] Button global_position is reasonable for viewport size
 - [ ] Button z_index is appropriate (10 or higher)
 
 ## Next Steps
