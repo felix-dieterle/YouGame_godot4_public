@@ -97,6 +97,12 @@ func test_slope_gradient():
 			all_valid = false
 		else:
 			print("  Gradient at (%.1f, %.1f): (%.3f, %.3f, %.3f)" % [pos.x, pos.z, gradient.x, gradient.y, gradient.z])
+		
+		# Additional check: gradient length should be reasonable (not NaN or infinite)
+		var gradient_length = gradient.length()
+		if is_nan(gradient_length) or is_inf(gradient_length):
+			print("FAIL: Gradient has invalid length at (%.1f, %.1f)" % [pos.x, pos.z])
+			all_valid = false
 	
 	if all_valid:
 		print("PASS: Slope gradient calculation returns valid values")

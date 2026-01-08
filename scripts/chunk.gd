@@ -550,14 +550,16 @@ func get_slope_gradient_at_world_pos(world_x: float, world_z: float) -> Vector3:
 	var x1 = min(x + 1, RESOLUTION)
 	var z1 = min(z + 1, RESOLUTION)
 	
-	# Get heights of the cell corners
+	# Get heights of all four cell corners for more robust calculation
 	var h00 = heightmap[z * (RESOLUTION + 1) + x]
 	var h10 = heightmap[z * (RESOLUTION + 1) + x1]
 	var h01 = heightmap[z1 * (RESOLUTION + 1) + x]
+	var h11 = heightmap[z1 * (RESOLUTION + 1) + x1]
 	
-	# Calculate gradient (change in height per unit distance)
-	var dx = (h10 - h00) / CELL_SIZE  # height change in x direction
-	var dz = (h01 - h00) / CELL_SIZE  # height change in z direction
+	# Calculate gradient using proper central differences for better accuracy
+	# This averages the height differences across both axes for a more robust gradient
+	var dx = (h10 + h11 - h00 - h01) / (2.0 * CELL_SIZE)  # average height change in x direction
+	var dz = (h01 + h11 - h00 - h10) / (2.0 * CELL_SIZE)  # average height change in z direction
 	
 	# Return gradient vector (direction of steepest ascent)
 	# In 3D space: gradient points uphill

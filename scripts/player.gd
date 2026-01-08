@@ -8,6 +8,11 @@ class_name Player
 @export var camera_height: float = 5.0
 @export var max_slope_angle: float = 30.0  # Maximum walkable slope in degrees
 
+# Slope detection settings - distances to look ahead when checking for steep slopes
+@export var slope_check_near: float = 0.3   # Near check - about one step ahead
+@export var slope_check_medium: float = 1.0 # Medium check - a few steps ahead
+@export var slope_check_far: float = 2.5    # Far check - catch steep edges from a distance
+
 # First-person settings
 @export var first_person_height: float = 1.6
 @export var head_bob_frequency: float = 2.0
@@ -72,29 +77,36 @@ func _physics_process(delta):
 	var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
 	
 	if direction:
-		# Check slope at intended position
-		var intended_position = global_position + direction * move_speed * delta
+		# Check slope along intended movement path
 		var can_move = true
 		
 		if world_manager:
-			var slope_at_position = world_manager.get_slope_at_position(intended_position)
-			# Only restrict movement if slope is too steep AND we're moving uphill
-			if slope_at_position > max_slope_angle:
-				# Get the slope gradient (direction of steepest ascent)
-				var slope_gradient = world_manager.get_slope_gradient_at_position(intended_position)
+			# Check multiple points along the movement path to catch steep edges
+			# Use configurable lookahead distances to ensure consistent behavior
+			var check_distances = [slope_check_near, slope_check_medium, slope_check_far]
+			
+			for check_dist in check_distances:
+				var check_position = global_position + direction * check_dist
+				var slope_at_position = world_manager.get_slope_at_position(check_position)
 				
-				# Normalize gradient for dot product calculation
-				if slope_gradient.length_squared() > 0.0001:  # Check if gradient is non-zero
-					var normalized_gradient = slope_gradient.normalized()
+				# Only restrict movement if slope is too steep AND we're moving uphill
+				if slope_at_position > max_slope_angle:
+					# Get the slope gradient (direction of steepest ascent)
+					var slope_gradient = world_manager.get_slope_gradient_at_position(check_position)
 					
-					# Check if we're moving uphill by checking dot product
-					# If dot product > 0, we're moving in the uphill direction
-					var uphill_component = direction.dot(normalized_gradient)
-					
-					# Only block movement if we're moving uphill (positive dot product)
-					# Allow movement if going sideways (near 0) or downhill (negative)
-					if uphill_component > 0.1:  # Small threshold to allow slight angles
-						can_move = false
+					# Normalize gradient for dot product calculation
+					if slope_gradient.length_squared() > 0.0001:  # Check if gradient is non-zero
+						var normalized_gradient = slope_gradient.normalized()
+						
+						# Check if we're moving uphill by checking dot product
+						# If dot product > 0, we're moving in the uphill direction
+						var uphill_component = direction.dot(normalized_gradient)
+						
+						# Only block movement if we're moving uphill (positive dot product)
+						# Allow movement if going sideways (near 0) or downhill (negative)
+						if uphill_component > 0.1:  # Small threshold to allow slight angles
+							can_move = false
+							break  # Stop checking once we find a blocking slope
 		
 		if can_move:
 			velocity.x = direction.x * move_speed
