@@ -137,7 +137,7 @@ The project includes a player controller. To enable it:
   - **Mouse Wheel**: Zoom camera in/out (third-person only)
 - **Mobile:**
   - **Virtual Joystick** (bottom-left): Move character
-  - **Camera Button** 👁 (bottom-right): Toggle camera view
+  - **Menu Button** ☰ (bottom-right): Open settings menu with camera view toggle and actions
   - **Debug Button** 🐛 (top-right): Toggle debug narrative panel
 
 ## Adding NPCs
