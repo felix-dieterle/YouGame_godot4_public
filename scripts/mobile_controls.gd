@@ -91,6 +91,9 @@ func _ready():
 	_update_joystick_position()
 	get_viewport().size_changed.connect(_update_joystick_position)
 	
+	# Log MobileControls position and size info
+	_log_control_info()
+	
 	DebugLogOverlay.add_log("MobileControls._ready() completed", "green")
 
 func _update_joystick_position():
@@ -349,6 +352,46 @@ func _update_button_position():
 	menu_button.position = Vector2(button_x, button_y)
 	
 	DebugLogOverlay.add_log("Menu button positioned at (%.0f, %.0f), viewport: %.0fx%.0f" % [button_x, button_y, viewport_size.x, viewport_size.y], "cyan")
+	
+	# Log absolute position after positioning
+	if menu_button.is_inside_tree():
+		var global_pos = menu_button.global_position
+		DebugLogOverlay.add_log("Menu button global_position: (%.0f, %.0f)" % [global_pos.x, global_pos.y], "cyan")
+		
+		# Use helper function to check bounds and log results
+		var bounds_check = _check_button_bounds(global_pos, viewport_size)
+		_log_button_bounds_check(bounds_check)
+
+func _check_button_bounds(button_global_pos: Vector2, viewport_size: Vector2) -> Dictionary:
+	# Helper function to check if button is within viewport bounds
+	# Note: Y position uses (BUTTON_SIZE/2) offset to align with joystick center,
+	# so button may intentionally extend beyond viewport bottom edge
+	var button_right = button_global_pos.x + BUTTON_SIZE
+	var button_bottom = button_global_pos.y + BUTTON_SIZE
+	
+	var top_left_in_bounds = (button_global_pos.x >= 0 and button_global_pos.y >= 0 and 
+	                          button_global_pos.x < viewport_size.x and 
+	                          button_global_pos.y < viewport_size.y)
+	var fully_in_bounds = (button_global_pos.x >= 0 and button_global_pos.y >= 0 and 
+	                       button_right <= viewport_size.x and 
+	                       button_bottom <= viewport_size.y)
+	
+	return {
+		"top_left_in_bounds": top_left_in_bounds,
+		"fully_in_bounds": fully_in_bounds,
+		"button_right": button_right,
+		"button_bottom": button_bottom
+	}
+
+func _log_button_bounds_check(bounds_check: Dictionary):
+	# Helper function to log button bounds checking results with appropriate colors
+	var top_left_color = "green" if bounds_check.top_left_in_bounds else "red"
+	var fully_color = "green" if bounds_check.fully_in_bounds else "yellow"
+	
+	DebugLogOverlay.add_log("Button top-left in viewport: %s" % str(bounds_check.top_left_in_bounds), 
+	                        top_left_color)
+	DebugLogOverlay.add_log("Button fully in viewport: %s (may extend beyond due to centering)" % str(bounds_check.fully_in_bounds), 
+	                        fully_color)
 
 func _update_settings_panel_position():
 	if not settings_panel:
@@ -366,3 +409,39 @@ func _update_settings_panel_position():
 	settings_panel.size = Vector2(PANEL_WIDTH, PANEL_HEIGHT)
 	
 	DebugLogOverlay.add_log("Settings panel positioned at (%.0f, %.0f), size: %.0fx%.0f" % [panel_x, panel_y, PANEL_WIDTH, PANEL_HEIGHT], "cyan")
+
+func _log_control_info():
+	# Log comprehensive information about the MobileControls control itself
+	var viewport_size = get_viewport().size
+	
+	DebugLogOverlay.add_log("=== MobileControls Control Info ===", "cyan")
+	DebugLogOverlay.add_log("Control position: (%.0f, %.0f)" % [position.x, position.y], "cyan")
+	DebugLogOverlay.add_log("Control size: %.0fx%.0f" % [size.x, size.y], "cyan")
+	DebugLogOverlay.add_log("Control global_position: (%.0f, %.0f)" % [global_position.x, global_position.y], "cyan")
+	DebugLogOverlay.add_log("Viewport size: %.0fx%.0f" % [viewport_size.x, viewport_size.y], "cyan")
+	DebugLogOverlay.add_log("anchor_left: %.2f, anchor_right: %.2f" % [anchor_left, anchor_right], "cyan")
+	DebugLogOverlay.add_log("anchor_top: %.2f, anchor_bottom: %.2f" % [anchor_top, anchor_bottom], "cyan")
+	DebugLogOverlay.add_log("offset_left: %.0f, offset_right: %.0f" % [offset_left, offset_right], "cyan")
+	DebugLogOverlay.add_log("offset_top: %.0f, offset_bottom: %.0f" % [offset_top, offset_bottom], "cyan")
+	DebugLogOverlay.add_log("clip_contents: %s" % str(clip_contents), "cyan")
+	DebugLogOverlay.add_log("mouse_filter: %d (0=STOP, 1=PASS, 2=IGNORE)" % mouse_filter, "cyan")
+	
+	if menu_button:
+		DebugLogOverlay.add_log("=== Menu Button Info ===", "cyan")
+		DebugLogOverlay.add_log("Button position: (%.0f, %.0f)" % [menu_button.position.x, menu_button.position.y], "cyan")
+		DebugLogOverlay.add_log("Button global_position: (%.0f, %.0f)" % [menu_button.global_position.x, menu_button.global_position.y], "cyan")
+		DebugLogOverlay.add_log("Button size: %.0fx%.0f" % [menu_button.size.x, menu_button.size.y], "cyan")
+		DebugLogOverlay.add_log("Button visible: %s, z_index: %d" % [str(menu_button.visible), menu_button.z_index], "cyan")
+		DebugLogOverlay.add_log("Button is_visible_in_tree: %s" % str(menu_button.is_visible_in_tree()), "cyan")
+		DebugLogOverlay.add_log("Button modulate: %s" % str(menu_button.modulate), "cyan")
+		DebugLogOverlay.add_log("Button self_modulate: %s" % str(menu_button.self_modulate), "cyan")
+		
+		# Calculate expected screen bounds using helper function
+		var bounds_check = _check_button_bounds(menu_button.global_position, viewport_size)
+		DebugLogOverlay.add_log("Button bounds: (%.0f, %.0f) to (%.0f, %.0f)" % [
+			menu_button.global_position.x, menu_button.global_position.y,
+			bounds_check.button_right, bounds_check.button_bottom
+		], "cyan")
+		
+		# Log visibility checks using helper
+		_log_button_bounds_check(bounds_check)
