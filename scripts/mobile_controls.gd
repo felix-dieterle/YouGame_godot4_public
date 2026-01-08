@@ -140,8 +140,9 @@ func _create_camera_toggle_button():
 	# Set focus mode to prevent focus issues on mobile
 	camera_toggle_button.focus_mode = Control.FOCUS_NONE
 	
-	# Ensure button is above other UI elements
+	# Ensure button is above other UI elements and can receive touch events
 	camera_toggle_button.z_index = 10
+	camera_toggle_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	# Style the button - normal state
 	var button_style = StyleBoxFlat.new()
@@ -173,14 +174,22 @@ func _create_camera_toggle_button():
 	# Connect button to toggle function
 	camera_toggle_button.pressed.connect(_on_camera_toggle_pressed)
 	
+	# Ensure button is visible
+	camera_toggle_button.visible = true
+	
 	add_child(camera_toggle_button)
-	_update_button_position()
+	# Defer positioning to ensure viewport size is ready
+	call_deferred("_update_button_position")
 
 func _update_button_position():
+	if not camera_toggle_button:
+		return
+	
 	# Position button in bottom-right corner with margin
+	# Align vertically with the joystick center
 	var viewport_size = get_viewport().size
 	var button_x = viewport_size.x - button_margin_x - BUTTON_SIZE
-	var button_y = viewport_size.y - joystick_margin_y - BUTTON_SIZE / 2
+	var button_y = viewport_size.y - joystick_margin_y - (BUTTON_SIZE / 2)
 	camera_toggle_button.position = Vector2(button_x, button_y)
 
 func _on_camera_toggle_pressed():
