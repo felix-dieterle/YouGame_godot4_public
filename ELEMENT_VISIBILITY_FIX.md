@@ -127,12 +127,12 @@ Check the logs for:
 ## Z-Index Hierarchy
 
 From bottom to top:
-- UIManager labels: z-index 0
-- MobileControls menu button: z-index 10
-- DebugNarrativeUI button: z-index 10
-- MobileControls settings panel: z-index 20
+- UIManager labels: z-index 0 (default)
 - DebugLogOverlay panel: z-index 99
 - DebugLogOverlay buttons: z-index 100
+- MobileControls menu button: z-index 101
+- DebugNarrativeUI button: z-index 101
+- MobileControls settings panel: z-index 102
 
 ## Next Steps
 

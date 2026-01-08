@@ -219,11 +219,13 @@ If the button is positioned correctly but still not visible, check if system UI 
 
 ### Z-Index Explanation
 Higher z-index values render on top:
-- 100: Debug log buttons (highest - always on top)
+- 102: Settings panel (highest - when opened)
+- 101: Menu button, Debug narrative button
+- 100: Debug log buttons
 - 99: Debug log panel
-- 20: Settings panel
-- 10: Menu button, Debug narrative button
-- 0: Status labels (lowest)
+- 0: Status labels (lowest - default)
+
+**Note**: The menu button and other UI buttons now use z-index 101+ to ensure they render above the debug overlay (99-100) and are always visible to the user.
 
 ### Mouse Filter Explanation
 - `MOUSE_FILTER_STOP (0)`: Receives and blocks mouse events

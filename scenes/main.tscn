@@ -54,6 +54,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+z_index = 0
 script = ExtResource("5_ui")
 
 [node name="MobileControls" type="Control" parent="."]
@@ -64,6 +65,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+z_index = 10
 script = ExtResource("6_mobile")
 
 [node name="DebugNarrativeUI" type="Control" parent="."]
@@ -74,6 +76,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+z_index = 10
 script = ExtResource("7_debug_narrative")
 
 [node name="DebugLogOverlay" type="Control" parent="."]
@@ -84,4 +87,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+z_index = 5
 script = ExtResource("8_debug_log")

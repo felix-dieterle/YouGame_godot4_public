@@ -172,7 +172,10 @@ func _create_menu_button():
 	menu_button.focus_mode = Control.FOCUS_NONE
 	
 	# Ensure button is above other UI elements and can receive touch events
-	menu_button.z_index = 10
+	# Set z-index high to ensure it renders above all other UI elements
+	# With parent MobileControls z-index 10, effective z-index is 10+101=111
+	# This places it above debug overlay (effective z-index 104-105)
+	menu_button.z_index = 101
 	menu_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	DebugLogOverlay.add_log("Menu button configured: z_index=%d, size=%.0fx%.0f" % [menu_button.z_index, BUTTON_SIZE, BUTTON_SIZE], "cyan")
@@ -199,7 +202,10 @@ func _create_settings_panel():
 	
 	# Create a panel for the settings menu
 	settings_panel = Panel.new()
-	settings_panel.z_index = 20  # Above the menu button
+	# Set z-index high to ensure it renders above all other UI elements, including the menu button
+	# With parent MobileControls z-index 10, effective z-index is 10+102=112
+	# This places it above menu button (111) and debug overlay (104-105)
+	settings_panel.z_index = 102
 	settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	settings_panel.visible = false  # Initially hidden
 	
