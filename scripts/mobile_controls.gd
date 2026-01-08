@@ -350,11 +350,11 @@ func _update_button_position():
 		DebugLogOverlay.add_log("ERROR: menu_button is null in _update_button_position", "red")
 		return
 	
-	# Position button in bottom-right corner with margin
-	# Align vertically with the joystick center
+	# Position button in top-left corner, next to debug buttons
+	# Place it to the right of the debug overlay buttons (which are at the very left)
 	var viewport_size = get_viewport().size
-	var button_x = viewport_size.x - button_margin_x - BUTTON_SIZE
-	var button_y = viewport_size.y - joystick_margin_y - (BUTTON_SIZE / 2)
+	var button_x = 100.0  # Position to the right of debug buttons (which take ~90px)
+	var button_y = 10.0   # Small margin from top
 	menu_button.position = Vector2(button_x, button_y)
 	
 	DebugLogOverlay.add_log("Menu button positioned at (%.0f, %.0f), viewport: %.0fx%.0f" % [button_x, button_y, viewport_size.x, viewport_size.y], "cyan")
@@ -404,12 +404,12 @@ func _update_settings_panel_position():
 		DebugLogOverlay.add_log("ERROR: settings_panel is null in _update_settings_panel_position", "red")
 		return
 	
-	# Position panel above the menu button, centered and sized appropriately
+	# Position panel below the menu button in the top-left area
 	var viewport_size = get_viewport().size
 	
-	# Center the panel horizontally, position it in the bottom half of the screen
-	var panel_x = (viewport_size.x - PANEL_WIDTH) / 2
-	var panel_y = viewport_size.y - PANEL_HEIGHT - joystick_margin_y - BUTTON_SIZE - 20
+	# Position panel below the menu button with a small gap
+	var panel_x = 10.0  # Small margin from left edge
+	var panel_y = 70.0  # Below the menu button (which is at y=10 with size=60)
 	
 	settings_panel.position = Vector2(panel_x, panel_y)
 	settings_panel.size = Vector2(PANEL_WIDTH, PANEL_HEIGHT)
