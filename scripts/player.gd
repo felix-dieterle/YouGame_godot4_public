@@ -6,6 +6,7 @@ class_name Player
 @export var rotation_speed: float = 3.0
 @export var camera_distance: float = 10.0
 @export var camera_height: float = 5.0
+@export var max_slope_angle: float = 30.0  # Maximum walkable slope in degrees
 
 # First-person settings
 @export var first_person_height: float = 1.6
@@ -34,6 +35,9 @@ var mobile_controls: Node = null
 var robot_parts: Array[Node3D] = []
 
 func _ready():
+	# Configure CharacterBody3D slope handling
+	floor_max_angle = deg_to_rad(max_slope_angle)
+	
 	# Setup camera
 	camera = Camera3D.new()
 	add_child(camera)
