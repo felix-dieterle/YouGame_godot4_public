@@ -395,6 +395,8 @@ func _log_control_info():
 	DebugLogOverlay.add_log("anchor_top: %.2f, anchor_bottom: %.2f" % [anchor_top, anchor_bottom], "cyan")
 	DebugLogOverlay.add_log("offset_left: %.0f, offset_right: %.0f" % [offset_left, offset_right], "cyan")
 	DebugLogOverlay.add_log("offset_top: %.0f, offset_bottom: %.0f" % [offset_top, offset_bottom], "cyan")
+	DebugLogOverlay.add_log("clip_contents: %s" % str(clip_contents), "cyan")
+	DebugLogOverlay.add_log("mouse_filter: %d (0=STOP, 1=PASS, 2=IGNORE)" % mouse_filter, "cyan")
 	
 	if menu_button:
 		DebugLogOverlay.add_log("=== Menu Button Info ===", "cyan")
@@ -403,3 +405,21 @@ func _log_control_info():
 		DebugLogOverlay.add_log("Button size: %.0fx%.0f" % [menu_button.size.x, menu_button.size.y], "cyan")
 		DebugLogOverlay.add_log("Button visible: %s, z_index: %d" % [str(menu_button.visible), menu_button.z_index], "cyan")
 		DebugLogOverlay.add_log("Button is_visible_in_tree: %s" % str(menu_button.is_visible_in_tree()), "cyan")
+		DebugLogOverlay.add_log("Button modulate: %s" % str(menu_button.modulate), "cyan")
+		DebugLogOverlay.add_log("Button self_modulate: %s" % str(menu_button.self_modulate), "cyan")
+		
+		# Calculate expected screen bounds
+		var button_right = menu_button.global_position.x + menu_button.size.x
+		var button_bottom = menu_button.global_position.y + menu_button.size.y
+		DebugLogOverlay.add_log("Button bounds: (%.0f, %.0f) to (%.0f, %.0f)" % [
+			menu_button.global_position.x, menu_button.global_position.y,
+			button_right, button_bottom
+		], "cyan")
+		
+		# Check if fully in viewport
+		var fully_visible = (menu_button.global_position.x >= 0 and 
+		                     menu_button.global_position.y >= 0 and 
+		                     button_right <= viewport_size.x and 
+		                     button_bottom <= viewport_size.y)
+		DebugLogOverlay.add_log("Button fully in viewport: %s" % str(fully_visible), 
+		                        "green" if fully_visible else "red")
