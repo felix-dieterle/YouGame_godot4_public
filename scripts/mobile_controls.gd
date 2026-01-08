@@ -8,8 +8,10 @@ var joystick_active: bool = false
 var joystick_touch_index: int = -1
 var joystick_vector: Vector2 = Vector2.ZERO
 
-# Camera toggle button
-var camera_toggle_button: Button
+# Menu button and settings panel
+var menu_button: Button
+var settings_panel: Panel
+var settings_visible: bool = false
 
 # Configuration
 const JOYSTICK_RADIUS: float = 80.0
@@ -33,8 +35,11 @@ func _ready():
 	joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
 	add_child(joystick_base)
 	
-	# Create camera toggle button (bottom right)
-	_create_camera_toggle_button()
+	# Create menu button (bottom right)
+	_create_menu_button()
+	
+	# Create settings panel (initially hidden)
+	_create_settings_panel()
 	
 	# Update position when viewport size changes
 	_update_joystick_position()
@@ -130,19 +135,19 @@ func _update_joystick(touch_pos: Vector2):
 func get_input_vector() -> Vector2:
 	return joystick_vector
 
-func _create_camera_toggle_button():
-	camera_toggle_button = Button.new()
-	camera_toggle_button.text = "👁"  # Eye emoji for camera view
-	camera_toggle_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
-	camera_toggle_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
-	camera_toggle_button.add_theme_font_size_override("font_size", 30)
+func _create_menu_button():
+	menu_button = Button.new()
+	menu_button.text = "☰"  # Hamburger menu icon
+	menu_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+	menu_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+	menu_button.add_theme_font_size_override("font_size", 40)
 	
 	# Set focus mode to prevent focus issues on mobile
-	camera_toggle_button.focus_mode = Control.FOCUS_NONE
+	menu_button.focus_mode = Control.FOCUS_NONE
 	
 	# Ensure button is above other UI elements and can receive touch events
-	camera_toggle_button.z_index = 10
-	camera_toggle_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu_button.z_index = 10
+	menu_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	# Style the button - normal state
 	var button_style = StyleBoxFlat.new()
@@ -151,7 +156,7 @@ func _create_camera_toggle_button():
 	button_style.corner_radius_top_right = int(BUTTON_SIZE / 2)
 	button_style.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
 	button_style.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
-	camera_toggle_button.add_theme_stylebox_override("normal", button_style)
+	menu_button.add_theme_stylebox_override("normal", button_style)
 	
 	# Style the button - hover state (for desktop/mouse support)
 	var button_style_hover = StyleBoxFlat.new()
@@ -160,7 +165,7 @@ func _create_camera_toggle_button():
 	button_style_hover.corner_radius_top_right = int(BUTTON_SIZE / 2)
 	button_style_hover.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
 	button_style_hover.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
-	camera_toggle_button.add_theme_stylebox_override("hover", button_style_hover)
+	menu_button.add_theme_stylebox_override("hover", button_style_hover)
 	
 	# Style the button - pressed state
 	var button_style_pressed = StyleBoxFlat.new()
@@ -169,20 +174,179 @@ func _create_camera_toggle_button():
 	button_style_pressed.corner_radius_top_right = int(BUTTON_SIZE / 2)
 	button_style_pressed.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
 	button_style_pressed.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
-	camera_toggle_button.add_theme_stylebox_override("pressed", button_style_pressed)
+	menu_button.add_theme_stylebox_override("pressed", button_style_pressed)
 	
-	# Connect button to toggle function
-	camera_toggle_button.pressed.connect(_on_camera_toggle_pressed)
+	# Connect button to menu toggle function
+	menu_button.pressed.connect(_on_menu_button_pressed)
 	
 	# Ensure button is visible
-	camera_toggle_button.visible = true
+	menu_button.visible = true
 	
-	add_child(camera_toggle_button)
+	add_child(menu_button)
 	# Defer positioning to ensure viewport size is ready
 	call_deferred("_update_button_position")
 
+func _create_settings_panel():
+	# Create a panel for the settings menu
+	settings_panel = Panel.new()
+	settings_panel.z_index = 20  # Above the menu button
+	settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	settings_panel.visible = false  # Initially hidden
+	
+	# Style the panel
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.2, 0.2, 0.2, 0.95)
+	panel_style.corner_radius_top_left = 10
+	panel_style.corner_radius_top_right = 10
+	panel_style.corner_radius_bottom_left = 10
+	panel_style.corner_radius_bottom_right = 10
+	panel_style.border_color = Color(0.4, 0.4, 0.4, 1.0)
+	panel_style.border_width_left = 2
+	panel_style.border_width_right = 2
+	panel_style.border_width_top = 2
+	panel_style.border_width_bottom = 2
+	settings_panel.add_theme_stylebox_override("panel", panel_style)
+	
+	# Add padding container
+	var margin = MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 15)
+	margin.add_theme_constant_override("margin_right", 15)
+	margin.add_theme_constant_override("margin_top", 15)
+	margin.add_theme_constant_override("margin_bottom", 15)
+	settings_panel.add_child(margin)
+	
+	# Create a vertical box container for menu items
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	margin.add_child(vbox)
+	
+	# Title label
+	var title_label = Label.new()
+	title_label.text = "Settings"
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.add_theme_font_size_override("font_size", 24)
+	title_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	vbox.add_child(title_label)
+	
+	# Add a separator
+	var separator1 = HSeparator.new()
+	separator1.add_theme_constant_override("separation", 10)
+	vbox.add_child(separator1)
+	
+	# Camera toggle button
+	var camera_button = Button.new()
+	camera_button.text = "👁 Toggle First Person View"
+	camera_button.custom_minimum_size = Vector2(0, 50)
+	camera_button.add_theme_font_size_override("font_size", 18)
+	camera_button.focus_mode = Control.FOCUS_NONE
+	
+	# Style the camera button
+	var cam_btn_style = StyleBoxFlat.new()
+	cam_btn_style.bg_color = Color(0.3, 0.3, 0.3, 1.0)
+	cam_btn_style.corner_radius_top_left = 5
+	cam_btn_style.corner_radius_top_right = 5
+	cam_btn_style.corner_radius_bottom_left = 5
+	cam_btn_style.corner_radius_bottom_right = 5
+	camera_button.add_theme_stylebox_override("normal", cam_btn_style)
+	
+	var cam_btn_style_hover = StyleBoxFlat.new()
+	cam_btn_style_hover.bg_color = Color(0.4, 0.4, 0.4, 1.0)
+	cam_btn_style_hover.corner_radius_top_left = 5
+	cam_btn_style_hover.corner_radius_top_right = 5
+	cam_btn_style_hover.corner_radius_bottom_left = 5
+	cam_btn_style_hover.corner_radius_bottom_right = 5
+	camera_button.add_theme_stylebox_override("hover", cam_btn_style_hover)
+	
+	var cam_btn_style_pressed = StyleBoxFlat.new()
+	cam_btn_style_pressed.bg_color = Color(0.5, 0.5, 0.5, 1.0)
+	cam_btn_style_pressed.corner_radius_top_left = 5
+	cam_btn_style_pressed.corner_radius_top_right = 5
+	cam_btn_style_pressed.corner_radius_bottom_left = 5
+	cam_btn_style_pressed.corner_radius_bottom_right = 5
+	camera_button.add_theme_stylebox_override("pressed", cam_btn_style_pressed)
+	
+	camera_button.pressed.connect(_on_camera_toggle_pressed)
+	vbox.add_child(camera_button)
+	
+	# Add a separator
+	var separator2 = HSeparator.new()
+	separator2.add_theme_constant_override("separation", 10)
+	vbox.add_child(separator2)
+	
+	# Actions section label
+	var actions_label = Label.new()
+	actions_label.text = "Actions"
+	actions_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	actions_label.add_theme_font_size_override("font_size", 20)
+	actions_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1))
+	vbox.add_child(actions_label)
+	
+	# Placeholder for future actions
+	var placeholder_label = Label.new()
+	placeholder_label.text = "(More actions coming soon)"
+	placeholder_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	placeholder_label.add_theme_font_size_override("font_size", 14)
+	placeholder_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6, 1))
+	vbox.add_child(placeholder_label)
+	
+	# Add spacer
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 10)
+	vbox.add_child(spacer)
+	
+	# Close button
+	var close_button = Button.new()
+	close_button.text = "Close"
+	close_button.custom_minimum_size = Vector2(0, 45)
+	close_button.add_theme_font_size_override("font_size", 18)
+	close_button.focus_mode = Control.FOCUS_NONE
+	
+	# Style the close button
+	var close_btn_style = StyleBoxFlat.new()
+	close_btn_style.bg_color = Color(0.5, 0.2, 0.2, 1.0)
+	close_btn_style.corner_radius_top_left = 5
+	close_btn_style.corner_radius_top_right = 5
+	close_btn_style.corner_radius_bottom_left = 5
+	close_btn_style.corner_radius_bottom_right = 5
+	close_button.add_theme_stylebox_override("normal", close_btn_style)
+	
+	var close_btn_style_hover = StyleBoxFlat.new()
+	close_btn_style_hover.bg_color = Color(0.6, 0.3, 0.3, 1.0)
+	close_btn_style_hover.corner_radius_top_left = 5
+	close_btn_style_hover.corner_radius_top_right = 5
+	close_btn_style_hover.corner_radius_bottom_left = 5
+	close_btn_style_hover.corner_radius_bottom_right = 5
+	close_button.add_theme_stylebox_override("hover", close_btn_style_hover)
+	
+	close_button.pressed.connect(_on_close_settings_pressed)
+	vbox.add_child(close_button)
+	
+	add_child(settings_panel)
+	# Defer positioning to ensure viewport size is ready
+	call_deferred("_update_settings_panel_position")
+
+func _on_menu_button_pressed():
+	# Toggle settings panel visibility
+	settings_visible = not settings_visible
+	settings_panel.visible = settings_visible
+	if settings_visible:
+		_update_settings_panel_position()
+
+func _on_close_settings_pressed():
+	# Hide settings panel
+	settings_visible = false
+	settings_panel.visible = false
+
+func _on_camera_toggle_pressed():
+	# Toggle camera view on player and close menu
+	if player and player.has_method("_toggle_camera_view"):
+		player._toggle_camera_view()
+	# Close the settings menu after action
+	_on_close_settings_pressed()
+
 func _update_button_position():
-	if not camera_toggle_button:
+	if not menu_button:
 		return
 	
 	# Position button in bottom-right corner with margin
@@ -190,9 +354,20 @@ func _update_button_position():
 	var viewport_size = get_viewport().size
 	var button_x = viewport_size.x - button_margin_x - BUTTON_SIZE
 	var button_y = viewport_size.y - joystick_margin_y - (BUTTON_SIZE / 2)
-	camera_toggle_button.position = Vector2(button_x, button_y)
+	menu_button.position = Vector2(button_x, button_y)
 
-func _on_camera_toggle_pressed():
-	# Toggle camera view on player
-	if player and player.has_method("_toggle_camera_view"):
-		player._toggle_camera_view()
+func _update_settings_panel_position():
+	if not settings_panel:
+		return
+	
+	# Position panel above the menu button, centered and sized appropriately
+	var viewport_size = get_viewport().size
+	var panel_width = 300.0
+	var panel_height = 350.0
+	
+	# Center the panel horizontally, position it in the bottom half of the screen
+	var panel_x = (viewport_size.x - panel_width) / 2
+	var panel_y = viewport_size.y - panel_height - joystick_margin_y - BUTTON_SIZE - 20
+	
+	settings_panel.position = Vector2(panel_x, panel_y)
+	settings_panel.size = Vector2(panel_width, panel_height)
