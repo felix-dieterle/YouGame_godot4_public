@@ -20,19 +20,19 @@ func test_slope_calculation():
 	
 	# Test that slope calculation method exists and returns valid values
 	var test_positions = [
-		Vector2(CHUNK.CHUNK_SIZE / 2, CHUNK.CHUNK_SIZE / 2),  # Center
-		Vector2(5.0, 5.0),  # Near corner
-		Vector2(CHUNK.CHUNK_SIZE - 5.0, CHUNK.CHUNK_SIZE - 5.0)  # Opposite corner
+		{"x": CHUNK.CHUNK_SIZE / 2, "z": CHUNK.CHUNK_SIZE / 2},  # Center
+		{"x": 5.0, "z": 5.0},  # Near corner
+		{"x": CHUNK.CHUNK_SIZE - 5.0, "z": CHUNK.CHUNK_SIZE - 5.0}  # Opposite corner
 	]
 	
 	var all_valid = true
 	for pos in test_positions:
-		var slope = chunk.get_slope_at_world_pos(pos.x, pos.y)
+		var slope = chunk.get_slope_at_world_pos(pos.x, pos.z)
 		if slope < 0 or slope > 90:
-			print("FAIL: Invalid slope %.2f at position (%.1f, %.1f)" % [slope, pos.x, pos.y])
+			print("FAIL: Invalid slope %.2f at position (%.1f, %.1f)" % [slope, pos.x, pos.z])
 			all_valid = false
 		else:
-			print("  Slope at (%.1f, %.1f): %.2f degrees" % [pos.x, pos.y, slope])
+			print("  Slope at (%.1f, %.1f): %.2f degrees" % [pos.x, pos.z, slope])
 	
 	if all_valid:
 		print("PASS: Slope calculation returns valid values")
