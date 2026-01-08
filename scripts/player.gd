@@ -72,19 +72,34 @@ func _physics_process(delta):
 	var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
 	
 	if direction:
-		velocity.x = direction.x * move_speed
-		velocity.z = direction.z * move_speed
+		# Check slope at intended position
+		var intended_position = global_position + direction * move_speed * delta
+		var can_move = true
 		
-		# Rotate towards movement direction
-		var target_rotation = atan2(direction.x, direction.z)
-		rotation.y = lerp_angle(rotation.y, target_rotation, rotation_speed * delta)
+		if world_manager:
+			var slope_at_position = world_manager.get_slope_at_position(intended_position)
+			# Only allow movement if slope is walkable
+			if slope_at_position > max_slope_angle:
+				can_move = false
 		
-		# Update head bob when moving in first-person
-		if is_first_person:
-			head_bob_time += delta * head_bob_frequency
-		
-		# Handle footstep sounds
-		_update_footsteps(delta)
+		if can_move:
+			velocity.x = direction.x * move_speed
+			velocity.z = direction.z * move_speed
+			
+			# Rotate towards movement direction
+			var target_rotation = atan2(direction.x, direction.z)
+			rotation.y = lerp_angle(rotation.y, target_rotation, rotation_speed * delta)
+			
+			# Update head bob when moving in first-person
+			if is_first_person:
+				head_bob_time += delta * head_bob_frequency
+			
+			# Handle footstep sounds
+			_update_footsteps(delta)
+		else:
+			# Stop movement if trying to climb too steep slope
+			velocity.x = move_toward(velocity.x, 0, move_speed * delta * 2.0)
+			velocity.z = move_toward(velocity.z, 0, move_speed * delta * 2.0)
 	else:
 		velocity.x = move_toward(velocity.x, 0, move_speed * delta)
 		velocity.z = move_toward(velocity.z, 0, move_speed * delta)

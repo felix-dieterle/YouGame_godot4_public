@@ -137,3 +137,9 @@ func get_terrain_material_at_position(world_pos: Vector3) -> String:
 	if chunk:
 		return chunk.get_terrain_material_at_world_pos(world_pos.x, world_pos.z)
 	return "grass"
+
+func get_slope_at_position(world_pos: Vector3) -> float:
+	var chunk = get_chunk_at_position(world_pos)
+	if chunk:
+		return chunk.get_slope_at_world_pos(world_pos.x, world_pos.z)
+	return 0.0

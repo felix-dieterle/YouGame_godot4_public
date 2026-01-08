@@ -502,3 +502,27 @@ func get_water_depth_at_local_pos(local_x: float, local_z: float) -> float:
 	# Water gets deeper towards center (knee-deep at center)
 	var depth_factor = 1.0 - (dist_to_center / lake_radius)
 	return depth_factor * lake_depth
+
+func get_slope_at_world_pos(world_x: float, world_z: float) -> float:
+	# Convert world position to local chunk position
+	var local_x = world_x - chunk_x * CHUNK_SIZE
+	var local_z = world_z - chunk_z * CHUNK_SIZE
+	
+	# Convert to cell coordinates
+	var cell_x = local_x / CELL_SIZE
+	var cell_z = local_z / CELL_SIZE
+	
+	# Clamp to valid cell range (0 to RESOLUTION-1)
+	var x = int(clamp(cell_x, 0, RESOLUTION - 1))
+	var z = int(clamp(cell_z, 0, RESOLUTION - 1))
+	
+	# Get heights of the 4 corners of this cell
+	var h00 = heightmap[z * (RESOLUTION + 1) + x]
+	var h10 = heightmap[z * (RESOLUTION + 1) + (x + 1)]
+	var h01 = heightmap[(z + 1) * (RESOLUTION + 1) + x]
+	var h11 = heightmap[(z + 1) * (RESOLUTION + 1) + (x + 1)]
+	
+	# Calculate slope using the maximum height difference
+	var max_height_diff = max(max(abs(h10 - h00), abs(h01 - h00)), abs(h11 - h00))
+	var slope_rad = atan(max_height_diff / CELL_SIZE)
+	return rad_to_deg(slope_rad)
