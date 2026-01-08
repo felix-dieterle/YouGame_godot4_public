@@ -18,6 +18,8 @@ const JOYSTICK_RADIUS: float = 80.0
 const STICK_RADIUS: float = 30.0
 const DEADZONE: float = 0.2
 const BUTTON_SIZE: float = 60.0
+const PANEL_WIDTH: float = 300.0
+const PANEL_HEIGHT: float = 350.0
 @export var joystick_margin_x: float = 120.0
 @export var joystick_margin_y: float = 120.0
 @export var button_margin_x: float = 80.0
@@ -135,6 +137,16 @@ func _update_joystick(touch_pos: Vector2):
 func get_input_vector() -> Vector2:
 	return joystick_vector
 
+func _create_styled_button_style(bg_color: Color, corner_radius: int) -> StyleBoxFlat:
+	# Helper function to create a styled button with rounded corners
+	var style = StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.corner_radius_top_left = corner_radius
+	style.corner_radius_top_right = corner_radius
+	style.corner_radius_bottom_left = corner_radius
+	style.corner_radius_bottom_right = corner_radius
+	return style
+
 func _create_menu_button():
 	menu_button = Button.new()
 	menu_button.text = "☰"  # Hamburger menu icon
@@ -149,32 +161,10 @@ func _create_menu_button():
 	menu_button.z_index = 10
 	menu_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	
-	# Style the button - normal state
-	var button_style = StyleBoxFlat.new()
-	button_style.bg_color = Color(0.3, 0.3, 0.3, 0.7)
-	button_style.corner_radius_top_left = int(BUTTON_SIZE / 2)
-	button_style.corner_radius_top_right = int(BUTTON_SIZE / 2)
-	button_style.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
-	button_style.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
-	menu_button.add_theme_stylebox_override("normal", button_style)
-	
-	# Style the button - hover state (for desktop/mouse support)
-	var button_style_hover = StyleBoxFlat.new()
-	button_style_hover.bg_color = Color(0.4, 0.4, 0.4, 0.8)
-	button_style_hover.corner_radius_top_left = int(BUTTON_SIZE / 2)
-	button_style_hover.corner_radius_top_right = int(BUTTON_SIZE / 2)
-	button_style_hover.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
-	button_style_hover.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
-	menu_button.add_theme_stylebox_override("hover", button_style_hover)
-	
-	# Style the button - pressed state
-	var button_style_pressed = StyleBoxFlat.new()
-	button_style_pressed.bg_color = Color(0.5, 0.5, 0.5, 0.9)
-	button_style_pressed.corner_radius_top_left = int(BUTTON_SIZE / 2)
-	button_style_pressed.corner_radius_top_right = int(BUTTON_SIZE / 2)
-	button_style_pressed.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
-	button_style_pressed.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
-	menu_button.add_theme_stylebox_override("pressed", button_style_pressed)
+	# Style the button states
+	menu_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.3, 0.3, 0.3, 0.7), int(BUTTON_SIZE / 2)))
+	menu_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.4, 0.4, 0.4, 0.8), int(BUTTON_SIZE / 2)))
+	menu_button.add_theme_stylebox_override("pressed", _create_styled_button_style(Color(0.5, 0.5, 0.5, 0.9), int(BUTTON_SIZE / 2)))
 	
 	# Connect button to menu toggle function
 	menu_button.pressed.connect(_on_menu_button_pressed)
@@ -242,29 +232,9 @@ func _create_settings_panel():
 	camera_button.focus_mode = Control.FOCUS_NONE
 	
 	# Style the camera button
-	var cam_btn_style = StyleBoxFlat.new()
-	cam_btn_style.bg_color = Color(0.3, 0.3, 0.3, 1.0)
-	cam_btn_style.corner_radius_top_left = 5
-	cam_btn_style.corner_radius_top_right = 5
-	cam_btn_style.corner_radius_bottom_left = 5
-	cam_btn_style.corner_radius_bottom_right = 5
-	camera_button.add_theme_stylebox_override("normal", cam_btn_style)
-	
-	var cam_btn_style_hover = StyleBoxFlat.new()
-	cam_btn_style_hover.bg_color = Color(0.4, 0.4, 0.4, 1.0)
-	cam_btn_style_hover.corner_radius_top_left = 5
-	cam_btn_style_hover.corner_radius_top_right = 5
-	cam_btn_style_hover.corner_radius_bottom_left = 5
-	cam_btn_style_hover.corner_radius_bottom_right = 5
-	camera_button.add_theme_stylebox_override("hover", cam_btn_style_hover)
-	
-	var cam_btn_style_pressed = StyleBoxFlat.new()
-	cam_btn_style_pressed.bg_color = Color(0.5, 0.5, 0.5, 1.0)
-	cam_btn_style_pressed.corner_radius_top_left = 5
-	cam_btn_style_pressed.corner_radius_top_right = 5
-	cam_btn_style_pressed.corner_radius_bottom_left = 5
-	cam_btn_style_pressed.corner_radius_bottom_right = 5
-	camera_button.add_theme_stylebox_override("pressed", cam_btn_style_pressed)
+	camera_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.3, 0.3, 0.3, 1.0), 5))
+	camera_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.4, 0.4, 0.4, 1.0), 5))
+	camera_button.add_theme_stylebox_override("pressed", _create_styled_button_style(Color(0.5, 0.5, 0.5, 1.0), 5))
 	
 	camera_button.pressed.connect(_on_camera_toggle_pressed)
 	vbox.add_child(camera_button)
@@ -303,21 +273,8 @@ func _create_settings_panel():
 	close_button.focus_mode = Control.FOCUS_NONE
 	
 	# Style the close button
-	var close_btn_style = StyleBoxFlat.new()
-	close_btn_style.bg_color = Color(0.5, 0.2, 0.2, 1.0)
-	close_btn_style.corner_radius_top_left = 5
-	close_btn_style.corner_radius_top_right = 5
-	close_btn_style.corner_radius_bottom_left = 5
-	close_btn_style.corner_radius_bottom_right = 5
-	close_button.add_theme_stylebox_override("normal", close_btn_style)
-	
-	var close_btn_style_hover = StyleBoxFlat.new()
-	close_btn_style_hover.bg_color = Color(0.6, 0.3, 0.3, 1.0)
-	close_btn_style_hover.corner_radius_top_left = 5
-	close_btn_style_hover.corner_radius_top_right = 5
-	close_btn_style_hover.corner_radius_bottom_left = 5
-	close_btn_style_hover.corner_radius_bottom_right = 5
-	close_button.add_theme_stylebox_override("hover", close_btn_style_hover)
+	close_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.5, 0.2, 0.2, 1.0), 5))
+	close_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.6, 0.3, 0.3, 1.0), 5))
 	
 	close_button.pressed.connect(_on_close_settings_pressed)
 	vbox.add_child(close_button)
@@ -362,12 +319,10 @@ func _update_settings_panel_position():
 	
 	# Position panel above the menu button, centered and sized appropriately
 	var viewport_size = get_viewport().size
-	var panel_width = 300.0
-	var panel_height = 350.0
 	
 	# Center the panel horizontally, position it in the bottom half of the screen
-	var panel_x = (viewport_size.x - panel_width) / 2
-	var panel_y = viewport_size.y - panel_height - joystick_margin_y - BUTTON_SIZE - 20
+	var panel_x = (viewport_size.x - PANEL_WIDTH) / 2
+	var panel_y = viewport_size.y - PANEL_HEIGHT - joystick_margin_y - BUTTON_SIZE - 20
 	
 	settings_panel.position = Vector2(panel_x, panel_y)
-	settings_panel.size = Vector2(panel_width, panel_height)
+	settings_panel.size = Vector2(PANEL_WIDTH, PANEL_HEIGHT)
