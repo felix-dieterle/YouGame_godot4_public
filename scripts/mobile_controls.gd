@@ -28,14 +28,18 @@ const PANEL_HEIGHT: float = 350.0
 var player: Node = null
 
 func _ready():
+	DebugLogOverlay.add_log("MobileControls._ready() started", "yellow")
+	
 	# Find player reference
 	player = get_parent().get_node_or_null("Player")
+	DebugLogOverlay.add_log("Player reference: " + ("Found" if player else "NOT FOUND"), "yellow")
 	
 	# Create virtual joystick (bottom left)
 	joystick_base = Control.new()
 	joystick_base.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
 	joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
 	add_child(joystick_base)
+	DebugLogOverlay.add_log("Joystick base created", "green")
 	
 	# Create menu button (bottom right)
 	_create_menu_button()
@@ -46,6 +50,8 @@ func _ready():
 	# Update position when viewport size changes
 	_update_joystick_position()
 	get_viewport().size_changed.connect(_update_joystick_position)
+	
+	DebugLogOverlay.add_log("MobileControls._ready() completed", "green")
 	
 	# Base circle
 	var base_panel = Panel.new()
@@ -148,6 +154,8 @@ func _create_styled_button_style(bg_color: Color, corner_radius: int) -> StyleBo
 	return style
 
 func _create_menu_button():
+	DebugLogOverlay.add_log("Creating menu button...", "cyan")
+	
 	menu_button = Button.new()
 	menu_button.text = "☰"  # Hamburger menu icon
 	menu_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
@@ -161,6 +169,8 @@ func _create_menu_button():
 	menu_button.z_index = 10
 	menu_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	
+	DebugLogOverlay.add_log("Menu button configured: z_index=%d, size=%.0fx%.0f" % [menu_button.z_index, BUTTON_SIZE, BUTTON_SIZE], "cyan")
+	
 	# Style the button states
 	menu_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.3, 0.3, 0.3, 0.7), int(BUTTON_SIZE / 2)))
 	menu_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.4, 0.4, 0.4, 0.8), int(BUTTON_SIZE / 2)))
@@ -173,15 +183,21 @@ func _create_menu_button():
 	menu_button.visible = true
 	
 	add_child(menu_button)
+	DebugLogOverlay.add_log("Menu button added to scene tree, visible=%s" % str(menu_button.visible), "green")
+	
 	# Defer positioning to ensure viewport size is ready
 	call_deferred("_update_button_position")
 
 func _create_settings_panel():
+	DebugLogOverlay.add_log("Creating settings panel...", "cyan")
+	
 	# Create a panel for the settings menu
 	settings_panel = Panel.new()
 	settings_panel.z_index = 20  # Above the menu button
 	settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	settings_panel.visible = false  # Initially hidden
+	
+	DebugLogOverlay.add_log("Settings panel configured: z_index=%d, visible=%s" % [settings_panel.z_index, str(settings_panel.visible)], "cyan")
 	
 	# Style the panel
 	var panel_style = StyleBoxFlat.new()
@@ -280,30 +296,46 @@ func _create_settings_panel():
 	vbox.add_child(close_button)
 	
 	add_child(settings_panel)
+	DebugLogOverlay.add_log("Settings panel added to scene tree", "green")
+	
 	# Defer positioning to ensure viewport size is ready
 	call_deferred("_update_settings_panel_position")
 
 func _on_menu_button_pressed():
+	DebugLogOverlay.add_log("Menu button pressed!", "yellow")
+	
 	# Toggle settings panel visibility
 	settings_visible = not settings_visible
 	settings_panel.visible = settings_visible
+	
+	DebugLogOverlay.add_log("Settings panel visibility toggled to: %s" % str(settings_visible), "yellow")
+	
 	if settings_visible:
 		_update_settings_panel_position()
 
 func _on_close_settings_pressed():
+	DebugLogOverlay.add_log("Close settings button pressed", "yellow")
+	
 	# Hide settings panel
 	settings_visible = false
 	settings_panel.visible = false
 
 func _on_camera_toggle_pressed():
+	DebugLogOverlay.add_log("Camera toggle pressed", "yellow")
+	
 	# Toggle camera view on player and close menu
 	if player and player.has_method("_toggle_camera_view"):
 		player._toggle_camera_view()
+		DebugLogOverlay.add_log("Camera view toggled", "green")
+	else:
+		DebugLogOverlay.add_log("Player not found or method missing!", "red")
+	
 	# Close the settings menu after action
 	_on_close_settings_pressed()
 
 func _update_button_position():
 	if not menu_button:
+		DebugLogOverlay.add_log("ERROR: menu_button is null in _update_button_position", "red")
 		return
 	
 	# Position button in bottom-right corner with margin
@@ -312,9 +344,12 @@ func _update_button_position():
 	var button_x = viewport_size.x - button_margin_x - BUTTON_SIZE
 	var button_y = viewport_size.y - joystick_margin_y - (BUTTON_SIZE / 2)
 	menu_button.position = Vector2(button_x, button_y)
+	
+	DebugLogOverlay.add_log("Menu button positioned at (%.0f, %.0f), viewport: %.0fx%.0f" % [button_x, button_y, viewport_size.x, viewport_size.y], "cyan")
 
 func _update_settings_panel_position():
 	if not settings_panel:
+		DebugLogOverlay.add_log("ERROR: settings_panel is null in _update_settings_panel_position", "red")
 		return
 	
 	# Position panel above the menu button, centered and sized appropriately
@@ -326,3 +361,5 @@ func _update_settings_panel_position():
 	
 	settings_panel.position = Vector2(panel_x, panel_y)
 	settings_panel.size = Vector2(PANEL_WIDTH, PANEL_HEIGHT)
+	
+	DebugLogOverlay.add_log("Settings panel positioned at (%.0f, %.0f), size: %.0fx%.0f" % [panel_x, panel_y, PANEL_WIDTH, PANEL_HEIGHT], "cyan")
