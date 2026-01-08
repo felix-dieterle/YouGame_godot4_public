@@ -172,7 +172,8 @@ func _create_menu_button():
 	menu_button.focus_mode = Control.FOCUS_NONE
 	
 	# Ensure button is above other UI elements and can receive touch events
-	menu_button.z_index = 10
+	# Set z-index high to ensure it renders above all other UI elements
+	menu_button.z_index = 101  # Higher than debug overlay buttons (100)
 	menu_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	DebugLogOverlay.add_log("Menu button configured: z_index=%d, size=%.0fx%.0f" % [menu_button.z_index, BUTTON_SIZE, BUTTON_SIZE], "cyan")
