@@ -83,10 +83,9 @@ func _physics_process(delta):
 				# Get the slope gradient (direction of steepest ascent)
 				var slope_gradient = world_manager.get_slope_gradient_at_position(intended_position)
 				
-				# Normalize gradient once for dot product calculation
-				var gradient_length = slope_gradient.length()
-				if gradient_length > 0.001:  # Avoid division by zero
-					var normalized_gradient = slope_gradient / gradient_length
+				# Normalize gradient for dot product calculation
+				if slope_gradient.length_squared() > 0.0001:  # Check if gradient is non-zero
+					var normalized_gradient = slope_gradient.normalized()
 					
 					# Check if we're moving uphill by checking dot product
 					# If dot product > 0, we're moving in the uphill direction
