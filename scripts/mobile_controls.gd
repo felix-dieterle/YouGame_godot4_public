@@ -134,9 +134,16 @@ func _create_camera_toggle_button():
 	camera_toggle_button = Button.new()
 	camera_toggle_button.text = "👁"  # Eye emoji for camera view
 	camera_toggle_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+	camera_toggle_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
 	camera_toggle_button.add_theme_font_size_override("font_size", 30)
 	
-	# Style the button
+	# Set focus mode to prevent focus issues on mobile
+	camera_toggle_button.focus_mode = Control.FOCUS_NONE
+	
+	# Ensure button is above other UI elements
+	camera_toggle_button.z_index = 10
+	
+	# Style the button - normal state
 	var button_style = StyleBoxFlat.new()
 	button_style.bg_color = Color(0.3, 0.3, 0.3, 0.7)
 	button_style.corner_radius_top_left = int(BUTTON_SIZE / 2)
@@ -145,6 +152,16 @@ func _create_camera_toggle_button():
 	button_style.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
 	camera_toggle_button.add_theme_stylebox_override("normal", button_style)
 	
+	# Style the button - hover state (for desktop/mouse support)
+	var button_style_hover = StyleBoxFlat.new()
+	button_style_hover.bg_color = Color(0.4, 0.4, 0.4, 0.8)
+	button_style_hover.corner_radius_top_left = int(BUTTON_SIZE / 2)
+	button_style_hover.corner_radius_top_right = int(BUTTON_SIZE / 2)
+	button_style_hover.corner_radius_bottom_left = int(BUTTON_SIZE / 2)
+	button_style_hover.corner_radius_bottom_right = int(BUTTON_SIZE / 2)
+	camera_toggle_button.add_theme_stylebox_override("hover", button_style_hover)
+	
+	# Style the button - pressed state
 	var button_style_pressed = StyleBoxFlat.new()
 	button_style_pressed.bg_color = Color(0.5, 0.5, 0.5, 0.9)
 	button_style_pressed.corner_radius_top_left = int(BUTTON_SIZE / 2)
