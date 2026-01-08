@@ -48,7 +48,8 @@ func _create_toggle_button():
 	toggle_button.focus_mode = Control.FOCUS_NONE
 	
 	# Ensure button is above other UI elements
-	toggle_button.z_index = 10
+	# Set z-index high to ensure visibility above game UI
+	toggle_button.z_index = 101  # Same level as menu button
 	
 	# Style the button - normal state
 	var button_style = StyleBoxFlat.new()

@@ -200,7 +200,8 @@ func _create_settings_panel():
 	
 	# Create a panel for the settings menu
 	settings_panel = Panel.new()
-	settings_panel.z_index = 20  # Above the menu button
+	# Set z-index high to ensure it renders above all other UI elements, including the menu button
+	settings_panel.z_index = 102  # Above the menu button (101) and debug overlay (99-100)
 	settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	settings_panel.visible = false  # Initially hidden
 	
