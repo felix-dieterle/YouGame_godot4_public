@@ -135,8 +135,12 @@ func _update_camera():
 			camera.look_at(global_position, Vector3.UP)
 
 func _toggle_camera_view():
+	DebugLogOverlay.add_log("Player._toggle_camera_view() called", "yellow")
+	
 	is_first_person = not is_first_person
 	_update_camera()
+	
+	DebugLogOverlay.add_log("Camera view toggled to: %s" % ("First Person" if is_first_person else "Third Person"), "green")
 	
 	# Toggle visibility of robot body parts
 	for part in robot_parts:
