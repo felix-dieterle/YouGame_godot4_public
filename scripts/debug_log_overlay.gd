@@ -1,5 +1,7 @@
 extends Control
-class_name DebugLogOverlay
+
+# Debug Log Overlay - UI for displaying debug messages
+# Used as an autoload singleton
 
 # UI elements
 var log_panel: Panel

@@ -33,6 +33,18 @@ jobs:
         ls -la
         cat project.godot
     
+    - name: Validate scripts (check for parse errors)
+      run: |
+        echo "Validating GDScript files for parse errors..."
+        godot --headless --path . --check-only --quit 2>&1 | tee script_validation.log
+        if grep -q "ERROR:\|SCRIPT ERROR:" script_validation.log; then
+          echo "❌ Script validation failed - parse errors detected"
+          grep "ERROR:\|SCRIPT ERROR:" script_validation.log
+          exit 1
+        else
+          echo "✅ All scripts validated successfully"
+        fi
+    
     - name: Run tests with timeout monitoring
       timeout-minutes: 10
       run: |
