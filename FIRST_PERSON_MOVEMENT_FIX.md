@@ -29,7 +29,7 @@ Modified the movement direction calculation in `scripts/player.gd` to be camera-
 **Changed in `scripts/player.gd` (_physics_process):**
 
 ```gdscript
-# OLD CODE (lines 80):
+# OLD CODE (original line 80):
 var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
 
 # NEW CODE (lines 80-92):
@@ -38,8 +38,8 @@ if input_dir.length() > 0.01:
     if is_first_person:
         # First-person: Transform input by player's rotation
         # Forward (input_dir.y) should move in the direction player is facing
-        var input_3d = Vector3(input_dir.x, 0, input_dir.y)
-        direction = input_3d.rotated(Vector3.UP, rotation.y).normalized()
+        var input_3d = Vector3(input_dir.x, 0, input_dir.y).normalized()
+        direction = input_3d.rotated(Vector3.UP, rotation.y)
     else:
         # Third-person: World-relative movement (original behavior)
         direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
