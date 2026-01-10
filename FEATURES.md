@@ -96,21 +96,41 @@ The Player node is now fully integrated:
 A comprehensive settings menu has been added for mobile devices:
 
 ### Features
-- **Menu Button**: Positioned in the bottom-right corner with hamburger icon (☰)
-- **Settings Panel**: Popup menu with various options and actions
-- **Touch-Friendly**: Large buttons optimized for mobile screens
+- **Menu Button**: Positioned in the top-left corner with hamburger icon (☰)
+- **Settings Panel**: Organized popup menu with sections for different settings
+- **Touch-Friendly**: Large buttons optimized for mobile screens (55px height)
 - **Seamless Integration**: Works with the existing mobile control system
+- **Better Organization**: Grouped into Display, Audio, and Game sections
+- **Enhanced Styling**: Modern look with rounded corners and distinct color schemes
 
 ### Available Settings
+
+**Display Section:**
 - **Toggle First Person View**: Switch between third-person and first-person camera views
   - Robot body automatically hides in first-person mode
   - Head bobbing effect active in first-person when moving
-- **Actions Section**: Placeholder for future game actions
+
+**Audio Section:**
+- **Master Volume Control**: Slider to adjust game audio (0-100%)
+  - Real-time volume adjustment
+  - Visual percentage display
+
+**Game Section:**
+- **Pause Game**: Access the pause menu from mobile devices
+  - Opens the main pause menu with Resume/Settings/Quit options
 
 ### Usage
-- Tap the menu button (☰) in the bottom-right to open settings
+- Tap the menu button (☰) in the top-left to open settings
+- Adjust volume with the slider
 - Select "Toggle First Person View" to switch camera modes
-- Tap "Close" or press the menu button again to close the settings panel
+- Select "Pause Game" to pause the game
+- Tap "✕ Close" or press the menu button again to close the settings panel
+
+### Technical Improvements
+- Increased button sizes for better touch targets
+- Organized into logical sections with clear headings
+- Better color differentiation between sections
+- Improved spacing and padding throughout
 
 ## Terrain Biome System
 
@@ -246,11 +266,82 @@ debug_visualization.toggle_clusters()
 ```
 
 See **CLUSTER_SYSTEM.md** for complete API documentation.
+## Pause Menu System
+
+A comprehensive pause menu system for desktop and mobile:
+
+### Features
+- **Pause Toggle**: Press ESC key to pause/resume the game
+- **Pause Overlay**: Semi-transparent centered menu with:
+  - Resume button - Returns to game
+  - Settings button - Access in-game settings
+  - Quit button - Exit to desktop
+- **Game Tree Pause**: Properly pauses all game logic while keeping UI responsive
+- **Settings Integration**: Access camera toggle and audio settings from pause menu
+- **Mobile Support**: Can also be triggered from mobile settings menu
+
+### Desktop Controls
+- Press **ESC** to open/close pause menu
+- Click buttons to navigate
+- ESC also resumes the game
+
+### Mobile Access
+- Tap the menu button (☰) in top-left
+- Select "Pause Game" option
+- Access all pause menu features on mobile
+
+### Technical Details
+- Uses `get_tree().paused = true` for proper pause implementation
+- Pause menu has `PROCESS_MODE_ALWAYS` to remain interactive
+- High z-index (100+) ensures it appears above all other UI
+- Clean separation between pause state and settings panels
+
+## Improved Settings Menu
+
+Enhanced settings menu with better organization and new features:
+
+### New Features
+- **Organized Sections**: Display, Audio, and Game sections
+- **Master Volume Control**: Slider to adjust game volume (0-100%)
+  - Real-time volume adjustment
+  - Displays current percentage
+  - Uses AudioServer for proper audio mixing
+- **Camera Toggle**: Switch between first-person and third-person views
+- **Pause Game Button**: Mobile-friendly pause access
+- **Better Styling**: Improved colors, spacing, and button designs
+  - Rounded corners on all buttons
+  - Distinct color schemes per section
+  - Better visual hierarchy
+
+### Usage
+- Desktop: Press ESC and click Settings
+- Mobile: Tap menu button (☰) in top-left
+
+### Settings Available
+1. **Display Section**
+   - Toggle First Person View
+
+2. **Audio Section**
+   - Master Volume slider (0-100%)
+
+3. **Game Section**
+   - Pause Game (mobile only, desktop uses ESC)
+
+### Technical Details
+- Volume uses decibel conversion for proper audio scaling
+- Settings persist during gameplay session
+- All buttons use custom styled backgrounds
+- Touch-friendly sizing for mobile devices
 
 ## Future Enhancements
 
 Potential improvements for these features:
 
+- [ ] Save/load settings preferences
+- [ ] Additional audio channels (Music, SFX, Ambient)
+- [ ] Graphics quality settings
+- [ ] Control customization
+- [ ] Fullscreen toggle
 - [ ] Pre-recorded footstep sound samples for better quality
 - [ ] Customizable joystick position and size
 - [ ] Multiple control schemes (swipe-to-move, tap-to-move)
