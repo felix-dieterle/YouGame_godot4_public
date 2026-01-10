@@ -50,7 +50,7 @@ func test_chunk_generates_narrative_markers():
 		else:
 			print("FAIL: Importance should be between 0 and 1")
 	
-	chunk.free()
+	chunk.queue_free()
 
 func test_marker_has_flexible_metadata():
 	print("\n--- Test: Marker Has Flexible Metadata ---")
@@ -89,7 +89,7 @@ func test_marker_has_flexible_metadata():
 		else:
 			print("FAIL: Openness should be between 0 and 1")
 	
-	chunk.free()
+	chunk.queue_free()
 
 func test_quest_hook_system_registers_markers():
 	print("\n--- Test: Quest Hook System Registers Markers ---")
@@ -114,7 +114,7 @@ func test_quest_hook_system_registers_markers():
 	else:
 		print("FAIL: Registered marker should match")
 	
-	quest_system.free()
+	quest_system.queue_free()
 
 func test_quest_hook_system_selects_best_marker():
 	print("\n--- Test: Quest Hook System Selects Best Marker ---")
@@ -147,7 +147,7 @@ func test_quest_hook_system_selects_best_marker():
 	else:
 		print("FAIL: Should select marker with highest importance")
 	
-	quest_system.free()
+	quest_system.queue_free()
 
 func test_demo_mode_generates_story():
 	print("\n--- Test: Demo Mode Generates Story ---")
@@ -175,7 +175,7 @@ func test_demo_mode_generates_story():
 	else:
 		print("FAIL: Story should mention biome")
 	
-	quest_system.free()
+	quest_system.queue_free()
 
 func test_demo_quest_creation():
 	print("\n--- Test: Demo Quest Creation ---")
@@ -236,7 +236,7 @@ func test_demo_quest_creation():
 		else:
 			print("FAIL: Objective description should not be empty")
 	
-	quest_system.free()
+	quest_system.queue_free()
 
 func test_landmark_chunks_get_more_markers():
 	print("\n--- Test: Landmark Chunks Get More Markers ---")
@@ -254,4 +254,4 @@ func test_landmark_chunks_get_more_markers():
 	else:
 		print("FAIL: Chunk should generate 0-3 markers")
 	
-	chunk_landmark.free()
+	chunk_landmark.queue_free()
