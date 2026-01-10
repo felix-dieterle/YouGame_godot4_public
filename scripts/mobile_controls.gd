@@ -211,98 +211,153 @@ func _create_settings_panel():
 	
 	DebugLogOverlay.add_log("Settings panel configured: z_index=%d, visible=%s" % [settings_panel.z_index, str(settings_panel.visible)], "cyan")
 	
-	# Style the panel
+	# Style the panel with improved colors
 	var panel_style = StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.2, 0.2, 0.2, 0.95)
-	panel_style.corner_radius_top_left = 10
-	panel_style.corner_radius_top_right = 10
-	panel_style.corner_radius_bottom_left = 10
-	panel_style.corner_radius_bottom_right = 10
-	panel_style.border_color = Color(0.4, 0.4, 0.4, 1.0)
-	panel_style.border_width_left = 2
-	panel_style.border_width_right = 2
-	panel_style.border_width_top = 2
-	panel_style.border_width_bottom = 2
+	panel_style.bg_color = Color(0.15, 0.15, 0.15, 0.95)
+	panel_style.corner_radius_top_left = 12
+	panel_style.corner_radius_top_right = 12
+	panel_style.corner_radius_bottom_left = 12
+	panel_style.corner_radius_bottom_right = 12
+	panel_style.border_color = Color(0.5, 0.5, 0.5, 1.0)
+	panel_style.border_width_left = 3
+	panel_style.border_width_right = 3
+	panel_style.border_width_top = 3
+	panel_style.border_width_bottom = 3
 	settings_panel.add_theme_stylebox_override("panel", panel_style)
 	
 	# Add padding container
 	var margin = MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 15)
-	margin.add_theme_constant_override("margin_right", 15)
-	margin.add_theme_constant_override("margin_top", 15)
-	margin.add_theme_constant_override("margin_bottom", 15)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
 	settings_panel.add_child(margin)
 	
 	# Create a vertical box container for menu items
 	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", 12)
 	margin.add_child(vbox)
 	
 	# Title label
 	var title_label = Label.new()
-	title_label.text = "Settings"
+	title_label.text = "⚙ Settings"
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 24)
+	title_label.add_theme_font_size_override("font_size", 28)
 	title_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	vbox.add_child(title_label)
 	
 	# Add a separator
 	var separator1 = HSeparator.new()
-	separator1.add_theme_constant_override("separation", 10)
+	separator1.add_theme_constant_override("separation", 12)
 	vbox.add_child(separator1)
+	
+	# Display section
+	var display_section = Label.new()
+	display_section.text = "Display"
+	display_section.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	display_section.add_theme_font_size_override("font_size", 20)
+	display_section.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1))
+	vbox.add_child(display_section)
 	
 	# Camera toggle button
 	var camera_button = Button.new()
 	camera_button.text = "👁 Toggle First Person View"
-	camera_button.custom_minimum_size = Vector2(0, 50)
+	camera_button.custom_minimum_size = Vector2(0, 55)
 	camera_button.add_theme_font_size_override("font_size", 18)
 	camera_button.focus_mode = Control.FOCUS_NONE
 	
 	# Style the camera button
-	camera_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.3, 0.3, 0.3, 1.0), 5))
-	camera_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.4, 0.4, 0.4, 1.0), 5))
-	camera_button.add_theme_stylebox_override("pressed", _create_styled_button_style(Color(0.5, 0.5, 0.5, 1.0), 5))
+	camera_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.25, 0.35, 0.45, 1.0), 8))
+	camera_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.35, 0.45, 0.55, 1.0), 8))
+	camera_button.add_theme_stylebox_override("pressed", _create_styled_button_style(Color(0.45, 0.55, 0.65, 1.0), 8))
 	
 	camera_button.pressed.connect(_on_camera_toggle_pressed)
 	vbox.add_child(camera_button)
 	
 	# Add a separator
 	var separator2 = HSeparator.new()
-	separator2.add_theme_constant_override("separation", 10)
+	separator2.add_theme_constant_override("separation", 12)
 	vbox.add_child(separator2)
 	
-	# Actions section label
-	var actions_label = Label.new()
-	actions_label.text = "Actions"
-	actions_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	actions_label.add_theme_font_size_override("font_size", 20)
-	actions_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1))
-	vbox.add_child(actions_label)
+	# Audio section
+	var audio_section = Label.new()
+	audio_section.text = "Audio"
+	audio_section.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	audio_section.add_theme_font_size_override("font_size", 20)
+	audio_section.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1))
+	vbox.add_child(audio_section)
 	
-	# Placeholder for future actions
-	var placeholder_label = Label.new()
-	placeholder_label.text = "(More actions coming soon)"
-	placeholder_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	placeholder_label.add_theme_font_size_override("font_size", 14)
-	placeholder_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6, 1))
-	vbox.add_child(placeholder_label)
+	# Master volume slider with label
+	var volume_hbox = HBoxContainer.new()
+	volume_hbox.add_theme_constant_override("separation", 10)
+	vbox.add_child(volume_hbox)
+	
+	var volume_label = Label.new()
+	volume_label.text = "Volume:"
+	volume_label.custom_minimum_size = Vector2(80, 0)
+	volume_label.add_theme_font_size_override("font_size", 16)
+	volume_hbox.add_child(volume_label)
+	
+	var volume_slider = HSlider.new()
+	volume_slider.min_value = 0.0
+	volume_slider.max_value = 100.0
+	volume_slider.value = 80.0
+	volume_slider.custom_minimum_size = Vector2(100, 35)
+	volume_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	volume_slider.value_changed.connect(_on_volume_changed)
+	volume_hbox.add_child(volume_slider)
+	
+	var volume_value = Label.new()
+	volume_value.text = "80%"
+	volume_value.custom_minimum_size = Vector2(50, 0)
+	volume_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	volume_value.add_theme_font_size_override("font_size", 16)
+	volume_slider.value_changed.connect(func(value): volume_value.text = "%d%%" % int(value))
+	volume_hbox.add_child(volume_value)
+	
+	# Add a separator
+	var separator3 = HSeparator.new()
+	separator3.add_theme_constant_override("separation", 12)
+	vbox.add_child(separator3)
+	
+	# Game section
+	var game_section = Label.new()
+	game_section.text = "Game"
+	game_section.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	game_section.add_theme_font_size_override("font_size", 20)
+	game_section.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1))
+	vbox.add_child(game_section)
+	
+	# Pause button (for mobile)
+	var pause_button = Button.new()
+	pause_button.text = "⏸ Pause Game"
+	pause_button.custom_minimum_size = Vector2(0, 55)
+	pause_button.add_theme_font_size_override("font_size", 18)
+	pause_button.focus_mode = Control.FOCUS_NONE
+	pause_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.35, 0.35, 0.25, 1.0), 8))
+	pause_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.45, 0.45, 0.35, 1.0), 8))
+	pause_button.add_theme_stylebox_override("pressed", _create_styled_button_style(Color(0.55, 0.55, 0.45, 1.0), 8))
+	pause_button.pressed.connect(_on_pause_game_pressed)
+	vbox.add_child(pause_button)
 	
 	# Add spacer
 	var spacer = Control.new()
-	spacer.custom_minimum_size = Vector2(0, 10)
+	spacer.custom_minimum_size = Vector2(0, 15)
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(spacer)
 	
 	# Close button
 	var close_button = Button.new()
-	close_button.text = "Close"
-	close_button.custom_minimum_size = Vector2(0, 45)
-	close_button.add_theme_font_size_override("font_size", 18)
+	close_button.text = "✕ Close"
+	close_button.custom_minimum_size = Vector2(0, 50)
+	close_button.add_theme_font_size_override("font_size", 20)
 	close_button.focus_mode = Control.FOCUS_NONE
 	
 	# Style the close button
-	close_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.5, 0.2, 0.2, 1.0), 5))
-	close_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.6, 0.3, 0.3, 1.0), 5))
+	close_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.5, 0.2, 0.2, 1.0), 8))
+	close_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.6, 0.3, 0.3, 1.0), 8))
+	close_button.add_theme_stylebox_override("pressed", _create_styled_button_style(Color(0.7, 0.4, 0.4, 1.0), 8))
 	
 	close_button.pressed.connect(_on_close_settings_pressed)
 	vbox.add_child(close_button)
@@ -344,6 +399,26 @@ func _on_camera_toggle_pressed():
 	
 	# Close the settings menu after action
 	_on_close_settings_pressed()
+
+func _on_volume_changed(value: float):
+	# Convert 0-100 to decibels (-40 to 0 dB)
+	var db = linear_to_db(value / 100.0)
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), db)
+	DebugLogOverlay.add_log("Volume changed to: %d%% (%.1f dB)" % [int(value), db], "cyan")
+
+func _on_pause_game_pressed():
+	DebugLogOverlay.add_log("Pause game button pressed", "yellow")
+	
+	# Close settings menu
+	_on_close_settings_pressed()
+	
+	# Trigger pause menu (if it exists)
+	var pause_menu = get_tree().get_first_node_in_group("PauseMenu")
+	if pause_menu and pause_menu.has_method("toggle_pause"):
+		pause_menu.toggle_pause()
+		DebugLogOverlay.add_log("Pause menu toggled", "green")
+	else:
+		DebugLogOverlay.add_log("Pause menu not found!", "red")
 
 func _update_button_position():
 	if not menu_button:

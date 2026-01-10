@@ -40,6 +40,9 @@ var mobile_controls: Node = null
 var robot_parts: Array[Node3D] = []
 
 func _ready():
+	# Add to Player group so other systems can find this node
+	add_to_group("Player")
+	
 	# Configure CharacterBody3D slope handling
 	floor_max_angle = deg_to_rad(max_slope_angle)
 	
