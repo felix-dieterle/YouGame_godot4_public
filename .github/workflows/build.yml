@@ -98,12 +98,6 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history for tags
     
-    - name: Download APK artifact
-      uses: actions/download-artifact@v4.1.3
-      with:
-        name: YouGame-APK
-        path: ./apk
-    
     - name: Get latest tag and bump version
       id: version
       run: |
@@ -145,6 +139,28 @@ jobs:
         # Show the changes
         grep "version/" export_presets.cfg
     
+    - name: Setup Godot
+      uses: chickensoft-games/setup-godot@v1
+      with:
+        version: 4.3.0
+        use-dotnet: false
+        include-templates: true
+    
+    - name: Rebuild APK with updated version
+      run: |
+        echo "Rebuilding Android APK with updated version..."
+        mkdir -p release
+        godot --headless --export-debug "Android" release/YouGame.apk || { echo "Godot export failed"; exit 1; }
+        
+        # Verify the APK was created
+        if [ -f release/YouGame.apk ]; then
+          echo "APK rebuilt successfully with new version!"
+          ls -lh release/YouGame.apk
+        else
+          echo "Error: APK was not created"
+          exit 1
+        fi
+    
     - name: Commit version changes
       run: |
         git config user.name "github-actions[bot]"
@@ -174,7 +190,7 @@ jobs:
           ## Download
           Download the APK below to install on Android devices.
         files: |
-          ./apk/*.apk
+          ./release/*.apk
         draft: false
         prerelease: false
       env:
