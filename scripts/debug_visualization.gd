@@ -1,6 +1,9 @@
 extends Node3D
 class_name DebugVisualization
 
+# Preload dependencies
+const ClusterSystem = preload("res://scripts/cluster_system.gd")
+
 var show_chunk_borders: bool = true
 var show_walkability: bool = false
 var world_manager: WorldManager
@@ -64,14 +67,11 @@ func _redraw_cluster_visualization():
 		return
 	
 	# Draw all active clusters
-	var ClusterSystem = preload("res://scripts/cluster_system.gd")
 	for cluster_key in ClusterSystem.all_clusters:
 		var cluster = ClusterSystem.all_clusters[cluster_key]
 		_draw_cluster(cluster)
 
 func _draw_cluster(cluster):
-	var ClusterSystem = preload("res://scripts/cluster_system.gd")
-	
 	# Calculate world position of cluster center
 	var world_pos = Vector3(
 		cluster.center_chunk.x * ClusterSystem.CHUNK_SIZE + cluster.center_pos.x,
