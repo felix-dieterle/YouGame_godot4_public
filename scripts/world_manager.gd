@@ -1,6 +1,9 @@
 extends Node3D
 class_name WorldManager
 
+# Preload dependencies
+const Chunk = preload("res://scripts/chunk.gd")
+
 # Configuration
 const CHUNK_SIZE = 32
 const VIEW_DISTANCE = 3  # Number of chunks to load in each direction
