@@ -77,7 +77,19 @@ func _physics_process(delta):
 	if input_dir.length() < 0.1:
 		input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	
-	var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
+	# Convert input to direction vector
+	# In first-person mode, direction is relative to player's facing direction
+	# In third-person mode, direction is world-relative (original behavior)
+	var direction = Vector3.ZERO
+	if input_dir.length() > 0.01:
+		if is_first_person:
+			# First-person: Transform input by player's rotation
+			# Forward (input_dir.y) should move in the direction player is facing
+			var input_3d = Vector3(input_dir.x, 0, input_dir.y).normalized()
+			direction = input_3d.rotated(Vector3.UP, rotation.y)
+		else:
+			# Third-person: World-relative movement (original behavior)
+			direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
 	
 	if direction:
 		# Check slope along intended movement path
@@ -115,7 +127,8 @@ func _physics_process(delta):
 			velocity.x = direction.x * move_speed
 			velocity.z = direction.z * move_speed
 			
-			# Rotate towards movement direction
+			# Rotate towards movement direction (in both first and third person)
+			# This allows turning with joystick in first-person mode
 			var target_rotation = atan2(direction.x, direction.z)
 			rotation.y = lerp_angle(rotation.y, target_rotation, rotation_speed * delta)
 			
