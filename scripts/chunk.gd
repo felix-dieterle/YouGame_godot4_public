@@ -3,6 +3,8 @@ class_name Chunk
 
 # Preload dependencies
 const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
+const ClusterSystem = preload("res://scripts/cluster_system.gd")
+const ProceduralModels = preload("res://scripts/procedural_models.gd")
 
 # Chunk configuration
 const CHUNK_SIZE = 32  # Size in world units
@@ -45,6 +47,10 @@ const LAKE_MESH_SEGMENTS = 16
 var mesh_instance: MeshInstance3D
 var water_mesh_instance: MeshInstance3D = null
 
+# Cluster objects
+var placed_objects: Array = []  # Array of MeshInstance3D for trees/buildings
+var active_clusters: Array = []  # Clusters affecting this chunk
+
 func _init(x: int, z: int, world_seed: int):
 	chunk_x = x
 	chunk_z = z
@@ -60,6 +66,7 @@ func generate():
 	_generate_narrative_markers()
 	_generate_lake_if_valley()
 	_create_mesh()
+	_place_cluster_objects()
 
 func _setup_noise():
 	noise = FastNoiseLite.new()
@@ -564,3 +571,143 @@ func get_slope_gradient_at_world_pos(world_x: float, world_z: float) -> Vector3:
 	# Return gradient vector (direction of steepest ascent)
 	# In 3D space: gradient points uphill
 	return Vector3(dx, 0, dz)
+
+## Place trees and buildings based on cluster system
+func _place_cluster_objects():
+# Get clusters affecting this chunk
+var chunk_pos = Vector2i(chunk_x, chunk_z)
+active_clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, seed_value)
+
+if active_clusters.is_empty():
+return
+
+# Place objects for each cluster
+for cluster in active_clusters:
+if cluster.type == ClusterSystem.ClusterType.FOREST:
+_place_forest_objects(cluster)
+elif cluster.type == ClusterSystem.ClusterType.SETTLEMENT:
+_place_settlement_objects(cluster)
+
+## Place trees for a forest cluster
+func _place_forest_objects(cluster: ClusterSystem.ClusterData):
+var rng = RandomNumberGenerator.new()
+rng.seed = cluster.seed_value ^ hash(Vector2i(chunk_x, chunk_z))
+
+# Calculate how many trees to place based on cluster density and influence
+var chunk_area = CHUNK_SIZE * CHUNK_SIZE
+var avg_influence = 0.0
+var sample_count = 0
+
+# Sample influence at a grid of points
+for x in range(0, int(CHUNK_SIZE), 4):
+for z in range(0, int(CHUNK_SIZE), 4):
+var world_pos = Vector2(chunk_x * CHUNK_SIZE + x, chunk_z * CHUNK_SIZE + z)
+var influence = ClusterSystem.get_cluster_influence_at_pos(world_pos, cluster)
+avg_influence += influence
+sample_count += 1
+
+avg_influence /= sample_count
+var tree_count = int(chunk_area * cluster.density * avg_influence * 0.02)  # Reduced for performance
+
+# Place trees
+for i in range(tree_count):
+var local_x = rng.randf_range(1.0, CHUNK_SIZE - 1.0)
+var local_z = rng.randf_range(1.0, CHUNK_SIZE - 1.0)
+var world_x = chunk_x * CHUNK_SIZE + local_x
+var world_z = chunk_z * CHUNK_SIZE + local_z
+
+# Check if position is influenced by cluster
+var influence = ClusterSystem.get_cluster_influence_at_pos(Vector2(world_x, world_z), cluster)
+if influence < 0.1:
+continue
+
+# Check if on walkable terrain
+var cell_x = int(local_x / CELL_SIZE)
+var cell_z = int(local_z / CELL_SIZE)
+if cell_x >= 0 and cell_x < RESOLUTION and cell_z >= 0 and cell_z < RESOLUTION:
+if walkable_map[cell_z * RESOLUTION + cell_x] != 1:
+continue
+
+# Get terrain height
+var height = get_height_at_world_pos(world_x, world_z)
+
+# Skip if in lake
+if has_lake:
+var dist_to_lake = Vector2(local_x, local_z).distance_to(lake_center)
+if dist_to_lake < lake_radius:
+continue
+
+# Create tree instance
+var tree_instance = MeshInstance3D.new()
+tree_instance.mesh = ProceduralModels.create_tree_mesh(rng.randi())
+tree_instance.material_override = ProceduralModels.create_tree_material()
+tree_instance.position = Vector3(local_x, height, local_z)
+tree_instance.rotation.y = rng.randf_range(0, TAU)  # Random rotation
+tree_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+
+add_child(tree_instance)
+placed_objects.append(tree_instance)
+
+## Place buildings for a settlement cluster
+func _place_settlement_objects(cluster: ClusterSystem.ClusterData):
+var rng = RandomNumberGenerator.new()
+rng.seed = cluster.seed_value ^ hash(Vector2i(chunk_x, chunk_z))
+
+# Calculate how many buildings to place
+var chunk_area = CHUNK_SIZE * CHUNK_SIZE
+var avg_influence = 0.0
+var sample_count = 0
+
+for x in range(0, int(CHUNK_SIZE), 4):
+for z in range(0, int(CHUNK_SIZE), 4):
+var world_pos = Vector2(chunk_x * CHUNK_SIZE + x, chunk_z * CHUNK_SIZE + z)
+var influence = ClusterSystem.get_cluster_influence_at_pos(world_pos, cluster)
+avg_influence += influence
+sample_count += 1
+
+avg_influence /= sample_count
+var building_count = int(chunk_area * cluster.density * avg_influence * 0.015)  # Fewer buildings than trees
+
+# Place buildings
+for i in range(building_count):
+var local_x = rng.randf_range(3.0, CHUNK_SIZE - 3.0)
+var local_z = rng.randf_range(3.0, CHUNK_SIZE - 3.0)
+var world_x = chunk_x * CHUNK_SIZE + local_x
+var world_z = chunk_z * CHUNK_SIZE + local_z
+
+# Check cluster influence
+var influence = ClusterSystem.get_cluster_influence_at_pos(Vector2(world_x, world_z), cluster)
+if influence < 0.2:  # Higher threshold for buildings
+continue
+
+# Check if on walkable, relatively flat terrain
+var cell_x = int(local_x / CELL_SIZE)
+var cell_z = int(local_z / CELL_SIZE)
+if cell_x >= 0 and cell_x < RESOLUTION and cell_z >= 0 and cell_z < RESOLUTION:
+if walkable_map[cell_z * RESOLUTION + cell_x] != 1:
+continue
+
+# Check slope - buildings need flatter ground
+var slope = _calculate_slope(cell_x, cell_z)
+if slope > 15.0:  # Max 15 degrees for buildings
+continue
+
+# Get terrain height
+var height = get_height_at_world_pos(world_x, world_z)
+
+# Skip if in lake
+if has_lake:
+var dist_to_lake = Vector2(local_x, local_z).distance_to(lake_center)
+if dist_to_lake < lake_radius + 2.0:  # Extra margin for buildings
+continue
+
+# Create building instance
+var building_instance = MeshInstance3D.new()
+building_instance.mesh = ProceduralModels.create_building_mesh(rng.randi())
+building_instance.material_override = ProceduralModels.create_building_material()
+building_instance.position = Vector3(local_x, height, local_z)
+building_instance.rotation.y = rng.randf_range(0, TAU)  # Random rotation
+building_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+
+add_child(building_instance)
+placed_objects.append(building_instance)
