@@ -14,7 +14,7 @@ func _ready():
 	# Clear any existing clusters
 	ClusterSystem.clear_all_clusters()
 	
-	run_all_tests()
+	await run_all_tests()
 	
 	print("\n=== Test Results ===")
 	for result in test_results:
@@ -31,7 +31,6 @@ func _ready():
 		print("Some tests failed!")
 	
 	# Exit after tests
-	await get_tree().create_timer(1.0).timeout
 	get_tree().quit()
 
 func run_all_tests():
@@ -39,7 +38,7 @@ func run_all_tests():
 	test_cluster_consistency()
 	test_cluster_influence()
 	test_cluster_boundary_crossing()
-	test_object_placement()
+	await test_object_placement()
 
 func test_cluster_generation():
 	print("\nTest: Cluster Generation")
@@ -161,6 +160,9 @@ func test_object_placement():
 	add_child(chunk)
 	chunk.generate()
 	
+	# Wait for the chunk to be fully added to the tree
+	await get_tree().process_frame
+	
 	# Check if any objects were placed
 	var object_count = chunk.placed_objects.size()
 	var has_forests = false
@@ -179,4 +181,3 @@ func test_object_placement():
 	
 	# Clean up
 	chunk.queue_free()
-	await get_tree().process_frame
