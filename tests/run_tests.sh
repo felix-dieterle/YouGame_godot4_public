@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test runner script that runs each test individually with timeout and reports results
 
-TIMEOUT_SECONDS=120  # 2 minutes per test
+TIMEOUT_SECONDS=60  # 1 minute per test
 GODOT_CMD="godot --headless --path ."
 
 # Color codes for output
