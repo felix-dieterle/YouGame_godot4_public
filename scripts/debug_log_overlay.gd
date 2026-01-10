@@ -19,8 +19,8 @@ const MAX_LOG_LINES: int = 50
 # Log storage
 var log_messages: Array[String] = []
 
-# Singleton instance
-static var instance: DebugLogOverlay = null
+# Singleton instance (type is inferred from autoload)
+static var instance = null
 
 func _ready():
 	instance = self
