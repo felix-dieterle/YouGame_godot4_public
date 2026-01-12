@@ -26,6 +26,7 @@ var next_weather_change: float = 0.0
 var fog_environment: Environment
 var rain_particles: GPUParticles3D
 var world_environment: WorldEnvironment
+var sky_material: PhysicalSkyMaterial
 
 # Player reference for positioning rain
 var player: Node3D
@@ -76,6 +77,12 @@ func _setup_environment():
     
     if world_environment and world_environment.environment:
         fog_environment = world_environment.environment
+        
+        # Get reference to the sky material
+        if fog_environment.sky and fog_environment.sky.sky_material:
+            sky_material = fog_environment.sky.sky_material
+        else:
+            push_warning("WeatherSystem: Could not find Sky material, sky effects may not work")
     else:
         push_warning("WeatherSystem: Could not find WorldEnvironment, weather effects may not work")
         return
@@ -177,37 +184,65 @@ func _apply_weather_transition():
             rain_particles.amount = int(1000 * rain_intensity)
         else:
             rain_particles.emitting = false
+    
+    # Interpolate sky parameters (clouds, color)
+    if sky_material:
+        var turbidity = lerp(current_params.turbidity, target_params.turbidity, transition_progress)
+        var mie_coefficient = lerp(current_params.mie_coefficient, target_params.mie_coefficient, transition_progress)
+        var rayleigh_coefficient = lerp(current_params.rayleigh_coefficient, target_params.rayleigh_coefficient, transition_progress)
+        
+        sky_material.turbidity = turbidity
+        sky_material.mie_coefficient = mie_coefficient
+        sky_material.rayleigh_coefficient = rayleigh_coefficient
 
 func _get_weather_params(weather: WeatherState) -> Dictionary:
     match weather:
         WeatherState.CLEAR:
             return {
                 "fog_density": 0.0,
-                "rain_intensity": 0.0
+                "rain_intensity": 0.0,
+                "turbidity": 10.0,  # Clear sky
+                "mie_coefficient": 0.005,  # Minimal haze
+                "rayleigh_coefficient": 2.0  # Bright blue sky
             }
         WeatherState.LIGHT_FOG:
             return {
                 "fog_density": 0.001,
-                "rain_intensity": 0.0
+                "rain_intensity": 0.0,
+                "turbidity": 15.0,  # Slightly hazy
+                "mie_coefficient": 0.01,  # More haze
+                "rayleigh_coefficient": 1.5  # Less vibrant blue
             }
         WeatherState.HEAVY_FOG:
             return {
                 "fog_density": 0.005,
-                "rain_intensity": 0.0
+                "rain_intensity": 0.0,
+                "turbidity": 25.0,  # Very hazy
+                "mie_coefficient": 0.02,  # Heavy haze
+                "rayleigh_coefficient": 1.0  # Muted sky color
             }
         WeatherState.LIGHT_RAIN:
             return {
                 "fog_density": 0.0005,
-                "rain_intensity": 0.3
+                "rain_intensity": 0.3,
+                "turbidity": 20.0,  # Cloudy
+                "mie_coefficient": 0.015,  # Moderate haze/clouds
+                "rayleigh_coefficient": 1.2  # Greyish sky
             }
         WeatherState.HEAVY_RAIN:
             return {
                 "fog_density": 0.002,
-                "rain_intensity": 1.0
+                "rain_intensity": 1.0,
+                "turbidity": 30.0,  # Very cloudy/stormy
+                "mie_coefficient": 0.025,  # Heavy clouds
+                "rayleigh_coefficient": 0.8  # Dark, stormy sky
             }
     
     # Default (shouldn't reach here)
     return {
         "fog_density": 0.0,
-        "rain_intensity": 0.0
+        "rain_intensity": 0.0,
+        "turbidity": 10.0,
+        "mie_coefficient": 0.005,
+        "rayleigh_coefficient": 2.0
     }
