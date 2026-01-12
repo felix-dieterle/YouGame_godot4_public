@@ -10,11 +10,16 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Screenshot directory setup
+SCREENSHOT_OUTPUT_DIR="./test_screenshots"
+mkdir -p "$SCREENSHOT_OUTPUT_DIR"
+
 # Array of test scenes
 tests=(
     "res://tests/test_scene_chunk.tscn|Chunk Tests"
     "res://tests/test_scene_narrative_markers.tscn|Narrative Markers Tests"
     "res://tests/test_scene_clusters.tscn|Clusters Tests"
+    "res://tests/test_scene_visual_example.tscn|Visual Example Tests"
 )
 
 echo "========================================="
@@ -72,6 +77,43 @@ if [ ${#timeout_tests[@]} -gt 0 ]; then
         echo "  - $test"
     done
 fi
+
+# Collect screenshots from Godot user directory
+echo ""
+echo "========================================="
+echo "Collecting Screenshots"
+echo "========================================="
+
+# Godot user directory location (varies by OS)
+if [ -d "$HOME/.local/share/godot/app_userdata/YouGame" ]; then
+    GODOT_USER_DIR="$HOME/.local/share/godot/app_userdata/YouGame"
+elif [ -d "$HOME/.local/share/godot/app_userdata/YouGame_godot4_public" ]; then
+    GODOT_USER_DIR="$HOME/.local/share/godot/app_userdata/YouGame_godot4_public"
+else
+    # Try to find it
+    GODOT_USER_DIR=$(find "$HOME/.local/share/godot/app_userdata" -maxdepth 1 -type d -name "*YouGame*" 2>/dev/null | head -n 1)
+fi
+
+if [ -n "$GODOT_USER_DIR" ] && [ -d "$GODOT_USER_DIR/test_screenshots" ]; then
+    echo "Found screenshot directory: $GODOT_USER_DIR/test_screenshots"
+    
+    # Copy screenshots to output directory
+    cp -v "$GODOT_USER_DIR/test_screenshots/"*.png "$SCREENSHOT_OUTPUT_DIR/" 2>/dev/null || true
+    
+    # Count screenshots
+    SCREENSHOT_COUNT=$(ls -1 "$SCREENSHOT_OUTPUT_DIR/"*.png 2>/dev/null | wc -l)
+    echo "Collected $SCREENSHOT_COUNT screenshot(s) to $SCREENSHOT_OUTPUT_DIR"
+    
+    # List screenshots
+    if [ $SCREENSHOT_COUNT -gt 0 ]; then
+        echo "Screenshots:"
+        ls -lh "$SCREENSHOT_OUTPUT_DIR/"*.png
+    fi
+else
+    echo "No screenshot directory found (this is normal for non-visual tests)"
+fi
+
+echo ""
 
 # Exit with non-zero if any tests failed or timed out
 if [ ${#failed_tests[@]} -gt 0 ] || [ ${#timeout_tests[@]} -gt 0 ]; then

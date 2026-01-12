@@ -51,6 +51,14 @@ jobs:
         echo "Running test suite with individual test timeouts..."
         chmod +x tests/run_tests.sh
         ./tests/run_tests.sh
+    
+    - name: Upload test screenshots
+      uses: actions/upload-artifact@v4
+      if: always()  # Upload screenshots even if tests fail
+      with:
+        name: test-screenshots
+        path: test_screenshots/*.png
+        if-no-files-found: ignore
 
   build-android:
     name: Build Android APK
