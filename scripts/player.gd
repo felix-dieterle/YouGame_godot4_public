@@ -85,21 +85,21 @@ func _physics_process(delta):
     # - Pushing left gives negative X
     # 3D coordinate system: In this game, forward movement is in +Z direction
     # - We negate input_dir.y to map "up" input to forward (+Z) movement
-    # - We negate input_dir.x because the third-person camera faces the player (not behind)
-    #   When camera looks at player's face, screen-right corresponds to player's left (-X)
+    # - We do NOT negate input_dir.x because the camera is behind the player (standard third-person)
+    #   When camera is at +Z looking at player, screen-right corresponds to player's right (+X)
     # In first-person mode, direction is relative to player's facing direction
     # In third-person mode, direction is world-relative (original behavior)
     var direction = Vector3.ZERO
     if input_dir.length() > 0.01:
         if is_first_person:
             # First-person: Transform input by player's rotation
-            # -input_dir.x → X axis (right/left, negated for correct direction), -input_dir.y → Z axis (forward/back, negated for correct direction)
-            var input_3d = Vector3(-input_dir.x, 0, -input_dir.y).normalized()
+            # input_dir.x → X axis (right/left), -input_dir.y → Z axis (forward/back, negated to convert UI coords to 3D)
+            var input_3d = Vector3(input_dir.x, 0, -input_dir.y).normalized()
             direction = input_3d.rotated(Vector3.UP, rotation.y)
         else:
             # Third-person: World-relative movement
-            # -input_dir.x → X axis (east/west, negated for correct direction), -input_dir.y → Z axis (north/south, negated for correct direction)
-            direction = Vector3(-input_dir.x, 0, -input_dir.y).normalized()
+            # input_dir.x → X axis (east/west), -input_dir.y → Z axis (north/south, negated to convert UI coords to 3D)
+            direction = Vector3(input_dir.x, 0, -input_dir.y).normalized()
     
     if direction:
         # Check slope along intended movement path
