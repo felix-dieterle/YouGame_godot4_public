@@ -377,16 +377,16 @@ func _create_settings_panel():
     call_deferred("_update_settings_panel_position")
 
 func _on_menu_button_pressed():
-    DebugLogOverlay.add_log("Menu button pressed!", "yellow")
+    DebugLogOverlay.add_log("Menu button pressed - opening pause menu", "yellow")
     
-    # Toggle settings panel visibility
-    settings_visible = not settings_visible
-    settings_panel.visible = settings_visible
-    
-    DebugLogOverlay.add_log("Settings panel visibility toggled to: %s" % str(settings_visible), "yellow")
-    
-    if settings_visible:
-        _update_settings_panel_position()
+    # Instead of showing our own settings panel, open the pause menu
+    # The pause menu has all the functionality working properly
+    var pause_menu = get_tree().get_first_node_in_group("PauseMenu")
+    if pause_menu and pause_menu.has_method("toggle_pause"):
+        pause_menu.toggle_pause()
+        DebugLogOverlay.add_log("Pause menu opened", "green")
+    else:
+        DebugLogOverlay.add_log("Pause menu not found!", "red")
 
 func _on_close_settings_pressed():
     DebugLogOverlay.add_log("Close settings button pressed", "yellow")
