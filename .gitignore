@@ -38,3 +38,6 @@ keystore.properties
 /tmp/
 *.tmp
 *.log
+
+# Test output
+test_screenshots/
