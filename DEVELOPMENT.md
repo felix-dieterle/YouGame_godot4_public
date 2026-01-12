@@ -76,6 +76,40 @@ Quest hooks and markers:
 - **Dynamic Quests**: Generated from markers
 - **Importance Weighting**: Markers have importance values
 
+## Version Management
+
+The game version is centralized in `project.godot` and used consistently across all displays:
+
+- **Source of Truth**: `project.godot` → `config/version`
+- **Display Locations**:
+  - Debug log overlay (top of log window)
+  - UI version label (bottom right corner of screen)
+  - Loading message ("YouGame vX.X.X - Loading terrain...")
+  - Android APK filename (`export/YouGame.apk` with version in metadata)
+
+### Updating Version Numbers
+
+To update the version across the entire project:
+
+1. **Update `project.godot`**:
+   ```ini
+   [application]
+   config/version="X.Y.Z"
+   ```
+
+2. **Update `export_presets.cfg`** (Android export):
+   ```ini
+   [preset.0.options]
+   version/name="X.Y.Z"
+   version/code=N  # Increment this integer for each release
+   ```
+
+Both files must be updated to maintain consistency. The version code is an integer that must increase with each Play Store release.
+
+### Version Display
+
+All in-game version displays automatically read from `ProjectSettings.get_setting("application/config/version")`, so updating `project.godot` will update all displays consistently.
+
 ## Building the Project
 
 ### Prerequisites
