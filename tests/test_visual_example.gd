@@ -20,9 +20,6 @@ func _ready():
 func create_visual_scene():
 	print("\n--- Creating Example Visual Scene ---")
 	
-	# Create a viewport for rendering if needed
-	var viewport = get_viewport()
-	
 	# Wait for initial render
 	await ScreenshotHelper.wait_for_render(5)
 	

@@ -28,7 +28,7 @@ static func capture_screenshot(scene_name: String, description: String = "") -> 
 		print("Failed to capture screenshot: main loop is not a SceneTree")
 		return ""
 	
-	var viewport = main_loop.root.get_viewport()
+	var viewport = main_loop.root
 	if not viewport:
 		print("Failed to capture screenshot: viewport not found")
 		return ""

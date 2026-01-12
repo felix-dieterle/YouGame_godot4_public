@@ -14,6 +14,16 @@ NC='\033[0m' # No Color
 SCREENSHOT_OUTPUT_DIR="./test_screenshots"
 mkdir -p "$SCREENSHOT_OUTPUT_DIR"
 
+# Project name detection - try to extract from project.godot
+PROJECT_NAME="YouGame"
+if [ -f "project.godot" ]; then
+    # Extract project name from config/name field
+    EXTRACTED_NAME=$(grep -E '^config/name=' project.godot | sed 's/config\/name="\(.*\)"/\1/')
+    if [ -n "$EXTRACTED_NAME" ]; then
+        PROJECT_NAME="$EXTRACTED_NAME"
+    fi
+fi
+
 # Array of test scenes
 tests=(
     "res://tests/test_scene_chunk.tscn|Chunk Tests"
@@ -84,13 +94,18 @@ echo "========================================="
 echo "Collecting Screenshots"
 echo "========================================="
 
-# Godot user directory location (varies by OS)
-if [ -d "$HOME/.local/share/godot/app_userdata/YouGame" ]; then
+# Godot user directory location (varies by OS and project name)
+GODOT_USER_DIR=""
+
+# Try common project name variations
+if [ -d "$HOME/.local/share/godot/app_userdata/$PROJECT_NAME" ]; then
+    GODOT_USER_DIR="$HOME/.local/share/godot/app_userdata/$PROJECT_NAME"
+elif [ -d "$HOME/.local/share/godot/app_userdata/YouGame" ]; then
     GODOT_USER_DIR="$HOME/.local/share/godot/app_userdata/YouGame"
 elif [ -d "$HOME/.local/share/godot/app_userdata/YouGame_godot4_public" ]; then
     GODOT_USER_DIR="$HOME/.local/share/godot/app_userdata/YouGame_godot4_public"
 else
-    # Try to find it
+    # Try to find it using wildcards
     GODOT_USER_DIR=$(find "$HOME/.local/share/godot/app_userdata" -maxdepth 1 -type d -name "*YouGame*" 2>/dev/null | head -n 1)
 fi
 
