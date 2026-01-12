@@ -404,12 +404,9 @@ func _on_close_settings_pressed():
 func _on_camera_toggle_pressed():
     DebugLogOverlay.add_log("Camera toggle pressed", "yellow")
     
-    # Find player using group system (more reliable than stored reference)
-    var current_player = get_tree().get_first_node_in_group("Player")
-    
-    # Toggle camera view on player and close menu
-    if current_player and current_player.has_method("_toggle_camera_view"):
-        current_player._toggle_camera_view()
+    # Toggle camera view on player and close menu (use cached reference)
+    if player and player.has_method("_toggle_camera_view"):
+        player._toggle_camera_view()
         DebugLogOverlay.add_log("Camera view toggled", "green")
     else:
         DebugLogOverlay.add_log("Player not found or method missing!", "red")
