@@ -85,7 +85,8 @@ func _physics_process(delta):
     # - Pushing left gives negative X
     # 3D coordinate system: In this game, forward movement is in +Z direction
     # - We negate input_dir.y to map "up" input to forward (+Z) movement
-    # - We negate input_dir.x to correct left/right mapping (right = -X, left = +X)
+    # - We negate input_dir.x because the third-person camera faces the player (not behind)
+    #   When camera looks at player's face, screen-right corresponds to player's left (-X)
     # In first-person mode, direction is relative to player's facing direction
     # In third-person mode, direction is world-relative (original behavior)
     var direction = Vector3.ZERO
