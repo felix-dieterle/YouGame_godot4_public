@@ -192,8 +192,9 @@ func _update_camera():
     if camera:
         if is_first_person:
             camera.position = Vector3(0, first_person_height, 0)
-            # In first-person, camera inherits player's rotation automatically
-            # No need to set rotation - let it follow the player's Y rotation
+            # In first-person, rotate 180° to look in opposite direction
+            # Third-person camera looks at player's face, so first-person should look backward
+            camera.rotation.y = PI
         else:
             camera.position = Vector3(0, camera_height, camera_distance)
             camera.look_at(global_position, Vector3.UP)
