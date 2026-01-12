@@ -33,10 +33,24 @@ jobs:
         ls -la
         cat project.godot
     
-    - name: Run tests
+    - name: Validate scripts (check for parse errors)
       run: |
-        echo "Running Godot tests..."
-        godot --headless --path . res://tests/test_scene.tscn
+        echo "Validating GDScript files for parse errors..."
+        godot --headless --path . --check-only --quit 2>&1 | tee script_validation.log
+        if grep -qi "ERROR:\|SCRIPT ERROR:\|Parse Error:\|PARSE ERROR:" script_validation.log; then
+          echo "❌ Script validation failed - parse errors detected"
+          grep -i "ERROR:\|SCRIPT ERROR:\|Parse Error:\|PARSE ERROR:" script_validation.log
+          exit 1
+        else
+          echo "✅ All scripts validated successfully"
+        fi
+    
+    - name: Run tests with timeout monitoring
+      timeout-minutes: 10
+      run: |
+        echo "Running test suite with individual test timeouts..."
+        chmod +x tests/run_tests.sh
+        ./tests/run_tests.sh
 
   build-android:
     name: Build Android APK

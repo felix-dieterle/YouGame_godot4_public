@@ -13,21 +13,21 @@ var is_activated: bool = false
 var metadata: Dictionary = {}
 
 func _init(id: String, chunk_pos: Vector2i, world_pos: Vector3, type: String):
-	marker_id = id
-	chunk_position = chunk_pos
-	world_position = world_pos
-	marker_type = type
+    marker_id = id
+    chunk_position = chunk_pos
+    world_position = world_pos
+    marker_type = type
 
 func activate():
-	is_activated = true
+    is_activated = true
 
 func get_data() -> Dictionary:
-	return {
-		"id": marker_id,
-		"chunk_position": chunk_position,
-		"world_position": world_position,
-		"type": marker_type,
-		"importance": importance,
-		"is_activated": is_activated,
-		"metadata": metadata
-	}
+    return {
+        "id": marker_id,
+        "chunk_position": chunk_position,
+        "world_position": world_position,
+        "type": marker_type,
+        "importance": importance,
+        "is_activated": is_activated,
+        "metadata": metadata
+    }
