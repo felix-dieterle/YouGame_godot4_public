@@ -723,7 +723,7 @@ func _place_forest_objects(cluster: ClusterSystem.ClusterData):
             if dist_to_lake < lake_radius:
                 continue
         
-        # Create tree instance with automatic type variation
+        # Create tree instance with automatic type variation (TreeType.AUTO is default)
         var tree_instance = MeshInstance3D.new()
         tree_instance.mesh = ProceduralModels.create_tree_mesh(rng.randi())
         tree_instance.material_override = ProceduralModels.create_tree_material()

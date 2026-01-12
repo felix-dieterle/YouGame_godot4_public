@@ -31,18 +31,19 @@ const ROCK_SEGMENTS = 6
 
 # Tree type enum
 enum TreeType {
-	CONIFER,  # Pine/spruce trees
-	BROAD_LEAF,  # Oak/maple style
-	SMALL_BUSH  # Small vegetation
+	AUTO = -1,  # Automatically select tree type based on seed
+	CONIFER = 0,  # Pine/spruce trees
+	BROAD_LEAF = 1,  # Oak/maple style
+	SMALL_BUSH = 2  # Small vegetation
 }
 
 ## Create a low-poly tree mesh with variations
-static func create_tree_mesh(seed_val: int = 0, tree_type: TreeType = TreeType.BROAD_LEAF) -> ArrayMesh:
+static func create_tree_mesh(seed_val: int = 0, tree_type: int = TreeType.AUTO) -> ArrayMesh:
     var rng = RandomNumberGenerator.new()
     rng.seed = seed_val
     
-    # Automatically pick tree type based on seed if not specified
-    if tree_type == TreeType.BROAD_LEAF and seed_val > 0:
+    # Automatically pick tree type based on seed if set to AUTO
+    if tree_type == TreeType.AUTO:
         var type_choice = rng.randi() % 10
         if type_choice < 4:
             tree_type = TreeType.CONIFER
