@@ -32,6 +32,9 @@ func _ready():
     # Cache game version
     game_version = ProjectSettings.get_setting("application/config/version", "unknown")
     
+    # Log how this instance is being loaded
+    _log_instance_type()
+    
     # Create toggle button (top left corner)
     _create_toggle_button()
     
@@ -50,6 +53,9 @@ func _ready():
     # Add initial log
     add_log("=== Debug Log System Started ===")
     add_log("Game Version: v" + game_version, "cyan")
+    
+    # Log which scene we are in
+    _log_current_scene()
 
 func _create_toggle_button():
     toggle_button = Button.new()
@@ -210,3 +216,44 @@ func _create_version_label():
     version_label.visible = true  # Explicitly make visible
     
     add_child(version_label)
+
+func _log_current_scene():
+    # Get the current scene
+    var current_scene = get_tree().current_scene
+    
+    if current_scene:
+        var scene_name = current_scene.name
+        var scene_path = current_scene.scene_file_path if current_scene.scene_file_path else "unknown"
+        
+        add_log("Current Scene: " + scene_name, "yellow")
+        add_log("Scene Path: " + scene_path, "yellow")
+        
+        # Determine if we're in main or demo_narrative scene
+        if scene_path.contains("main.tscn"):
+            add_log("Scene Type: MAIN SCENE", "green")
+        elif scene_path.contains("demo_narrative.tscn"):
+            add_log("Scene Type: DEMO NARRATIVE SCENE", "green")
+        else:
+            add_log("Scene Type: UNKNOWN/OTHER SCENE", "orange")
+    else:
+        add_log("WARNING: Could not detect current scene!", "red")
+        add_log("This may be because the scene is not fully loaded yet", "orange")
+    
+    # Also log version label visibility status
+    if version_label:
+        add_log("Version Label: visible=" + str(version_label.visible) + ", text='" + version_label.text + "'", "cyan")
+        add_log("Version Label position: " + str(version_label.position) + ", z_index=" + str(version_label.z_index), "cyan")
+    else:
+        add_log("WARNING: Version label not created yet!", "red")
+
+func _log_instance_type():
+    # Check if we're running as an autoload or as a scene node
+    var parent = get_parent()
+    var is_autoload = parent == get_tree().root
+    
+    if is_autoload:
+        print("[DEBUG] DebugLogOverlay: Running as AUTOLOAD SINGLETON")
+    else:
+        print("[DEBUG] DebugLogOverlay: Running as SCENE NODE (parent: " + str(parent.name if parent else "none") + ")")
+        print("[DEBUG] WARNING: DebugLogOverlay should be an autoload, not a scene node!")
+        print("[DEBUG] This duplicate instance may cause issues. Check main.tscn and remove the DebugLogOverlay node.")
