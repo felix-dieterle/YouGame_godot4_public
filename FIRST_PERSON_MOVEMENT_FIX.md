@@ -9,29 +9,35 @@ When in first-person mode, there were two issues with movement controls:
 - The player's facing direction had no effect on movement direction
 - This felt unnatural in first-person view
 
-**Second issue (current fix):**
+**Second issue (fixed in first-person):**
 - Even after making movement player-relative, the controls were inverted
 - Pushing forward on the joystick made the player move backward
 - Pushing backward on the joystick made the player move forward
 - This happened because the input Y-axis wasn't properly mapped to the 3D coordinate system
 
+**Third issue (fixed for both modes):**
+- Third-person mode also had inverted joystick controls on Android
+- Pushing the joystick up made the character move backward instead of forward
+- The same Y-axis negation was needed for third-person mode as well
+
 ## Solution
-Modified the movement direction calculation in `scripts/player.gd` in two stages:
+Modified the movement direction calculation in `scripts/player.gd` in three stages:
 
 1. **First fix**: Made movement player-relative in first-person mode by rotating the input vector
-2. **Second fix**: Corrected inverted controls by negating the Y-axis component
+2. **Second fix**: Corrected inverted controls in first-person by negating the Y-axis component
+3. **Third fix**: Applied the same Y-axis negation to third-person mode for consistent joystick behavior
 
-**After both fixes:**
+**After all three fixes:**
 - In **first-person mode**: Movement is relative to where the player is facing with correct forward/backward
   - Forward → moves in the direction you're looking (fixed: was backward)
   - Right → strafes right relative to your view direction
   - Backward → moves backward relative to your view (fixed: was forward)
   - Left → strafes left relative to your view direction
   
-- In **third-person mode**: Movement remains world-relative (unchanged behavior)
-  - Forward → moves north
+- In **third-person mode**: Movement remains world-relative with correct joystick direction
+  - Forward → moves north (fixed: was south)
   - Right → moves east
-  - Backward → moves south
+  - Backward → moves south (fixed: was north)
   - Left → moves west
 
 ## Technical Details
@@ -54,22 +60,29 @@ if input_dir.length() > 0.01:
         # Third-person: World-relative movement (original behavior)
         direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
 
-# SECOND FIX - Corrected inverted forward/backward controls (line 89):
+# SECOND FIX - Corrected inverted forward/backward controls in first-person (line 89):
 # Changed: var input_3d = Vector3(input_dir.x, 0, input_dir.y).normalized()
 # To:      var input_3d = Vector3(input_dir.x, 0, -input_dir.y).normalized()
+
+# THIRD FIX - Applied same negation to third-person mode (line 93):
+# Changed: direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
+# To:      direction = Vector3(input_dir.x, 0, -input_dir.y).normalized()
 # 
-# This negation is necessary because:
-# - Input.get_vector() returns negative Y for "up" input
-# - The player rotates to face the movement direction using atan2(x, z)
-# - Without negation, pressing "up" creates Vector3(0, 0, -1)
-# - atan2(0, -1) = 180°, making player face backward while moving
-# - With negation, pressing "up" creates Vector3(0, 0, 1)
-# - atan2(0, 1) = 0°, making player correctly face forward
+# This negation is necessary in both modes because:
+# - Input.get_vector() and mobile joystick both return negative Y for "up" input
+# - In Godot's 3D coordinate system, negative Z is the forward direction
+# - Without negation, pressing "up" (negative Y) creates Vector3(0, 0, negative)
+# - This negative Z points forward (correct)
+# - But the rotation logic uses atan2(x, z) to face the movement direction
+# - atan2(0, negative) gives wrong facing angle
+# - With negation, pressing "up" creates Vector3(0, 0, positive)
+# - atan2(0, positive) = 0°, making player correctly face forward in the positive Z direction
 ```
 
 The key changes are:
 1. Using `rotated(Vector3.UP, rotation.y)` to transform input by player rotation (first fix)
-2. Negating `input_dir.y` to fix inverted forward/backward controls (second fix)
+2. Negating `input_dir.y` to fix inverted forward/backward controls (second & third fixes)
+3. Applying the negation to both first-person and third-person modes for consistency
 
 ## How to Test
 
