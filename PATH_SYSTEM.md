@@ -99,7 +99,7 @@ starting_location.adjust_to_terrain(self)
 ### Path Constants (in path_system.gd)
 
 ```gdscript
-const DEFAULT_PATH_WIDTH = 1.5          # Path width in world units
+const DEFAULT_PATH_WIDTH = 2.5          # Path width in world units (increased for visibility)
 const BRANCH_PROBABILITY = 0.15         # 15% chance to branch
 const ENDPOINT_PROBABILITY = 0.05       # 5% chance to end randomly
 const MIN_SEGMENT_LENGTH = 8.0          # Minimum segment length
@@ -190,11 +190,20 @@ A path becomes an endpoint if:
 
 ## Visual Appearance / Visuelle Darstellung
 
-### Path Colors
+### Path Colors (Updated for Better Visibility)
 
-- **Main Path**: `Color(0.55, 0.5, 0.4)` - Light dirt
-- **Branch**: `Color(0.5, 0.45, 0.35)` - Standard dirt
-- **Endpoint**: `Color(0.6, 0.5, 0.3)` - Highlighted
+- **Main Path**: `Color(0.75, 0.7, 0.55)` - Light tan/beige (was 0.55, 0.5, 0.4)
+- **Branch**: `Color(0.65, 0.55, 0.4)` - Lighter dirt/sand (was 0.5, 0.45, 0.35)
+- **Endpoint**: `Color(0.8, 0.65, 0.4)` - Bright sandy color (was 0.6, 0.5, 0.3)
+
+### Path Visual Properties
+
+- **Elevation**: +0.15 units above terrain (increased from +0.05 for better visibility)
+- **Width**: Default 2.5 units (increased from 1.5)
+  - Main paths: 3.75 units (2.5 × 1.5)
+  - Branch paths: 2.0 units (2.5 × 0.8)
+- **Material**: Lower roughness (0.8 vs 0.95), shadows enabled for depth
+- **Starting chunk**: Guaranteed longer path (70-100% of max length)
 
 ### Starting Location Objects
 
@@ -397,8 +406,26 @@ Paths adapt to terrain:
 
 ### Modified Files
 
-- `scripts/chunk.gd` - Added path generation
+- `scripts/chunk.gd` - Added path generation and rendering (updated for visibility)
 - `scripts/world_manager.gd` - Added starting location
+- `scripts/path_system.gd` - Path generation logic (updated for visibility)
+- `PATH_SYSTEM.md` - This documentation (updated)
+- `tests/verify_path_visibility.gd` - Verification script (new)
+
+## Recent Changes / Letzte Änderungen
+
+### January 2026 - Visibility Improvements
+
+**Problem**: Paths were not visible enough in the game world.
+
+**Solution**: Multiple improvements to make paths stand out:
+1. **Brighter colors**: Main paths now use light tan/beige instead of dark brown
+2. **Increased elevation**: Paths now sit +0.15 units above terrain (was +0.05)
+3. **Wider paths**: Default width increased from 1.5 to 2.5 units
+4. **Better materials**: Reduced roughness and enabled shadow casting
+5. **Guaranteed visibility**: Starting chunk always has a longer initial path
+
+These changes make paths clearly visible against the terrain while maintaining a natural appearance.
 
 ## License / Lizenz
 
