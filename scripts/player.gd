@@ -90,7 +90,8 @@ func _physics_process(delta):
             direction = input_3d.rotated(Vector3.UP, rotation.y)
         else:
             # Third-person: World-relative movement (original behavior)
-            direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
+            # Negate input_dir.y to match forward direction (negative Z is forward)
+            direction = Vector3(input_dir.x, 0, -input_dir.y).normalized()
     
     if direction:
         # Check slope along intended movement path
