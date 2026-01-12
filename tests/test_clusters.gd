@@ -10,6 +10,7 @@ var test_results = []
 
 func _ready():
 	print("=== Running Cluster System Tests ===")
+	print("Test started at: ", Time.get_ticks_msec())
 	
 	# Clear any existing clusters
 	ClusterSystem.clear_all_clusters()
@@ -30,8 +31,13 @@ func _ready():
 	else:
 		print("Some tests failed!")
 	
+	print("Test completed at: ", Time.get_ticks_msec())
+	print("Calling get_tree().quit()...")
+	
 	# Exit after tests
 	get_tree().quit()
+	
+	print("After quit() call - this should not print")
 
 func run_all_tests():
 	test_cluster_generation()

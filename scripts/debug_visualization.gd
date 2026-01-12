@@ -3,15 +3,16 @@ class_name DebugVisualization
 
 # Preload dependencies
 const ClusterSystem = preload("res://scripts/cluster_system.gd")
+const Chunk = preload("res://scripts/chunk.gd")
 
 var show_chunk_borders: bool = true
 var show_walkability: bool = false
-var world_manager: WorldManager
+var world_manager  # WorldManager - type hint removed to avoid preload dependency
 
 func _ready():
     world_manager = get_tree().get_first_node_in_group("WorldManager")
 
-func draw_chunk_borders(chunk: Chunk):
+func draw_chunk_borders(chunk):  # Chunk - type hint removed to avoid preload dependency
     if not show_chunk_borders:
         return
     
