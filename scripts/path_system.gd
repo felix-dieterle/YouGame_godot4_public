@@ -216,6 +216,9 @@ static func _try_create_branch(segment: PathSegment, world_seed: int, rng: Rando
 		return
 	
 	if rng.randf() < BRANCH_PROBABILITY:
+		# Try to target a nearby cluster (forest or settlement)
+		var branch_type = _determine_branch_target(segment, world_seed, rng)
+		
 		# Create a branch
 		var branch_start = segment.start_pos.lerp(segment.end_pos, 0.5)  # Branch from middle
 		var main_direction = (segment.end_pos - segment.start_pos).normalized()
@@ -226,13 +229,35 @@ static func _try_create_branch(segment: PathSegment, world_seed: int, rng: Rando
 		if rng.randf() > 0.5:
 			branch_direction = -perpendicular
 		
+		# If we have a cluster target, adjust direction toward it
+		var target_cluster = _find_nearest_cluster(segment, world_seed, 50.0)
+		if target_cluster:
+			var segment_world_pos = Vector2(
+				segment.chunk_pos.x * CHUNK_SIZE + branch_start.x,
+				segment.chunk_pos.y * CHUNK_SIZE + branch_start.y
+			)
+			var cluster_world_pos = Vector2(
+				target_cluster.center_chunk.x * CHUNK_SIZE + target_cluster.center_pos.x,
+				target_cluster.center_chunk.y * CHUNK_SIZE + target_cluster.center_pos.y
+			)
+			var to_cluster = (cluster_world_pos - segment_world_pos).normalized()
+			
+			# Blend between perpendicular and toward cluster
+			branch_direction = branch_direction.lerp(to_cluster, 0.6).normalized()
+			
+			# Set branch type based on cluster
+			if target_cluster.type == 0:  # FOREST (enum value 0)
+				branch_type = PathType.FOREST_PATH
+			else:  # SETTLEMENT (enum value 1)
+				branch_type = PathType.VILLAGE_PATH
+		
 		var angle_variation = rng.randf_range(-PI/4, PI/4)
 		branch_direction = branch_direction.rotated(angle_variation)
 		
 		var length = rng.randf_range(MIN_SEGMENT_LENGTH * 0.7, MAX_SEGMENT_LENGTH * 0.7)
 		var branch_end = branch_start + branch_direction * length
 		
-		var branch_segment = _create_segment(segment.chunk_pos, branch_start, branch_end, PathType.BRANCH, rng)
+		var branch_segment = _create_segment(segment.chunk_pos, branch_start, branch_end, branch_type, rng)
 		
 		# Link segments
 		segment.next_segments.append(branch_segment.segment_id)
@@ -240,6 +265,48 @@ static func _try_create_branch(segment: PathSegment, world_seed: int, rng: Rando
 		# Register branch
 		if chunk_segments.has(segment.chunk_pos):
 			chunk_segments[segment.chunk_pos].append(branch_segment.segment_id)
+
+## Determine what type of branch to create
+static func _determine_branch_target(segment: PathSegment, world_seed: int, rng: RandomNumberGenerator) -> PathType:
+	# Random choice between forest and village path
+	if rng.randf() > 0.5:
+		return PathType.FOREST_PATH
+	else:
+		return PathType.VILLAGE_PATH
+
+## Find nearest cluster to a segment
+static func _find_nearest_cluster(segment: PathSegment, world_seed: int, max_distance: float):
+	if not ClassDB.class_exists("ClusterSystem"):
+		return null
+	
+	var ClusterSystem = load("res://scripts/cluster_system.gd")
+	
+	var segment_world_pos = Vector2(
+		segment.chunk_pos.x * CHUNK_SIZE + segment.end_pos.x,
+		segment.chunk_pos.y * CHUNK_SIZE + segment.end_pos.y
+	)
+	
+	# Check surrounding chunks for clusters
+	var nearest_cluster = null
+	var nearest_distance = max_distance
+	
+	for x in range(-3, 4):
+		for y in range(-3, 4):
+			var check_chunk = Vector2i(segment.chunk_pos.x + x, segment.chunk_pos.y + y)
+			var clusters = ClusterSystem.get_clusters_for_chunk(check_chunk, world_seed)
+			
+			for cluster in clusters:
+				var cluster_world_pos = Vector2(
+					cluster.center_chunk.x * CHUNK_SIZE + cluster.center_pos.x,
+					cluster.center_chunk.y * CHUNK_SIZE + cluster.center_pos.y
+				)
+				
+				var distance = segment_world_pos.distance_to(cluster_world_pos)
+				if distance < nearest_distance:
+					nearest_distance = distance
+					nearest_cluster = cluster
+	
+	return nearest_cluster
 
 ## Check if segment should be an endpoint
 static func _check_endpoint(segment: PathSegment, chunk_pos: Vector2i, world_seed: int, rng: RandomNumberGenerator):
