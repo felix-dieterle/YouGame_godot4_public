@@ -86,7 +86,8 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 		var center = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
 		var direction = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized()
 		# Ensure longer initial path for better visibility
-		var length = rng.randf_range(MAX_SEGMENT_LENGTH * MIN_STARTING_PATH_RATIO, MAX_SEGMENT_LENGTH)
+		var min_starting_length = MAX_SEGMENT_LENGTH * MIN_STARTING_PATH_RATIO
+		var length = rng.randf_range(min_starting_length, MAX_SEGMENT_LENGTH)
 		var end = center + direction * length
 		
 		# Clamp to chunk bounds or continue to next chunk

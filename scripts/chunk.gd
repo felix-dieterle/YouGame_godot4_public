@@ -17,6 +17,11 @@ const HEIGHT_RANGE = 10.0  # Maximum height variation from noise (±10 units)
 const HEIGHT_COLOR_DIVISOR = HEIGHT_RANGE * 4.0  # Normalizes height to color range
 const PATH_ELEVATION_OFFSET = 0.15  # Height offset for paths above terrain for visibility
 
+# Path colors - bright and contrasting for visibility
+const BRANCH_PATH_COLOR = Color(0.65, 0.55, 0.4)  # Lighter dirt/sand
+const MAIN_PATH_COLOR = Color(0.75, 0.7, 0.55)  # Light tan/beige
+const ENDPOINT_PATH_COLOR = Color(0.8, 0.65, 0.4)  # Bright sandy
+
 # Chunk position in grid
 var chunk_x: int = 0
 var chunk_z: int = 0
@@ -789,12 +794,12 @@ func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment):
     var h4 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p4.x, chunk_z * CHUNK_SIZE + p4.y) + PATH_ELEVATION_OFFSET
     
     # Path color based on type - made more visible and distinct
-    var path_color = Color(0.65, 0.55, 0.4)  # Lighter dirt/sand color
+    var path_color = BRANCH_PATH_COLOR
     if segment.path_type == PathSystem.PathType.MAIN_PATH:
-        path_color = Color(0.75, 0.7, 0.55)  # Much lighter tan/beige for main path
+        path_color = MAIN_PATH_COLOR
     
     if segment.is_endpoint:
-        path_color = Color(0.8, 0.65, 0.4)  # Bright sandy color for endpoints
+        path_color = ENDPOINT_PATH_COLOR
     
     # Create two triangles for the path segment
     surface_tool.set_color(path_color)
