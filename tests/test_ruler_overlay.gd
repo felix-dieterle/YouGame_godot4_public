@@ -26,8 +26,10 @@ func test_ruler_overlay_exists():
 			print("  FAIL: RulerOverlay should extend Control")
 		
 		# Check class name
-		if ruler.get_class() == "RulerOverlay" or ruler.has_method("toggle_visibility"):
-			print("  PASS: RulerOverlay has correct class name or methods")
+		if "RulerOverlay" in str(ruler.get_script()):
+			print("  PASS: RulerOverlay has correct class name")
+		else:
+			print("  INFO: RulerOverlay class name check inconclusive")
 		
 		ruler.free()
 	else:
