@@ -747,13 +747,17 @@ func _create_path_mesh():
     path_mesh_instance = MeshInstance3D.new()
     path_mesh_instance.mesh = path_mesh
     
-    # Create path material (dirt/stone color)
+    # Create path material - improved for better visibility
     var path_material = StandardMaterial3D.new()
     path_material.vertex_color_use_as_albedo = true
     path_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
-    path_material.roughness = 0.95
+    path_material.roughness = 0.8  # Slightly less rough for subtle sheen
+    path_material.metallic = 0.0
+    path_material.albedo_texture = null
+    # Slightly brighter overall to stand out more
+    path_material.emission_enabled = false
     path_mesh_instance.set_surface_override_material(0, path_material)
-    path_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    path_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON  # Enable shadows for depth
     
     add_child(path_mesh_instance)
     
@@ -778,19 +782,19 @@ func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment):
     var p3 = end + perpendicular * width / 2.0
     var p4 = end - perpendicular * width / 2.0
     
-    # Get heights at corners
-    var h1 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p1.x, chunk_z * CHUNK_SIZE + p1.y) + 0.05
-    var h2 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p2.x, chunk_z * CHUNK_SIZE + p2.y) + 0.05
-    var h3 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p3.x, chunk_z * CHUNK_SIZE + p3.y) + 0.05
-    var h4 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p4.x, chunk_z * CHUNK_SIZE + p4.y) + 0.05
+    # Get heights at corners - elevate paths more for better visibility
+    var h1 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p1.x, chunk_z * CHUNK_SIZE + p1.y) + 0.15
+    var h2 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p2.x, chunk_z * CHUNK_SIZE + p2.y) + 0.15
+    var h3 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p3.x, chunk_z * CHUNK_SIZE + p3.y) + 0.15
+    var h4 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p4.x, chunk_z * CHUNK_SIZE + p4.y) + 0.15
     
-    # Path color based on type
-    var path_color = Color(0.5, 0.45, 0.35)  # Dirt color
+    # Path color based on type - made more visible and distinct
+    var path_color = Color(0.65, 0.55, 0.4)  # Lighter dirt/sand color
     if segment.path_type == PathSystem.PathType.MAIN_PATH:
-        path_color = Color(0.55, 0.5, 0.4)  # Slightly lighter for main path
+        path_color = Color(0.75, 0.7, 0.55)  # Much lighter tan/beige for main path
     
     if segment.is_endpoint:
-        path_color = Color(0.6, 0.5, 0.3)  # Different color for endpoints
+        path_color = Color(0.8, 0.65, 0.4)  # Bright sandy color for endpoints
     
     # Create two triangles for the path segment
     surface_tool.set_color(path_color)

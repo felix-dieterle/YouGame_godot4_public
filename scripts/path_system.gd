@@ -48,7 +48,7 @@ static var next_segment_id: int = 0
 # Constants - Reference chunk size from a known constant
 # Note: Must match the chunk size used in the game
 const CHUNK_SIZE = 32.0  # Should match Chunk.CHUNK_SIZE
-const DEFAULT_PATH_WIDTH = 1.5
+const DEFAULT_PATH_WIDTH = 2.5  # Increased for better visibility
 const BRANCH_PROBABILITY = 0.15  # 15% chance to branch at each chunk
 const ENDPOINT_PROBABILITY = 0.05  # 5% chance to end path
 const MIN_SEGMENT_LENGTH = 8.0
@@ -79,9 +79,11 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 	# Check if this is the starting chunk (0, 0)
 	if chunk_pos == Vector2i(0, 0):
 		# Create initial main path from center going outward
+		# Make it more prominent and guaranteed to be visible
 		var center = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
 		var direction = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized()
-		var length = rng.randf_range(MIN_SEGMENT_LENGTH, MAX_SEGMENT_LENGTH)
+		# Ensure longer initial path for better visibility
+		var length = rng.randf_range(MAX_SEGMENT_LENGTH * 0.7, MAX_SEGMENT_LENGTH)
 		var end = center + direction * length
 		
 		# Clamp to chunk bounds or continue to next chunk
@@ -193,7 +195,7 @@ static func _create_segment(chunk_pos: Vector2i, start: Vector2, end: Vector2, t
 	
 	var width = DEFAULT_PATH_WIDTH
 	if type == PathType.MAIN_PATH:
-		width = DEFAULT_PATH_WIDTH * 1.2
+		width = DEFAULT_PATH_WIDTH * 1.5  # Make main paths significantly wider
 	elif type == PathType.BRANCH:
 		width = DEFAULT_PATH_WIDTH * 0.8
 	
