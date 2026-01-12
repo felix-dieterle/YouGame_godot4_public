@@ -25,6 +25,10 @@ const VERSION_LABEL_OFFSET_RIGHT: float = -10.0
 const VERSION_LABEL_OFFSET_BOTTOM: float = -10.0
 const VERSION_LABEL_Z_INDEX: int = 50  # Above most UI elements but below debug overlay
 
+# Night overlay constants
+const NIGHT_OVERLAY_COLOR: Color = Color(0.0, 0.0, 0.1, 0.9)  # Very dark blue
+const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
+
 # Game version
 var game_version: String = ""
 
@@ -83,8 +87,8 @@ func _ready():
     night_overlay = ColorRect.new()
     night_overlay.anchor_right = 1.0
     night_overlay.anchor_bottom = 1.0
-    night_overlay.color = Color(0.0, 0.0, 0.1, 0.9)  # Very dark blue
-    night_overlay.z_index = 200  # Above everything else
+    night_overlay.color = NIGHT_OVERLAY_COLOR
+    night_overlay.z_index = NIGHT_OVERLAY_Z_INDEX
     night_overlay.visible = false
     add_child(night_overlay)
     

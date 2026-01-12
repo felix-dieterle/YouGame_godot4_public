@@ -9,6 +9,22 @@ const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
 const WARNING_TIME_2MIN: float = 2.0 * 60.0  # 2 minutes before sunset
 const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 
+# Sun angle constants
+const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
+const SUNRISE_END_ANGLE: float = -30.0     # Morning position
+const SUNSET_START_ANGLE: float = 30.0     # Evening position  
+const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end
+const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night
+
+# Lighting intensity constants
+const MIN_LIGHT_ENERGY: float = 0.6        # Minimum light at sunrise/sunset
+const MAX_LIGHT_ENERGY: float = 1.5        # Maximum light at noon
+const SUNRISE_LIGHT_ENERGY: float = 0.8    # Light energy at end of sunrise
+
+# Color constants
+const SUNSET_WARMTH_FACTOR: float = 0.7    # How quickly warmth builds during sunset
+const SUNSET_COLOR_INTENSITY: float = 1.5  # Intensity of warm colors
+
 # Debug mode for faster testing
 @export var debug_mode: bool = false  # When true, time runs 60x faster
 @export var debug_skip_lockout: bool = false  # When true, skip the 4-hour lockout
@@ -48,10 +64,11 @@ func _ready():
     if not world_environment:
         world_environment = get_parent().get_node_or_null("WorldEnvironment")
     
-    ui_manager = get_parent().get_node_or_null("UIManager")
     player = get_tree().get_first_node_in_group("Player")
     if not player:
         player = get_parent().get_node_or_null("Player")
+    
+    ui_manager = get_parent().get_node_or_null("UIManager")
     
     # Load saved state
     _load_state()
@@ -172,7 +189,7 @@ func _update_lighting():
     # Adjust light intensity based on time of day
     # Brightest at noon, dimmer at sunrise/sunset
     var intensity_curve = 1.0 - abs(time_ratio - 0.5) * 2.0  # 0 at edges, 1 at center
-    directional_light.light_energy = lerp(0.6, 1.5, intensity_curve)
+    directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, MAX_LIGHT_ENERGY, intensity_curve)
     
     # Adjust ambient light color
     if world_environment and world_environment.environment:
@@ -185,11 +202,11 @@ func _animate_sunrise(progress: float):
         return
     
     # Animate from night (below horizon) to day (above horizon)
-    var sun_angle = lerp(-120.0, -30.0, progress)  # Start below horizon, rise to morning position
+    var sun_angle = lerp(SUNRISE_START_ANGLE, SUNRISE_END_ANGLE, progress)
     directional_light.rotation_degrees.x = -sun_angle
     
     # Fade in light
-    directional_light.light_energy = lerp(0.0, 0.8, progress)
+    directional_light.light_energy = lerp(0.0, SUNRISE_LIGHT_ENERGY, progress)
     
     # Adjust colors - start with warm sunrise colors
     if world_environment and world_environment.environment:
@@ -202,24 +219,24 @@ func _animate_sunset(progress: float):
         return
     
     # Animate from day to night (sun going below horizon)
-    var sun_angle = lerp(30.0, 120.0, progress)  # Descend below horizon
+    var sun_angle = lerp(SUNSET_START_ANGLE, SUNSET_END_ANGLE, progress)
     directional_light.rotation_degrees.x = -sun_angle
     
     # Fade out light
-    directional_light.light_energy = lerp(0.8, 0.0, progress)
+    directional_light.light_energy = lerp(SUNRISE_LIGHT_ENERGY, 0.0, progress)
     
     # Adjust colors - warm sunset colors
     if world_environment and world_environment.environment:
         var env = world_environment.environment
-        var warmth = lerp(0.1, 0.5, progress * 0.7)  # Get warmer during sunset
-        env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * 1.5)
+        var warmth = lerp(0.1, 0.5, progress * SUNSET_WARMTH_FACTOR)
+        env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * SUNSET_COLOR_INTENSITY)
 
 func _set_night_lighting():
     if not directional_light:
         return
     
     # Set sun below horizon
-    directional_light.rotation_degrees.x = 120.0
+    directional_light.rotation_degrees.x = NIGHT_SUN_ANGLE
     directional_light.light_energy = 0.0
     
     # Dark blue ambient light for night
