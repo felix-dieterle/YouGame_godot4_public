@@ -66,6 +66,12 @@ func verify_starting_chunk_path():
 			else:
 				print("    ❌ Main path width incorrect: ", segment.width, " expected: ", expected_width)
 			
+			# Check if path starts at starting location (0, 0)
+			if segment.start_pos.distance_to(Vector2(0, 0)) < 0.1:
+				print("    ✓ Path starts at starting location (0, 0)")
+			else:
+				print("    ❌ Path does not start at starting location: ", segment.start_pos)
+			
 			# Check if path is long enough to be visible
 			if length >= PathSystem.MAX_SEGMENT_LENGTH * PathSystem.MIN_STARTING_PATH_RATIO:
 				print("    ✓ Path is long enough to be visible (>= ", PathSystem.MAX_SEGMENT_LENGTH * PathSystem.MIN_STARTING_PATH_RATIO, ")")

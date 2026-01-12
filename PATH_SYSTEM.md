@@ -159,9 +159,9 @@ starting_loc.adjust_to_terrain(world_manager)
 
 ### Main Path Generation (Chunk 0,0)
 
-1. Start from chunk center (16, 16)
+1. Start from starting location at world origin (0, 0)
 2. Generate random direction
-3. Create segment with random length
+3. Create segment with random length (14-20 units for visibility)
 4. Continue in neighboring chunks
 
 ### Path Continuation
@@ -413,6 +413,16 @@ Paths adapt to terrain:
 - `tests/verify_path_visibility.gd` - Verification script (new)
 
 ## Recent Changes / Letzte Änderungen
+
+### January 2026 - Starting Path Position Fix
+
+**Problem**: The path in the starting chunk was not visible from the starting location marker.
+
+**Root Cause**: The starting location marker (central cairn) is at world position (0, 0, 0), but the path was starting from the chunk center at (16, 0, 16), creating a ~22 unit gap.
+
+**Solution**: Modified path generation to start from position (0, 0) to align with the starting location marker.
+
+**Files Changed**: `scripts/path_system.gd`
 
 ### January 2026 - Visibility Improvements
 
