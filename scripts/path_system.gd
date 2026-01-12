@@ -48,12 +48,15 @@ static var next_segment_id: int = 0
 # Constants - Reference chunk size from a known constant
 # Note: Must match the chunk size used in the game
 const CHUNK_SIZE = 32.0  # Should match Chunk.CHUNK_SIZE
-const DEFAULT_PATH_WIDTH = 1.5
+const DEFAULT_PATH_WIDTH = 2.5  # Increased for better visibility
+const MAIN_PATH_WIDTH_MULTIPLIER = 1.5  # Main paths are 50% wider than default
+const BRANCH_PATH_WIDTH_MULTIPLIER = 0.8  # Branch paths are 80% of default width (20% narrower)
 const BRANCH_PROBABILITY = 0.15  # 15% chance to branch at each chunk
 const ENDPOINT_PROBABILITY = 0.05  # 5% chance to end path
 const MIN_SEGMENT_LENGTH = 8.0
 const MAX_SEGMENT_LENGTH = 20.0
 const PATH_ROUGHNESS = 0.3  # How much paths can deviate (0 = straight, 1 = very curvy)
+const MIN_STARTING_PATH_RATIO = 0.7  # Starting path is at least 70% of max length for visibility
 
 ## Generate or get path segments for a chunk
 static func get_path_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -> Array[PathSegment]:
@@ -79,9 +82,12 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 	# Check if this is the starting chunk (0, 0)
 	if chunk_pos == Vector2i(0, 0):
 		# Create initial main path from center going outward
+		# Make it more prominent and guaranteed to be visible
 		var center = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
 		var direction = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized()
-		var length = rng.randf_range(MIN_SEGMENT_LENGTH, MAX_SEGMENT_LENGTH)
+		# Ensure longer initial path for better visibility
+		var min_starting_length = MAX_SEGMENT_LENGTH * MIN_STARTING_PATH_RATIO
+		var length = rng.randf_range(min_starting_length, MAX_SEGMENT_LENGTH)
 		var end = center + direction * length
 		
 		# Clamp to chunk bounds or continue to next chunk
@@ -193,9 +199,9 @@ static func _create_segment(chunk_pos: Vector2i, start: Vector2, end: Vector2, t
 	
 	var width = DEFAULT_PATH_WIDTH
 	if type == PathType.MAIN_PATH:
-		width = DEFAULT_PATH_WIDTH * 1.2
+		width = DEFAULT_PATH_WIDTH * MAIN_PATH_WIDTH_MULTIPLIER
 	elif type == PathType.BRANCH:
-		width = DEFAULT_PATH_WIDTH * 0.8
+		width = DEFAULT_PATH_WIDTH * BRANCH_PATH_WIDTH_MULTIPLIER
 	
 	var segment = PathSegment.new(segment_id, chunk_pos, start, end, type, width)
 	all_segments[segment_id] = segment
