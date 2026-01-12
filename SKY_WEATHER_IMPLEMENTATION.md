@@ -52,7 +52,7 @@ These parameters are dynamically adjusted by the weather system.
 | **CLEAR** | 10.0 | 0.005 | 2.0 | Bright, clear blue sky |
 | **LIGHT_FOG** | 15.0 | 0.01 | 1.5 | Slightly hazy, less vibrant |
 | **HEAVY_FOG** | 18.0 | 0.02 | 1.0 | Dense atmospheric haze |
-| **LIGHT_RAIN** | 20.0 | 0.015 | 1.2 | Cloudy, greyish sky |
+| **LIGHT_RAIN** | 20.0 | 0.018 | 0.95 | Cloudy, greyish sky |
 | **HEAVY_RAIN** | 30.0 | 0.025 | 0.8 | Dark, stormy sky |
 
 ##### Sky Parameter Effects

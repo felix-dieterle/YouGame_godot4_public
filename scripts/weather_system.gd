@@ -226,8 +226,8 @@ func _get_weather_params(weather: WeatherState) -> Dictionary:
                 "fog_density": 0.0005,
                 "rain_intensity": 0.3,
                 "turbidity": 20.0,  # Cloudy
-                "mie_coefficient": 0.015,  # Moderate haze/clouds
-                "rayleigh_coefficient": 1.2  # Greyish sky
+                "mie_coefficient": 0.018,  # Moderate clouds (between HEAVY_FOG and HEAVY_RAIN)
+                "rayleigh_coefficient": 0.95  # Greyish sky (slightly darker than HEAVY_FOG)
             }
         WeatherState.HEAVY_RAIN:
             return {
