@@ -22,6 +22,15 @@ const BRANCH_PATH_COLOR = Color(0.65, 0.55, 0.4)  # Lighter dirt/sand
 const MAIN_PATH_COLOR = Color(0.75, 0.7, 0.55)  # Light tan/beige
 const ENDPOINT_PATH_COLOR = Color(0.8, 0.65, 0.4)  # Bright sandy
 
+# Rock placement constants
+const ROCK_SEED_OFFSET = 12345  # Offset for rock placement seed differentiation
+const ROCK_COUNT_MOUNTAIN_MIN = 8
+const ROCK_COUNT_MOUNTAIN_MAX = 15
+const ROCK_COUNT_ROCKY_MIN = 5
+const ROCK_COUNT_ROCKY_MAX = 10
+const ROCK_COUNT_GRASSLAND_MIN = 2
+const ROCK_COUNT_GRASSLAND_MAX = 5
+
 # Chunk position in grid
 var chunk_x: int = 0
 var chunk_z: int = 0
@@ -618,16 +627,16 @@ func get_slope_gradient_at_world_pos(world_x: float, world_z: float) -> Vector3:
 ## Place rocks on terrain for decoration
 func _place_rocks():
     var rng = RandomNumberGenerator.new()
-    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ 12345  # Different seed from trees
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ ROCK_SEED_OFFSET
     
     # Determine rock count based on biome - more rocks in rocky/mountain areas
     var rock_count = 0
     if biome == "mountain":
-        rock_count = rng.randi_range(8, 15)
+        rock_count = rng.randi_range(ROCK_COUNT_MOUNTAIN_MIN, ROCK_COUNT_MOUNTAIN_MAX)
     elif biome == "rocky_hills":
-        rock_count = rng.randi_range(5, 10)
+        rock_count = rng.randi_range(ROCK_COUNT_ROCKY_MIN, ROCK_COUNT_ROCKY_MAX)
     else:
-        rock_count = rng.randi_range(2, 5)  # A few rocks even in grassland
+        rock_count = rng.randi_range(ROCK_COUNT_GRASSLAND_MIN, ROCK_COUNT_GRASSLAND_MAX)
     
     # Place rocks
     for i in range(rock_count):

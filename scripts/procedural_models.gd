@@ -28,6 +28,12 @@ const BUILDING_WALL_SEGMENTS = 4
 const ROCK_MIN_SIZE = 0.5
 const ROCK_MAX_SIZE = 1.5
 const ROCK_SEGMENTS = 6
+const ROCK_COLORS = [
+	Color(0.45, 0.45, 0.47),  # Light gray
+	Color(0.35, 0.35, 0.37),  # Medium gray
+	Color(0.42, 0.40, 0.38),  # Brownish gray
+	Color(0.38, 0.36, 0.35)   # Dark brownish
+]
 
 # Tree type enum
 enum TreeType {
@@ -336,14 +342,8 @@ static func create_rock_mesh(seed_val: int = 0) -> ArrayMesh:
         rng.randf_range(-0.2, 0.2) * base_size
     )
     
-    # Rock color variations (gray/brown tones)
-    var color_choices = [
-        Color(0.45, 0.45, 0.47),  # Light gray
-        Color(0.35, 0.35, 0.37),  # Medium gray
-        Color(0.42, 0.40, 0.38),  # Brownish gray
-        Color(0.38, 0.36, 0.35)   # Dark brownish
-    ]
-    var rock_color = color_choices[rng.randi() % color_choices.size()]
+    # Use predefined rock colors
+    var rock_color = ROCK_COLORS[rng.randi() % ROCK_COLORS.size()]
     
     # Add slight color variation per face
     var color_var = 0.08
