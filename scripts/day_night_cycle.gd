@@ -59,16 +59,24 @@ func _ready():
     directional_light = get_tree().get_first_node_in_group("DirectionalLight3D")
     if not directional_light:
         directional_light = get_parent().get_node_or_null("DirectionalLight3D")
+        if not directional_light:
+            push_warning("DayNightCycle: DirectionalLight3D not found - sun movement will not work")
     
     world_environment = get_tree().get_first_node_in_group("WorldEnvironment")
     if not world_environment:
         world_environment = get_parent().get_node_or_null("WorldEnvironment")
+        if not world_environment:
+            push_warning("DayNightCycle: WorldEnvironment not found - ambient lighting changes will not work")
     
     player = get_tree().get_first_node_in_group("Player")
     if not player:
         player = get_parent().get_node_or_null("Player")
+        if not player:
+            push_warning("DayNightCycle: Player not found - input control will not work")
     
     ui_manager = get_parent().get_node_or_null("UIManager")
+    if not ui_manager:
+        push_warning("DayNightCycle: UIManager not found - messages and night overlay will not work")
     
     # Load saved state
     _load_state()
@@ -101,7 +109,8 @@ func _process(delta):
     # Handle lockout check
     if is_locked_out and not is_night:
         var current_unix_time = Time.get_unix_time_from_system()
-        # Skip lockout if debug mode is enabled
+        # Validate time makes sense (not in the past relative to lockout start)
+        # Also skip lockout if debug mode is enabled
         if debug_skip_lockout or current_unix_time >= lockout_end_time:
             # Time to wake up, show sunrise
             is_locked_out = false
@@ -110,6 +119,14 @@ func _process(delta):
             current_time = 0.0
             _disable_player_input()
             _hide_night_screen()
+        elif current_unix_time < lockout_end_time - SLEEP_LOCKOUT_DURATION:
+            # System time appears to have been set backwards significantly
+            # Reset to reasonable lockout end time (4 hours from now)
+            push_warning("DayNightCycle: System time appears invalid, resetting lockout period")
+            lockout_end_time = current_unix_time + SLEEP_LOCKOUT_DURATION
+            _save_state()
+            if ui_manager and ui_manager.has_method("show_night_overlay"):
+                ui_manager.show_night_overlay(lockout_end_time)
         return
     
     # Handle sunrise animation

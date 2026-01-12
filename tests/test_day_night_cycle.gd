@@ -2,8 +2,6 @@ extends Node
 
 # Test for DayNightCycle system
 
-const DayNightCycle = preload("res://scripts/day_night_cycle.gd")
-
 var test_passed: int = 0
 var test_failed: int = 0
 

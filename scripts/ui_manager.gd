@@ -169,7 +169,10 @@ func _update_night_countdown():
     var current_time = Time.get_unix_time_from_system()
     var time_remaining = night_lockout_end_time - current_time
     
-    if time_remaining <= 0:
+    # Handle potential system time manipulation
+    if time_remaining < -3600:  # If more than 1 hour in the past, something is wrong
+        night_label.text = "Waking up..."
+    elif time_remaining <= 0:
         night_label.text = "Waking up..."
     else:
         var hours = int(time_remaining / 3600)
