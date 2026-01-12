@@ -223,7 +223,7 @@ func _log_current_scene():
     
     if current_scene:
         var scene_name = current_scene.name
-        var scene_path = current_scene.scene_file_path if current_scene.scene_file_path else "unknown"
+        var scene_path = current_scene.scene_file_path or "unknown"
         
         add_log("Current Scene: " + scene_name, "yellow")
         add_log("Scene Path: " + scene_path, "yellow")
@@ -239,7 +239,7 @@ func _log_current_scene():
         add_log("WARNING: Could not detect current scene!", "red")
         add_log("This may be because the scene is not fully loaded yet", "orange")
     
-    # Also log version label visibility status
+    # Also logs version label visibility status
     if version_label:
         add_log("Version Label: visible=" + str(version_label.visible) + ", text='" + version_label.text + "'", "cyan")
         add_log("Version Label position: " + str(version_label.position) + ", z_index=" + str(version_label.z_index), "cyan")
@@ -249,11 +249,16 @@ func _log_current_scene():
 func _log_instance_type():
     # Check if we're running as an autoload or as a scene node
     var parent = get_parent()
+    
+    if not parent:
+        print("[DEBUG] DebugLogOverlay: WARNING - No parent found!")
+        return
+    
     var is_autoload = parent == get_tree().root
     
     if is_autoload:
         print("[DEBUG] DebugLogOverlay: Running as AUTOLOAD SINGLETON")
     else:
-        print("[DEBUG] DebugLogOverlay: Running as SCENE NODE (parent: " + str(parent.name if parent else "none") + ")")
+        print("[DEBUG] DebugLogOverlay: Running as SCENE NODE (parent: " + str(parent.name) + ")")
         print("[DEBUG] WARNING: DebugLogOverlay should be an autoload, not a scene node!")
         print("[DEBUG] This duplicate instance may cause issues. Check main.tscn and remove the DebugLogOverlay node.")

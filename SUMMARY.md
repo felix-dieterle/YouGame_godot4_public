@@ -1,7 +1,7 @@
 # Implementation Summary: Scene Debug Logging
 
 ## Issue Addressed
-**Issue:** Debug log in which scene we are  
+**Issue:** Debug logging for which scene we are in  
 **Goal:** Add debug logging to show which scene we're in (main or demo_narrative) and trace why version wasn't showing in debug log window.
 
 ## Changes Made
