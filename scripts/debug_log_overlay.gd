@@ -20,11 +20,17 @@ const MAX_LOG_LINES: int = 50
 # Log storage
 var log_messages: Array[String] = []
 
+# Game version (cached)
+var game_version: String = ""
+
 # Singleton instance (type is inferred from autoload)
 static var instance = null
 
 func _ready():
     instance = self
+    
+    # Cache game version
+    game_version = ProjectSettings.get_setting("application/config/version", "unknown")
     
     # Create toggle button (top left corner)
     _create_toggle_button()
@@ -42,9 +48,8 @@ func _ready():
     get_viewport().size_changed.connect(_update_button_positions)
     
     # Add initial log
-    var version = ProjectSettings.get_setting("application/config/version", "unknown")
     add_log("=== Debug Log System Started ===")
-    add_log("Game Version: v" + version, "cyan")
+    add_log("Game Version: v" + game_version, "cyan")
 
 func _create_toggle_button():
     toggle_button = Button.new()
@@ -186,8 +191,7 @@ func _update_log_display():
 
 func _create_version_label():
     version_label = Label.new()
-    var version = ProjectSettings.get_setting("application/config/version", "unknown")
-    version_label.text = "Version: v" + version
+    version_label.text = "Version: v" + game_version
     version_label.add_theme_font_size_override("font_size", 14)
     version_label.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 0.9))
     version_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

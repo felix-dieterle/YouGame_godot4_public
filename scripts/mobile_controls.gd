@@ -27,6 +27,9 @@ const PANEL_HEIGHT: float = 350.0
 # Player reference for camera toggle
 var player: Node = null
 
+# Pause menu reference (cached)
+var pause_menu: Node = null
+
 func _ready():
     DebugLogOverlay.add_log("MobileControls._ready() started", "yellow")
     
@@ -37,6 +40,10 @@ func _ready():
     # Find player reference
     player = get_parent().get_node_or_null("Player")
     DebugLogOverlay.add_log("Player reference: " + ("Found" if player else "NOT FOUND"), "yellow")
+    
+    # Find pause menu reference
+    pause_menu = get_tree().get_first_node_in_group("PauseMenu")
+    DebugLogOverlay.add_log("Pause menu reference: " + ("Found" if pause_menu else "NOT FOUND"), "yellow")
     
     # Create virtual joystick (bottom left)
     joystick_base = Control.new()
@@ -381,7 +388,6 @@ func _on_menu_button_pressed():
     
     # Instead of showing our own settings panel, open the pause menu
     # The pause menu has all the functionality working properly
-    var pause_menu = get_tree().get_first_node_in_group("PauseMenu")
     if pause_menu and pause_menu.has_method("toggle_pause"):
         pause_menu.toggle_pause()
         DebugLogOverlay.add_log("Pause menu opened", "green")
@@ -423,8 +429,7 @@ func _on_pause_game_pressed():
     # Close settings menu
     _on_close_settings_pressed()
     
-    # Trigger pause menu (if it exists)
-    var pause_menu = get_tree().get_first_node_in_group("PauseMenu")
+    # Trigger pause menu (use cached reference)
     if pause_menu and pause_menu.has_method("toggle_pause"):
         pause_menu.toggle_pause()
         DebugLogOverlay.add_log("Pause menu toggled", "green")
