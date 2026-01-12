@@ -26,6 +26,8 @@ func _draw():
 	# Draw markers every 50 pixels from right to left
 	var marker_height = 10.0  # Height of the marker line
 	var label_offset = 15.0  # Offset for label below the marker
+	var font = ThemeDB.fallback_font
+	var font_size = ThemeDB.fallback_font_size
 	
 	for x in range(int(viewport_size.x), -1, -MARKER_SPACING):
 		# Draw vertical marker line
@@ -39,8 +41,6 @@ func _draw():
 		# Draw value label at each marker point
 		var distance = int(viewport_size.x - x)
 		var label_text = str(distance)
-		var font = ThemeDB.fallback_font
-		var font_size = ThemeDB.fallback_font_size
 		var text_size = font.get_string_size(label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 		var label_position = Vector2(x - text_size.x / 2.0, mid_height + marker_height + label_offset)
 		draw_string(font, label_position, label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, line_color)
