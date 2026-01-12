@@ -19,6 +19,7 @@ const VERSION_LABEL_OFFSET_LEFT: float = -200.0
 const VERSION_LABEL_OFFSET_TOP: float = -30.0
 const VERSION_LABEL_OFFSET_RIGHT: float = -10.0
 const VERSION_LABEL_OFFSET_BOTTOM: float = -10.0
+const VERSION_LABEL_Z_INDEX: int = 50  # Above most UI elements but below debug overlay
 
 # Game version
 var game_version: String = ""
@@ -58,7 +59,7 @@ func _ready():
     version_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM
     version_label.add_theme_font_size_override("font_size", 16)
     version_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.8))
-    version_label.z_index = 50  # Ensure it's above most UI elements
+    version_label.z_index = VERSION_LABEL_Z_INDEX
     version_label.text = "v" + game_version
     version_label.visible = true  # Explicitly make visible
     add_child(version_label)
