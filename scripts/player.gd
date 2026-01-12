@@ -81,21 +81,21 @@ func _physics_process(delta):
     # Input coordinate system: Y axis points down on screen (standard UI coordinates)
     # - Pushing up on joystick/keyboard gives negative Y
     # - Pushing down gives positive Y
-    # 3D coordinate system: Camera is at positive Z, forward is negative Z
-    # - input_dir.y maps directly to Z axis for proper forward/backward movement
+    # 3D coordinate system: In this game, forward movement is in +Z direction
+    # - We negate input_dir.y to map "up" input to forward (+Z) movement
     # In first-person mode, direction is relative to player's facing direction
     # In third-person mode, direction is world-relative (original behavior)
     var direction = Vector3.ZERO
     if input_dir.length() > 0.01:
         if is_first_person:
             # First-person: Transform input by player's rotation
-            # input_dir.x → X axis (right), input_dir.y → Z axis (forward/back)
-            var input_3d = Vector3(input_dir.x, 0, input_dir.y).normalized()
+            # input_dir.x → X axis (right), -input_dir.y → Z axis (forward/back, negated for correct direction)
+            var input_3d = Vector3(input_dir.x, 0, -input_dir.y).normalized()
             direction = input_3d.rotated(Vector3.UP, rotation.y)
         else:
             # Third-person: World-relative movement
-            # input_dir.x → X axis (east/west), input_dir.y → Z axis (north/south)
-            direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
+            # input_dir.x → X axis (east/west), -input_dir.y → Z axis (north/south, negated for correct direction)
+            direction = Vector3(input_dir.x, 0, -input_dir.y).normalized()
     
     if direction:
         # Check slope along intended movement path

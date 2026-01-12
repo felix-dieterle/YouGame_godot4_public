@@ -27,6 +27,9 @@ const PANEL_HEIGHT: float = 350.0
 # Player reference for camera toggle
 var player: Node = null
 
+# Pause menu reference (cached)
+var pause_menu: Node = null
+
 func _ready():
     DebugLogOverlay.add_log("MobileControls._ready() started", "yellow")
     
@@ -37,6 +40,10 @@ func _ready():
     # Find player reference
     player = get_parent().get_node_or_null("Player")
     DebugLogOverlay.add_log("Player reference: " + ("Found" if player else "NOT FOUND"), "yellow")
+    
+    # Find pause menu reference
+    pause_menu = get_tree().get_first_node_in_group("PauseMenu")
+    DebugLogOverlay.add_log("Pause menu reference: " + ("Found" if pause_menu else "NOT FOUND"), "yellow")
     
     # Create virtual joystick (bottom left)
     joystick_base = Control.new()
@@ -377,16 +384,15 @@ func _create_settings_panel():
     call_deferred("_update_settings_panel_position")
 
 func _on_menu_button_pressed():
-    DebugLogOverlay.add_log("Menu button pressed!", "yellow")
+    DebugLogOverlay.add_log("Menu button pressed - opening pause menu", "yellow")
     
-    # Toggle settings panel visibility
-    settings_visible = not settings_visible
-    settings_panel.visible = settings_visible
-    
-    DebugLogOverlay.add_log("Settings panel visibility toggled to: %s" % str(settings_visible), "yellow")
-    
-    if settings_visible:
-        _update_settings_panel_position()
+    # Instead of showing our own settings panel, open the pause menu
+    # The pause menu has all the functionality working properly
+    if pause_menu and pause_menu.has_method("toggle_pause"):
+        pause_menu.toggle_pause()
+        DebugLogOverlay.add_log("Pause menu opened", "green")
+    else:
+        DebugLogOverlay.add_log("Pause menu not found!", "red")
 
 func _on_close_settings_pressed():
     DebugLogOverlay.add_log("Close settings button pressed", "yellow")
@@ -398,12 +404,9 @@ func _on_close_settings_pressed():
 func _on_camera_toggle_pressed():
     DebugLogOverlay.add_log("Camera toggle pressed", "yellow")
     
-    # Find player using group system (more reliable than stored reference)
-    var current_player = get_tree().get_first_node_in_group("Player")
-    
-    # Toggle camera view on player and close menu
-    if current_player and current_player.has_method("_toggle_camera_view"):
-        current_player._toggle_camera_view()
+    # Toggle camera view on player and close menu (use cached reference)
+    if player and player.has_method("_toggle_camera_view"):
+        player._toggle_camera_view()
         DebugLogOverlay.add_log("Camera view toggled", "green")
     else:
         DebugLogOverlay.add_log("Player not found or method missing!", "red")
@@ -423,8 +426,7 @@ func _on_pause_game_pressed():
     # Close settings menu
     _on_close_settings_pressed()
     
-    # Trigger pause menu (if it exists)
-    var pause_menu = get_tree().get_first_node_in_group("PauseMenu")
+    # Trigger pause menu (use cached reference)
     if pause_menu and pause_menu.has_method("toggle_pause"):
         pause_menu.toggle_pause()
         DebugLogOverlay.add_log("Pause menu toggled", "green")

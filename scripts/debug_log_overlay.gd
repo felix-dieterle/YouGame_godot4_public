@@ -8,6 +8,7 @@ var log_panel: Panel
 var log_label: RichTextLabel
 var toggle_button: Button
 var clear_button: Button
+var version_label: Label
 var is_visible: bool = true  # Start visible to catch early logs
 
 # Configuration
@@ -19,11 +20,17 @@ const MAX_LOG_LINES: int = 50
 # Log storage
 var log_messages: Array[String] = []
 
+# Game version (cached)
+var game_version: String = ""
+
 # Singleton instance (type is inferred from autoload)
 static var instance = null
 
 func _ready():
     instance = self
+    
+    # Cache game version
+    game_version = ProjectSettings.get_setting("application/config/version", "unknown")
     
     # Create toggle button (top left corner)
     _create_toggle_button()
@@ -34,11 +41,15 @@ func _ready():
     # Create log panel
     _create_log_panel()
     
+    # Create version label
+    _create_version_label()
+    
     # Update button position when viewport changes
     get_viewport().size_changed.connect(_update_button_positions)
     
     # Add initial log
     add_log("=== Debug Log System Started ===")
+    add_log("Game Version: v" + game_version, "cyan")
 
 func _create_toggle_button():
     toggle_button = Button.new()
@@ -177,3 +188,24 @@ func _add_log_internal(message: String, color: String = "white"):
 func _update_log_display():
     if log_label:
         log_label.text = "\n".join(log_messages)
+
+func _create_version_label():
+    version_label = Label.new()
+    version_label.text = "Version: v" + game_version
+    version_label.add_theme_font_size_override("font_size", 14)
+    version_label.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 0.9))
+    version_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    version_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+    version_label.z_index = 100
+    
+    # Position in bottom-right corner
+    version_label.anchor_left = 1.0
+    version_label.anchor_top = 1.0
+    version_label.anchor_right = 1.0
+    version_label.anchor_bottom = 1.0
+    version_label.offset_left = -150.0
+    version_label.offset_top = -30.0
+    version_label.offset_right = -10.0
+    version_label.offset_bottom = -10.0
+    
+    add_child(version_label)
