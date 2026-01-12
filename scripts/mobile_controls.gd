@@ -30,6 +30,10 @@ var player: Node = null
 func _ready():
     DebugLogOverlay.add_log("MobileControls._ready() started", "yellow")
     
+    # Ensure MobileControls can always process, even when game is paused
+    # This allows the settings menu to work at all times
+    process_mode = Node.PROCESS_MODE_ALWAYS
+    
     # Find player reference
     player = get_parent().get_node_or_null("Player")
     DebugLogOverlay.add_log("Player reference: " + ("Found" if player else "NOT FOUND"), "yellow")
@@ -177,6 +181,8 @@ func _create_menu_button():
     # This places it above debug overlay (effective z-index 104-105)
     menu_button.z_index = 101
     menu_button.mouse_filter = Control.MOUSE_FILTER_STOP
+    # Ensure button can always process input, even if game is paused
+    menu_button.process_mode = Node.PROCESS_MODE_ALWAYS
     
     DebugLogOverlay.add_log("Menu button configured: z_index=%d, size=%.0fx%.0f" % [menu_button.z_index, BUTTON_SIZE, BUTTON_SIZE], "cyan")
     
@@ -208,6 +214,8 @@ func _create_settings_panel():
     settings_panel.z_index = 102
     settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
     settings_panel.visible = false  # Initially hidden
+    # Ensure settings panel can always process input, even if game is paused
+    settings_panel.process_mode = Node.PROCESS_MODE_ALWAYS
     
     DebugLogOverlay.add_log("Settings panel configured: z_index=%d, visible=%s" % [settings_panel.z_index, str(settings_panel.visible)], "cyan")
     
@@ -390,9 +398,12 @@ func _on_close_settings_pressed():
 func _on_camera_toggle_pressed():
     DebugLogOverlay.add_log("Camera toggle pressed", "yellow")
     
+    # Find player using group system (more reliable than stored reference)
+    var current_player = get_tree().get_first_node_in_group("Player")
+    
     # Toggle camera view on player and close menu
-    if player and player.has_method("_toggle_camera_view"):
-        player._toggle_camera_view()
+    if current_player and current_player.has_method("_toggle_camera_view"):
+        current_player._toggle_camera_view()
         DebugLogOverlay.add_log("Camera view toggled", "green")
     else:
         DebugLogOverlay.add_log("Player not found or method missing!", "red")
