@@ -17,14 +17,22 @@ static func init_screenshot_dir():
 static func capture_screenshot(scene_name: String, description: String = "") -> String:
 	init_screenshot_dir()
 	
-	# Generate filename with timestamp
-	var time = Time.get_datetime_dict_from_system()
+	# Generate filename
 	var filename = "%s_%s" % [scene_name, description] if description else scene_name
 	filename = filename.replace(" ", "_").to_lower()
 	var filepath = "%s%s.png" % [SCREENSHOT_DIR, filename]
 	
-	# Capture the viewport
-	var viewport = Engine.get_main_loop().root.get_viewport()
+	# Capture the viewport - get from the main loop's root
+	var main_loop = Engine.get_main_loop()
+	if not main_loop or not main_loop is SceneTree:
+		print("Failed to capture screenshot: main loop is not a SceneTree")
+		return ""
+	
+	var viewport = main_loop.root.get_viewport()
+	if not viewport:
+		print("Failed to capture screenshot: viewport not found")
+		return ""
+	
 	var image = viewport.get_texture().get_image()
 	
 	# Save the image

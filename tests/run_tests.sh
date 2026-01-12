@@ -97,17 +97,17 @@ fi
 if [ -n "$GODOT_USER_DIR" ] && [ -d "$GODOT_USER_DIR/test_screenshots" ]; then
     echo "Found screenshot directory: $GODOT_USER_DIR/test_screenshots"
     
-    # Copy screenshots to output directory
-    cp -v "$GODOT_USER_DIR/test_screenshots/"*.png "$SCREENSHOT_OUTPUT_DIR/" 2>/dev/null || true
+    # Copy screenshots to output directory using find for robustness
+    find "$GODOT_USER_DIR/test_screenshots" -name "*.png" -type f -exec cp -v {} "$SCREENSHOT_OUTPUT_DIR/" \; 2>/dev/null || true
     
     # Count screenshots
-    SCREENSHOT_COUNT=$(ls -1 "$SCREENSHOT_OUTPUT_DIR/"*.png 2>/dev/null | wc -l)
+    SCREENSHOT_COUNT=$(find "$SCREENSHOT_OUTPUT_DIR" -name "*.png" -type f 2>/dev/null | wc -l)
     echo "Collected $SCREENSHOT_COUNT screenshot(s) to $SCREENSHOT_OUTPUT_DIR"
     
     # List screenshots
     if [ $SCREENSHOT_COUNT -gt 0 ]; then
         echo "Screenshots:"
-        ls -lh "$SCREENSHOT_OUTPUT_DIR/"*.png
+        ls -lh "$SCREENSHOT_OUTPUT_DIR/"*.png 2>/dev/null || true
     fi
 else
     echo "No screenshot directory found (this is normal for non-visual tests)"
