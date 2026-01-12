@@ -33,7 +33,15 @@ static func capture_screenshot(scene_name: String, description: String = "") -> 
 		print("Failed to capture screenshot: viewport not found")
 		return ""
 	
-	var image = viewport.get_texture().get_image()
+	var texture = viewport.get_texture()
+	if not texture:
+		print("Failed to capture screenshot: viewport texture is null (may occur in headless mode)")
+		return ""
+	
+	var image = texture.get_image()
+	if not image:
+		print("Failed to capture screenshot: could not get image from texture")
+		return ""
 	
 	# Save the image
 	var error = image.save_png(filepath)

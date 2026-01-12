@@ -17,8 +17,8 @@ mkdir -p "$SCREENSHOT_OUTPUT_DIR"
 # Project name detection - try to extract from project.godot
 PROJECT_NAME="YouGame"
 if [ -f "project.godot" ]; then
-    # Extract project name from config/name field
-    EXTRACTED_NAME=$(grep -E '^config/name=' project.godot | sed 's/config\/name="\(.*\)"/\1/')
+    # Extract project name from config/name field (handles both quoted and unquoted values)
+    EXTRACTED_NAME=$(grep -E '^config/name=' project.godot | sed -E 's/^config\/name="?([^"]*)"?$/\1/')
     if [ -n "$EXTRACTED_NAME" ]; then
         PROJECT_NAME="$EXTRACTED_NAME"
     fi
@@ -100,13 +100,9 @@ GODOT_USER_DIR=""
 # Try common project name variations
 if [ -d "$HOME/.local/share/godot/app_userdata/$PROJECT_NAME" ]; then
     GODOT_USER_DIR="$HOME/.local/share/godot/app_userdata/$PROJECT_NAME"
-elif [ -d "$HOME/.local/share/godot/app_userdata/YouGame" ]; then
-    GODOT_USER_DIR="$HOME/.local/share/godot/app_userdata/YouGame"
-elif [ -d "$HOME/.local/share/godot/app_userdata/YouGame_godot4_public" ]; then
-    GODOT_USER_DIR="$HOME/.local/share/godot/app_userdata/YouGame_godot4_public"
 else
-    # Try to find it using wildcards
-    GODOT_USER_DIR=$(find "$HOME/.local/share/godot/app_userdata" -maxdepth 1 -type d -name "*YouGame*" 2>/dev/null | head -n 1)
+    # Try to find any directory matching the project name pattern
+    GODOT_USER_DIR=$(find "$HOME/.local/share/godot/app_userdata" -maxdepth 1 -type d -name "*$PROJECT_NAME*" 2>/dev/null | head -n 1)
 fi
 
 if [ -n "$GODOT_USER_DIR" ] && [ -d "$GODOT_USER_DIR/test_screenshots" ]; then
