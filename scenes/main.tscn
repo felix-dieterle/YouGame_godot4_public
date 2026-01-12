@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://djkmwvr3o85qr"]
+[gd_scene load_steps=12 format=3 uid="uid://djkmwvr3o85qr"]
 
 [ext_resource type="Script" path="res://scripts/world_manager.gd" id="1_4f8k2"]
 [ext_resource type="Script" path="res://scripts/debug_visualization.gd" id="2_3h7j5"]
@@ -7,7 +7,6 @@
 [ext_resource type="Script" path="res://scripts/ui_manager.gd" id="5_ui"]
 [ext_resource type="Script" path="res://scripts/mobile_controls.gd" id="6_mobile"]
 [ext_resource type="Script" path="res://scripts/debug_narrative_ui.gd" id="7_debug_narrative"]
-[ext_resource type="Script" path="res://scripts/debug_log_overlay.gd" id="8_debug_log"]
 [ext_resource type="Script" path="res://scripts/weather_system.gd" id="9_weather"]
 [ext_resource type="Script" path="res://scripts/pause_menu.gd" id="10_pause"]
 [ext_resource type="Script" path="res://scripts/ruler_overlay.gd" id="11_ruler"]
@@ -84,17 +83,6 @@ grow_vertical = 2
 mouse_filter = 2
 z_index = 10
 script = ExtResource("7_debug_narrative")
-
-[node name="DebugLogOverlay" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-z_index = 5
-script = ExtResource("8_debug_log")
 
 [node name="RulerOverlay" type="Control" parent="." groups=["RulerOverlay"]]
 layout_mode = 3
