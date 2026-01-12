@@ -4,6 +4,7 @@ class_name UIManager
 # UI elements
 var status_label: Label
 var chunk_info_label: Label
+var version_label: Label
 
 # State
 var initial_loading_complete: bool = false
@@ -12,6 +13,12 @@ var chunks_loaded: int = 0
 # Timers for managing async operations
 var status_timer: Timer
 var chunk_timer: Timer
+
+# Version label positioning constants
+const VERSION_LABEL_OFFSET_LEFT: float = -200.0
+const VERSION_LABEL_OFFSET_TOP: float = -30.0
+const VERSION_LABEL_OFFSET_RIGHT: float = -10.0
+const VERSION_LABEL_OFFSET_BOTTOM: float = -10.0
 
 func _ready():
     # Create status label (top center)
@@ -31,6 +38,23 @@ func _ready():
     chunk_info_label.size = Vector2(400, 50)
     chunk_info_label.add_theme_font_size_override("font_size", 18)
     add_child(chunk_info_label)
+    
+    # Create version label (bottom right)
+    version_label = Label.new()
+    version_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    version_label.anchor_left = 1.0
+    version_label.anchor_top = 1.0
+    version_label.anchor_right = 1.0
+    version_label.anchor_bottom = 1.0
+    version_label.offset_left = VERSION_LABEL_OFFSET_LEFT
+    version_label.offset_top = VERSION_LABEL_OFFSET_TOP
+    version_label.offset_right = VERSION_LABEL_OFFSET_RIGHT
+    version_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM
+    version_label.add_theme_font_size_override("font_size", 16)
+    version_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.8))
+    var version = ProjectSettings.get_setting("application/config/version", "1.0.0")
+    version_label.text = "v" + version
+    add_child(version_label)
     
     # Create timers
     status_timer = Timer.new()
