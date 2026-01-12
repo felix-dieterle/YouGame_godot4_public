@@ -26,7 +26,7 @@ func _draw():
 	
 	# Draw markers every 50 pixels from right to left
 	var marker_height = 10.0  # Height of the marker line
-	for x in range(int(viewport_size.x), 0, -MARKER_SPACING):
+	for x in range(int(viewport_size.x), -1, -MARKER_SPACING):
 		# Draw vertical marker line
 		draw_line(
 			Vector2(x, mid_height - marker_height),
