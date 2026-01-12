@@ -85,7 +85,8 @@ func _physics_process(delta):
         if is_first_person:
             # First-person: Transform input by player's rotation
             # Forward (input_dir.y) should move in the direction player is facing
-            var input_3d = Vector3(input_dir.x, 0, input_dir.y).normalized()
+            # Negate input_dir.y because "up" input is negative, but we want negative Z (forward)
+            var input_3d = Vector3(input_dir.x, 0, -input_dir.y).normalized()
             direction = input_3d.rotated(Vector3.UP, rotation.y)
         else:
             # Third-person: World-relative movement (original behavior)

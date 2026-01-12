@@ -1,21 +1,31 @@
 # First-Person Movement Fix
 
 ## Problem
-When in first-person mode, the movement controls were still world-relative instead of player-relative. 
+When in first-person mode, there were two issues with movement controls:
 
-**Before the fix:**
+**First issue (previously fixed):**
+- Movement was still world-relative instead of player-relative
 - Pushing forward on the joystick always moved the player north (world coordinates)
 - The player's facing direction had no effect on movement direction
 - This felt unnatural in first-person view
 
-## Solution
-Modified the movement direction calculation in `scripts/player.gd` to be camera-relative in first-person mode.
+**Second issue (current fix):**
+- Even after making movement player-relative, the controls were inverted
+- Pushing forward on the joystick made the player move backward
+- Pushing backward on the joystick made the player move forward
+- This happened because the input Y-axis wasn't properly mapped to the 3D coordinate system
 
-**After the fix:**
-- In **first-person mode**: Movement is relative to where the player is facing
-  - Forward → moves in the direction you're looking
+## Solution
+Modified the movement direction calculation in `scripts/player.gd` in two stages:
+
+1. **First fix**: Made movement player-relative in first-person mode by rotating the input vector
+2. **Second fix**: Corrected inverted controls by negating the Y-axis component
+
+**After both fixes:**
+- In **first-person mode**: Movement is relative to where the player is facing with correct forward/backward
+  - Forward → moves in the direction you're looking (fixed: was backward)
   - Right → strafes right relative to your view direction
-  - Backward → moves backward relative to your view
+  - Backward → moves backward relative to your view (fixed: was forward)
   - Left → strafes left relative to your view direction
   
 - In **third-person mode**: Movement remains world-relative (unchanged behavior)
@@ -32,7 +42,7 @@ Modified the movement direction calculation in `scripts/player.gd` to be camera-
 # OLD CODE (original line 80):
 var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
 
-# NEW CODE (lines 80-92):
+# FIRST FIX - Made movement player-relative in first-person:
 var direction = Vector3.ZERO
 if input_dir.length() > 0.01:
     if is_first_person:
@@ -43,9 +53,23 @@ if input_dir.length() > 0.01:
     else:
         # Third-person: World-relative movement (original behavior)
         direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
+
+# SECOND FIX - Corrected inverted forward/backward controls (line 89):
+# Changed: var input_3d = Vector3(input_dir.x, 0, input_dir.y).normalized()
+# To:      var input_3d = Vector3(input_dir.x, 0, -input_dir.y).normalized()
+# 
+# This negation is necessary because:
+# - Input.get_vector() returns negative Y for "up" input
+# - The player rotates to face the movement direction using atan2(x, z)
+# - Without negation, pressing "up" creates Vector3(0, 0, -1)
+# - atan2(0, -1) = 180°, making player face backward while moving
+# - With negation, pressing "up" creates Vector3(0, 0, 1)
+# - atan2(0, 1) = 0°, making player correctly face forward
 ```
 
-The key change is using `rotated(Vector3.UP, rotation.y)` to transform the input direction by the player's current Y-axis rotation in first-person mode.
+The key changes are:
+1. Using `rotated(Vector3.UP, rotation.y)` to transform input by player rotation (first fix)
+2. Negating `input_dir.y` to fix inverted forward/backward controls (second fix)
 
 ## How to Test
 
