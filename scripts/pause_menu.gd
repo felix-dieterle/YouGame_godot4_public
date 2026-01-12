@@ -268,6 +268,24 @@ func _create_settings_panel():
     camera_button.pressed.connect(_on_camera_toggle_pressed)
     settings_vbox.add_child(camera_button)
     
+    # Ruler toggle
+    var ruler_hbox = HBoxContainer.new()
+    ruler_hbox.add_theme_constant_override("separation", 10)
+    settings_vbox.add_child(ruler_hbox)
+    
+    var ruler_checkbox = CheckBox.new()
+    ruler_checkbox.button_pressed = true  # Initially visible
+    ruler_checkbox.custom_minimum_size = Vector2(30, 30)
+    ruler_checkbox.focus_mode = Control.FOCUS_NONE
+    ruler_checkbox.toggled.connect(_on_ruler_toggled)
+    ruler_hbox.add_child(ruler_checkbox)
+    
+    var ruler_label = Label.new()
+    ruler_label.text = "Show Ruler"
+    ruler_label.add_theme_font_size_override("font_size", 16)
+    ruler_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    ruler_hbox.add_child(ruler_label)
+    
     # Spacer
     var spacer = Control.new()
     spacer.custom_minimum_size = Vector2(0, 10)
@@ -318,3 +336,9 @@ func _on_camera_toggle_pressed():
     var player = get_tree().get_first_node_in_group("Player")
     if player and player.has_method("_toggle_camera_view"):
         player._toggle_camera_view()
+
+func _on_ruler_toggled(pressed: bool):
+    # Find ruler overlay and toggle its visibility
+    var ruler = get_tree().get_first_node_in_group("RulerOverlay")
+    if ruler and ruler.has_method("set_visible_state"):
+        ruler.set_visible_state(pressed)
