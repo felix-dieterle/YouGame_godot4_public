@@ -356,3 +356,56 @@ Potential improvements for these features:
 - [ ] LOD system for distant objects
 - [ ] More tree and building variations
 - [ ] Biome-specific cluster types (pine forests, tropical settlements)
+
+## Path System and Starting Location
+
+A procedural path/road system (Wegesystem) and starting location (Startplatz) that creates an immersive starting experience:
+
+### Path System Features
+- **Origin Paths**: Main paths begin at the starting location (chunk 0,0)
+- **Chunk Continuity**: Paths seamlessly extend across chunk boundaries
+- **Random Branching**: 15% probability for paths to branch
+- **Cluster Targeting**: Branches intelligently aim toward forests and settlements
+- **Path Types**: Main paths, branches, forest paths, and village paths
+- **Endpoint Detection**: Paths can terminate near clusters or randomly
+- **Visual Representation**: Rendered as colored mesh overlays (dirt brown)
+
+### Starting Location Features
+- **Central Cairn**: Stacked stone marker at the world origin (0, 0, 0)
+- **Standing Stones**: 6 menhirs arranged in a circle around the starting area
+- **Procedural Generation**: No external model files required
+- **Terrain Adaptation**: All objects automatically adjust to terrain height
+- **Consistent Appearance**: Fixed seed ensures reproducible generation
+
+### Configuration
+```gdscript
+# Path System Constants
+BRANCH_PROBABILITY = 0.15       # 15% chance to branch
+ENDPOINT_PROBABILITY = 0.05     # 5% chance to end randomly
+DEFAULT_PATH_WIDTH = 1.5        # Path width in world units
+PATH_ROUGHNESS = 0.3            # Path curvature (0-1)
+
+# Starting Location Constants
+LOCATION_RADIUS = 8.0           # Radius of starting area
+NUM_MARKER_STONES = 6           # Number of standing stones
+```
+
+### Usage
+```gdscript
+# Get path segments for a chunk
+var segments = PathSystem.get_path_segments_for_chunk(chunk_pos, world_seed)
+
+# Manually create starting location
+var starting_loc = StartingLocation.new()
+starting_loc.adjust_to_terrain(world_manager)
+```
+
+### Future Enhancements
+- Sound effects at path endpoints (placeholder implemented)
+- Path decoration (stones, grass patches)
+- Terrain flattening along paths
+- World characteristics system (Zeit, Epoche, Stil) for varied path styles
+- Path quality levels (dirt → cobblestone → paved)
+- Bridge generation for water crossings
+
+See [PATH_SYSTEM.md](PATH_SYSTEM.md) for complete documentation.

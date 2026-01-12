@@ -3,6 +3,7 @@ class_name WorldManager
 
 # Preload dependencies
 const Chunk = preload("res://scripts/chunk.gd")
+const StartingLocation = preload("res://scripts/starting_location.gd")
 
 # Configuration
 const CHUNK_SIZE = 32
@@ -26,6 +27,9 @@ var quest_hook_system = null
 var initial_loading_done: bool = false
 var initial_loading_timer: Timer
 
+# Starting location
+var starting_location: StartingLocation = null
+
 func _ready():
     # Find player or create a simple camera for testing
     player = get_parent().get_node_or_null("Player")
@@ -38,6 +42,10 @@ func _ready():
     # Find quest hook system
     quest_hook_system = get_parent().get_node_or_null("QuestHookSystem")
     
+    # Create starting location
+    starting_location = StartingLocation.new()
+    add_child(starting_location)
+    
     # Create initial loading timer
     initial_loading_timer = Timer.new()
     initial_loading_timer.one_shot = true
@@ -46,6 +54,10 @@ func _ready():
     
     # Initial chunk loading
     _update_chunks()
+    
+    # Adjust starting location to terrain after first chunk is loaded
+    if starting_location:
+        starting_location.adjust_to_terrain(self)
     
     # Mark initial loading as complete after a short delay
     initial_loading_timer.start(0.5)

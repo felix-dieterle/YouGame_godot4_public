@@ -5,6 +5,7 @@ class_name Chunk
 const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
 const ClusterSystem = preload("res://scripts/cluster_system.gd")
 const ProceduralModels = preload("res://scripts/procedural_models.gd")
+const PathSystem = preload("res://scripts/path_system.gd")
 
 # Chunk configuration
 const CHUNK_SIZE = 32  # Size in world units
@@ -51,6 +52,10 @@ var water_mesh_instance: MeshInstance3D = null
 var placed_objects: Array = []  # Array of MeshInstance3D for trees/buildings
 var active_clusters: Array = []  # Clusters affecting this chunk
 
+# Path data
+var path_segments: Array = []  # Array of PathSystem.PathSegment
+var path_mesh_instance: MeshInstance3D = null
+
 func _init(x: int, z: int, world_seed: int):
     chunk_x = x
     chunk_z = z
@@ -67,6 +72,7 @@ func generate():
     _generate_lake_if_valley()
     _create_mesh()
     _place_cluster_objects()
+    _generate_paths()
 
 func _setup_noise():
     noise = FastNoiseLite.new()
@@ -711,3 +717,102 @@ func _place_settlement_objects(cluster: ClusterSystem.ClusterData):
         
         add_child(building_instance)
         placed_objects.append(building_instance)
+
+## Generate and visualize paths in this chunk
+func _generate_paths():
+    # Get path segments for this chunk
+    var chunk_pos = Vector2i(chunk_x, chunk_z)
+    path_segments = PathSystem.get_path_segments_for_chunk(chunk_pos, seed_value)
+    
+    if path_segments.is_empty():
+        return
+    
+    # Create path mesh
+    _create_path_mesh()
+
+## Create visual mesh for paths
+func _create_path_mesh():
+    if path_segments.is_empty():
+        return
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    for segment in path_segments:
+        _add_path_segment_to_surface(surface_tool, segment)
+    
+    surface_tool.generate_normals()
+    
+    var path_mesh = surface_tool.commit()
+    path_mesh_instance = MeshInstance3D.new()
+    path_mesh_instance.mesh = path_mesh
+    
+    # Create path material (dirt/stone color)
+    var path_material = StandardMaterial3D.new()
+    path_material.vertex_color_use_as_albedo = true
+    path_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    path_material.roughness = 0.95
+    path_mesh_instance.set_surface_override_material(0, path_material)
+    path_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    
+    add_child(path_mesh_instance)
+    
+    # Play endpoint sound if any segment is an endpoint
+    for segment in path_segments:
+        if segment.is_endpoint:
+            _play_endpoint_sound(segment)
+
+## Add a path segment to the surface tool
+func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment):
+    var start = segment.start_pos
+    var end = segment.end_pos
+    var width = segment.width
+    
+    # Calculate perpendicular direction for width
+    var direction = (end - start).normalized()
+    var perpendicular = Vector2(-direction.y, direction.x)
+    
+    # Create 4 corners of the path segment
+    var p1 = start + perpendicular * width / 2.0
+    var p2 = start - perpendicular * width / 2.0
+    var p3 = end + perpendicular * width / 2.0
+    var p4 = end - perpendicular * width / 2.0
+    
+    # Get heights at corners
+    var h1 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p1.x, chunk_z * CHUNK_SIZE + p1.y) + 0.05
+    var h2 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p2.x, chunk_z * CHUNK_SIZE + p2.y) + 0.05
+    var h3 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p3.x, chunk_z * CHUNK_SIZE + p3.y) + 0.05
+    var h4 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p4.x, chunk_z * CHUNK_SIZE + p4.y) + 0.05
+    
+    # Path color based on type
+    var path_color = Color(0.5, 0.45, 0.35)  # Dirt color
+    if segment.path_type == PathSystem.PathType.MAIN_PATH:
+        path_color = Color(0.55, 0.5, 0.4)  # Slightly lighter for main path
+    
+    if segment.is_endpoint:
+        path_color = Color(0.6, 0.5, 0.3)  # Different color for endpoints
+    
+    # Create two triangles for the path segment
+    surface_tool.set_color(path_color)
+    surface_tool.add_vertex(Vector3(p1.x, h1, p1.y))
+    surface_tool.add_vertex(Vector3(p2.x, h2, p2.y))
+    surface_tool.add_vertex(Vector3(p3.x, h3, p3.y))
+    
+    surface_tool.set_color(path_color)
+    surface_tool.add_vertex(Vector3(p2.x, h2, p2.y))
+    surface_tool.add_vertex(Vector3(p4.x, h4, p4.y))
+    surface_tool.add_vertex(Vector3(p3.x, h3, p3.y))
+
+## Play sound at path endpoint (placeholder)
+func _play_endpoint_sound(segment):
+    # TODO: Add actual sound file
+    # For now, just print to console
+    print("Path endpoint reached at chunk ", chunk_x, ", ", chunk_z, " - segment ", segment.segment_id)
+    
+    # Future: Load and play a special ambient sound
+    # var audio_player = AudioStreamPlayer3D.new()
+    # audio_player.stream = load("res://assets/sounds/path_endpoint.ogg")
+    # audio_player.position = Vector3(segment.end_pos.x, get_height_at_world_pos(...), segment.end_pos.y)
+    # add_child(audio_player)
+    # audio_player.play()
+

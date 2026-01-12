@@ -174,6 +174,22 @@ The project includes a player controller script. To use it:
 - `CLUSTER_SYSTEM.md`: Complete documentation
 - `OPEN_POINTS_ANALYSIS.md`: Analysis of missing features
 
+### ✅ Path System and Starting Location
+- **Procedural Paths**: Dynamic road/path generation starting from origin
+- **Chunk Continuity**: Paths seamlessly extend across chunk boundaries
+- **Intelligent Branching**: Paths target forests and settlements
+- **Starting Location**: Cairn and standing stones at world origin
+- **No External Assets**: Fully procedural generation
+- **Endpoint Detection**: Placeholder for sound effects
+- **Visual Integration**: Rendered as mesh overlays on terrain
+
+**New Files**:
+- `scripts/path_system.gd`: Path generation and management
+- `scripts/starting_location.gd`: Starting area object creation
+- `tests/test_path_system.gd`: Path system test suite
+- `PATH_SYSTEM.md`: Complete path system documentation
+- `PATH_SYSTEM_IMPLEMENTATION.md`: Implementation summary
+
 ## Next Steps
 
 The prototype is complete and ready for:
@@ -201,6 +217,9 @@ The prototype is complete and ready for:
 ✅ **NEW**: Forest and settlement generation  
 ✅ **NEW**: Procedural low-poly models  
 ✅ **NEW**: Cluster system with tests  
+✅ **NEW**: Path/road system with branching  
+✅ **NEW**: Starting location with cairn and standing stones  
+✅ **NEW**: Path-cluster integration (paths lead to forests/villages)  
 
 ## Documentation
 
@@ -209,6 +228,8 @@ The prototype is complete and ready for:
 - **IMPLEMENTATION.md**: Detailed requirement mapping
 - **scripts/README.md**: Code architecture and data flow
 - **CLUSTER_SYSTEM.md**: Forest/settlement system documentation
+- **PATH_SYSTEM.md**: Path system API and usage documentation
+- **PATH_SYSTEM_IMPLEMENTATION.md**: Path system implementation summary
 - **OPEN_POINTS_ANALYSIS.md**: Analysis of implemented features
 - **FEATURES.md**: Complete feature list
 
@@ -219,4 +240,4 @@ See repository for license information.
 ---
 
 **Project Status**: ✅ COMPLETE - Ready for development and extension  
-**Latest Update**: January 2026 - Forest & Settlement System Added
+**Latest Update**: January 2026 - Path System & Starting Location Added
