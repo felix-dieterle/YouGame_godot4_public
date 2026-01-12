@@ -93,8 +93,11 @@ func _physics_process(delta):
     if input_dir.length() > 0.01:
         if is_first_person:
             # First-person: Transform input by player's rotation
-            # input_dir.x → X axis (right/left), -input_dir.y → Z axis (forward/back, negated to convert UI coords to 3D)
-            var input_3d = Vector3(input_dir.x, 0, -input_dir.y).normalized()
+            # In first-person, the camera is rotated 180° (PI radians) to look forward
+            # This means we need to invert the X-axis input so that right joystick = turn right
+            # -input_dir.x → X axis (right/left, negated for first-person camera orientation)
+            # -input_dir.y → Z axis (forward/back, negated to convert UI coords to 3D)
+            var input_3d = Vector3(-input_dir.x, 0, -input_dir.y).normalized()
             direction = input_3d.rotated(Vector3.UP, rotation.y)
         else:
             # Third-person: World-relative movement

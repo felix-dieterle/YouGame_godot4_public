@@ -126,3 +126,59 @@ The fix is backward-compatible and doesn't introduce new dependencies.
 This fix **corrects** the erroneous change documented in `NAVIGATION_FIX.md`. That document incorrectly described the camera setup as "face-to-face" when it's actually "behind the player".
 
 The Y-axis negation (for forward/backward) was and remains correct, as documented in `BUGFIX_VERSION_NAVIGATION_MENU.md` and `FIRST_PERSON_MOVEMENT_FIX.md`.
+
+---
+
+## Update: First-Person Mode Fix (2026-01-12)
+
+### Additional Issue Discovered
+After the initial fix above, it was discovered that **first-person mode still had inverted left/right controls**. When using joystick controls in first-person view:
+- Pushing joystick RIGHT made the player turn/look LEFT
+- Pushing joystick LEFT made the player turn/look RIGHT
+
+### Root Cause
+The first-person camera is rotated 180° (PI radians) on the Y-axis to look forward from the player's position (see `scripts/player.gd` line 204):
+```gdscript
+camera.rotation = Vector3(0, PI, 0)
+```
+
+This 180° rotation inverts the left/right axis from the player's perspective. The original fix correctly handled third-person view but didn't account for the camera rotation in first-person mode.
+
+### Solution for First-Person Mode
+Negate `input_dir.x` when in first-person mode to compensate for the 180° camera rotation.
+
+**File:** `scripts/player.gd`  
+**line 100:** Changed `input_dir.x` to `-input_dir.x` in first-person mode only
+
+```gdscript
+# Before (INCORRECT for first-person):
+var input_3d = Vector3(input_dir.x, 0, -input_dir.y).normalized()
+
+# After (CORRECT for first-person):
+var input_3d = Vector3(-input_dir.x, 0, -input_dir.y).normalized()
+```
+
+### Technical Explanation
+1. **Third-person mode** (unchanged):
+   - Camera looks at player from behind
+   - No X-axis negation needed
+   - `input_dir.x` → `direction.x` (direct mapping)
+
+2. **First-person mode** (now fixed):
+   - Camera is rotated 180° to look forward
+   - X-axis negation needed to compensate for camera rotation
+   - `-input_dir.x` → `direction.x` (inverted mapping)
+
+### Verification
+In first-person mode:
+1. Pushing joystick/keys **right** → player turns **right** ✓
+2. Pushing joystick/keys **left** → player turns **left** ✓
+3. Pushing joystick/keys **forward** → player moves **forward** ✓
+4. Pushing joystick/keys **backward** → player moves **backward** ✓
+
+### Impact
+- **Lines changed:** 1 (added minus sign before `input_dir.x` in first-person mode)
+- **Characters changed:** 1 (added one minus sign)
+- **Files modified:** 1 (`scripts/player.gd`)
+- **Affected systems:** First-person mode input handling only
+- **Third-person mode:** Unchanged and working correctly
