@@ -1,8 +1,8 @@
 # Path Visibility Fix - Summary
 
 ## Issue
-**Titel**: Weggenerierung von Startpunkt aus  
-**Beschreibung**: Paths are generated from the starting point but are not visible in the game.
+**Title**: Weggenerierung von Startpunkt aus (Path generation from starting point)  
+**Description**: Paths are generated from the starting point but are not visible in the game.
 
 ## Root Cause Analysis
 

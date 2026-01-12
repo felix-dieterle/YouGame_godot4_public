@@ -58,7 +58,7 @@ func verify_path_width():
 	print("--- Verifying Path Width Changes ---")
 	
 	print("Default path width: ", PathSystem.DEFAULT_PATH_WIDTH)
-	print("Expected: ", PathSystem.DEFAULT_PATH_WIDTH, " (was 1.5)")
+	print("Expected: 2.5 (was 1.5)")
 	
 	if abs(PathSystem.DEFAULT_PATH_WIDTH - 2.5) < 0.01:
 		print("✓ Path width increased correctly\n")
