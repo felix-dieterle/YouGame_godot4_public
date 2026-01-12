@@ -12,9 +12,9 @@ NC='\033[0m' # No Color
 
 # Array of test scenes
 tests=(
-    "res://tests/test_scene_chunk.tscn:Chunk Tests"
-    "res://tests/test_scene_narrative_markers.tscn:Narrative Markers Tests"
-    "res://tests/test_scene_clusters.tscn:Clusters Tests"
+    "res://tests/test_scene_chunk.tscn|Chunk Tests"
+    "res://tests/test_scene_narrative_markers.tscn|Narrative Markers Tests"
+    "res://tests/test_scene_clusters.tscn|Clusters Tests"
 )
 
 echo "========================================="
@@ -27,7 +27,7 @@ passed_tests=()
 timeout_tests=()
 
 for test_info in "${tests[@]}"; do
-    IFS=':' read -r test_scene test_name <<< "$test_info"
+    IFS='|' read -r test_scene test_name <<< "$test_info"
     
     echo "-----------------------------------"
     echo "Running: $test_name"
