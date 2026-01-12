@@ -42,7 +42,6 @@ func _ready():
     # Create version label (bottom right)
     version_label = Label.new()
     version_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-    version_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
     version_label.anchor_left = 1.0
     version_label.anchor_top = 1.0
     version_label.anchor_right = 1.0
