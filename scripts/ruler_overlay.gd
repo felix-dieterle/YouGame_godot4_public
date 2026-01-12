@@ -2,7 +2,7 @@ extends Control
 class_name RulerOverlay
 
 # Ruler overlay - displays a horizontal line with markers every 50 pixels
-# Starting from the right edge at mid-height to the left edge
+# Starting from the right edge at lower quarter (75% down) to the left edge
 
 var is_visible: bool = true  # Initially visible
 const MARKER_SPACING: int = 50  # Markers every 50 pixels
@@ -18,7 +18,7 @@ func _draw():
 		return
 	
 	var viewport_size = get_viewport_rect().size
-	var mid_height = viewport_size.y / 2.0
+	var mid_height = viewport_size.y * 0.75  # Lower quarter (75% down)
 	
 	# Draw horizontal line from right to left at mid-height
 	var line_color = Color(1.0, 1.0, 1.0, 0.7)  # Semi-transparent white
