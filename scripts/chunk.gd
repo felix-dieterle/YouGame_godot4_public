@@ -15,6 +15,7 @@ const MAX_SLOPE_WALKABLE = 30.0  # degrees
 const MIN_WALKABLE_PERCENTAGE = 0.8
 const HEIGHT_RANGE = 10.0  # Maximum height variation from noise (±10 units)
 const HEIGHT_COLOR_DIVISOR = HEIGHT_RANGE * 4.0  # Normalizes height to color range
+const PATH_ELEVATION_OFFSET = 0.15  # Height offset for paths above terrain for visibility
 
 # Chunk position in grid
 var chunk_x: int = 0
@@ -783,10 +784,10 @@ func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment):
     var p4 = end - perpendicular * width / 2.0
     
     # Get heights at corners - elevate paths more for better visibility
-    var h1 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p1.x, chunk_z * CHUNK_SIZE + p1.y) + 0.15
-    var h2 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p2.x, chunk_z * CHUNK_SIZE + p2.y) + 0.15
-    var h3 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p3.x, chunk_z * CHUNK_SIZE + p3.y) + 0.15
-    var h4 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p4.x, chunk_z * CHUNK_SIZE + p4.y) + 0.15
+    var h1 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p1.x, chunk_z * CHUNK_SIZE + p1.y) + PATH_ELEVATION_OFFSET
+    var h2 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p2.x, chunk_z * CHUNK_SIZE + p2.y) + PATH_ELEVATION_OFFSET
+    var h3 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p3.x, chunk_z * CHUNK_SIZE + p3.y) + PATH_ELEVATION_OFFSET
+    var h4 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p4.x, chunk_z * CHUNK_SIZE + p4.y) + PATH_ELEVATION_OFFSET
     
     # Path color based on type - made more visible and distinct
     var path_color = Color(0.65, 0.55, 0.4)  # Lighter dirt/sand color

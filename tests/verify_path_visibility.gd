@@ -47,8 +47,8 @@ func verify_starting_chunk_path():
 				print("    ❌ Main path width incorrect: ", segment.width, " expected: ", expected_width)
 			
 			# Check if path is long enough to be visible
-			if length >= PathSystem.MAX_SEGMENT_LENGTH * 0.7:
-				print("    ✓ Path is long enough to be visible (>= ", PathSystem.MAX_SEGMENT_LENGTH * 0.7, ")")
+			if length >= PathSystem.MAX_SEGMENT_LENGTH * PathSystem.MIN_STARTING_PATH_RATIO:
+				print("    ✓ Path is long enough to be visible (>= ", PathSystem.MAX_SEGMENT_LENGTH * PathSystem.MIN_STARTING_PATH_RATIO, ")")
 			else:
 				print("    ⚠ Path might be too short: ", length)
 	
@@ -58,7 +58,7 @@ func verify_path_width():
 	print("--- Verifying Path Width Changes ---")
 	
 	print("Default path width: ", PathSystem.DEFAULT_PATH_WIDTH)
-	print("Expected: 2.5 (was 1.5)")
+	print("Expected: ", PathSystem.DEFAULT_PATH_WIDTH, " (was 1.5)")
 	
 	if abs(PathSystem.DEFAULT_PATH_WIDTH - 2.5) < 0.01:
 		print("✓ Path width increased correctly\n")

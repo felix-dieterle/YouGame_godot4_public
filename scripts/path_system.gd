@@ -54,6 +54,7 @@ const ENDPOINT_PROBABILITY = 0.05  # 5% chance to end path
 const MIN_SEGMENT_LENGTH = 8.0
 const MAX_SEGMENT_LENGTH = 20.0
 const PATH_ROUGHNESS = 0.3  # How much paths can deviate (0 = straight, 1 = very curvy)
+const MIN_STARTING_PATH_RATIO = 0.7  # Starting path is at least 70% of max length for visibility
 
 ## Generate or get path segments for a chunk
 static func get_path_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -> Array[PathSegment]:
@@ -83,7 +84,7 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 		var center = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
 		var direction = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized()
 		# Ensure longer initial path for better visibility
-		var length = rng.randf_range(MAX_SEGMENT_LENGTH * 0.7, MAX_SEGMENT_LENGTH)
+		var length = rng.randf_range(MAX_SEGMENT_LENGTH * MIN_STARTING_PATH_RATIO, MAX_SEGMENT_LENGTH)
 		var end = center + direction * length
 		
 		# Clamp to chunk bounds or continue to next chunk
