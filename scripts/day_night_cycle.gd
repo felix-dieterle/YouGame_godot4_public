@@ -59,8 +59,8 @@ func _ready():
     # Check if we need to show sunrise animation
     if is_locked_out:
         var current_unix_time = Time.get_unix_time_from_system()
-        if current_unix_time >= lockout_end_time:
-            # Lockout has expired, show sunrise animation
+        if debug_skip_lockout or current_unix_time >= lockout_end_time:
+            # Lockout has expired or debug skip enabled, show sunrise animation
             is_locked_out = false
             is_animating_sunrise = true
             sunrise_animation_time = 0.0
