@@ -187,6 +187,8 @@ func _create_mesh():
     surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
     
     # Pre-calculate forest influences for this chunk to darken forest floor
+    # Note: This is a one-time calculation during chunk generation (not per-frame)
+    # Performance: O(RESOLUTION² × num_clusters) but only executed once on chunk load
     var chunk_pos = Vector2i(chunk_x, chunk_z)
     var forest_clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, seed_value)
     var forest_influence_map = []

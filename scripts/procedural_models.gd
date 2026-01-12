@@ -62,6 +62,9 @@ static func create_tree_mesh(seed_val: int = 0, tree_type: int = TreeType.AUTO) 
             _create_broadleaf_tree(surface_tool, rng)
         TreeType.SMALL_BUSH:
             _create_small_bush(surface_tool, rng)
+        _:
+            # Fallback to broad-leaf if invalid type
+            _create_broadleaf_tree(surface_tool, rng)
     
     surface_tool.generate_normals()
     return surface_tool.commit()
