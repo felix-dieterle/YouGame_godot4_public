@@ -15,10 +15,10 @@ var status_timer: Timer
 var chunk_timer: Timer
 
 # Version label positioning constants
-const VERSION_LABEL_WIDTH: float = 200.0
-const VERSION_LABEL_HEIGHT: float = 30.0
-const VERSION_LABEL_MARGIN_RIGHT: float = 10.0
-const VERSION_LABEL_MARGIN_BOTTOM: float = 10.0
+const VERSION_LABEL_OFFSET_LEFT: float = -200.0
+const VERSION_LABEL_OFFSET_TOP: float = -30.0
+const VERSION_LABEL_OFFSET_RIGHT: float = -10.0
+const VERSION_LABEL_OFFSET_BOTTOM: float = -10.0
 
 func _ready():
     # Create status label (top center)
@@ -47,10 +47,10 @@ func _ready():
     version_label.anchor_top = 1.0
     version_label.anchor_right = 1.0
     version_label.anchor_bottom = 1.0
-    version_label.offset_left = -VERSION_LABEL_WIDTH
-    version_label.offset_top = -VERSION_LABEL_HEIGHT
-    version_label.offset_right = -VERSION_LABEL_MARGIN_RIGHT
-    version_label.offset_bottom = -VERSION_LABEL_MARGIN_BOTTOM
+    version_label.offset_left = VERSION_LABEL_OFFSET_LEFT
+    version_label.offset_top = VERSION_LABEL_OFFSET_TOP
+    version_label.offset_right = VERSION_LABEL_OFFSET_RIGHT
+    version_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM
     version_label.add_theme_font_size_override("font_size", 16)
     version_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.8))
     var version = ProjectSettings.get_setting("application/config/version", "1.0.0")
