@@ -11,7 +11,6 @@ func _ready():
 	# Ensure the control covers the full viewport
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block mouse interactions
-	z_index = 50  # Display above most UI elements but below pause menu
 
 func _draw():
 	if not is_visible:
