@@ -755,7 +755,6 @@ func _create_path_mesh():
     path_material.roughness = 0.8  # Slightly less rough for subtle sheen
     path_material.metallic = 0.0
     path_material.albedo_texture = null
-    # Slightly brighter overall to stand out more
     path_material.emission_enabled = false
     path_mesh_instance.set_surface_override_material(0, path_material)
     path_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON  # Enable shadows for depth

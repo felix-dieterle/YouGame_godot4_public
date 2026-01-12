@@ -30,7 +30,20 @@ func verify_starting_chunk_path():
 	for i in range(segments.size()):
 		var segment = segments[i]
 		print("  Segment ", i, ":")
-		print("    Type: ", PathSystem.PathType.keys()[segment.path_type])
+		
+		# Safely get path type name
+		var type_name = "UNKNOWN"
+		match segment.path_type:
+			PathSystem.PathType.MAIN_PATH:
+				type_name = "MAIN_PATH"
+			PathSystem.PathType.BRANCH:
+				type_name = "BRANCH"
+			PathSystem.PathType.FOREST_PATH:
+				type_name = "FOREST_PATH"
+			PathSystem.PathType.VILLAGE_PATH:
+				type_name = "VILLAGE_PATH"
+		
+		print("    Type: ", type_name)
 		print("    Width: ", segment.width, " (default: ", PathSystem.DEFAULT_PATH_WIDTH, ")")
 		print("    Start: ", segment.start_pos)
 		print("    End: ", segment.end_pos)
@@ -40,7 +53,7 @@ func verify_starting_chunk_path():
 		
 		# Verify main path properties
 		if segment.path_type == PathSystem.PathType.MAIN_PATH:
-			var expected_width = PathSystem.DEFAULT_PATH_WIDTH * 1.5
+			var expected_width = PathSystem.DEFAULT_PATH_WIDTH * PathSystem.MAIN_PATH_WIDTH_MULTIPLIER
 			if abs(segment.width - expected_width) < 0.01:
 				print("    ✓ Main path has correct width (", expected_width, ")")
 			else:
