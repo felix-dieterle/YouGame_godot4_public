@@ -69,14 +69,13 @@ if input_dir.length() > 0.01:
 # To:      direction = Vector3(input_dir.x, 0, -input_dir.y).normalized()
 # 
 # This negation is necessary in both modes because:
-# - Input.get_vector() and mobile joystick both return negative Y for "up" input
-# - In Godot's 3D coordinate system, negative Z is the forward direction
-# - Without negation, pressing "up" (negative Y) creates Vector3(0, 0, negative)
-# - This negative Z points forward (correct)
-# - But the rotation logic uses atan2(x, z) to face the movement direction
-# - atan2(0, negative) gives wrong facing angle
-# - With negation, pressing "up" creates Vector3(0, 0, positive)
-# - atan2(0, positive) = 0°, making player correctly face forward in the positive Z direction
+# - Input.get_vector() and mobile joystick both return negative Y for "up" input (screen coordinates)
+# - In this game's coordinate system, the player's forward facing direction corresponds to positive Z
+# - The character rotation is calculated using atan2(direction.x, direction.z) at line 133
+# - atan2(0, positive) = 0 radians, which means the player faces in the +Z direction
+# - Without negation: "up" input (negative Y) → Vector3(0, 0, negative Z) → atan2(0, negative) ≈ π radians → player faces -Z (opposite direction)
+# - With negation: "up" input (negative Y) → Vector3(0, 0, positive Z) → atan2(0, positive) = 0 radians → player faces +Z (forward)
+# - This ensures the player both moves and faces in the same direction when using the joystick
 ```
 
 The key changes are:
