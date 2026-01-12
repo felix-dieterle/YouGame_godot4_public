@@ -65,95 +65,108 @@ func _ready():
     _create_robot_body()
 
 func _physics_process(delta):
-    # Get input - support both keyboard and mobile controls
-    var input_dir = Vector2.ZERO
-    
-    # Try mobile controls first
-    if mobile_controls:
-        input_dir = mobile_controls.get_input_vector()
-    
-    # Fall back to keyboard if no mobile input
-    # Note: ui_left/right/up/down are default Godot actions that work with arrow keys and WASD
-    if input_dir.length() < 0.1:
-        input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-    
-    var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
-    
-    if direction:
-        # Check slope along intended movement path
-        var can_move = true
-        
-        if world_manager:
-            # Check multiple points along the movement path to catch steep edges
-            # Use configurable lookahead distances to ensure consistent behavior
-            var check_distances = [slope_check_near, slope_check_medium, slope_check_far]
-            
-            for check_dist in check_distances:
-                var check_position = global_position + direction * check_dist
-                var slope_at_position = world_manager.get_slope_at_position(check_position)
-                
-                # Only restrict movement if slope is too steep AND we're moving uphill
-                if slope_at_position > max_slope_angle:
-                    # Get the slope gradient (direction of steepest ascent)
-                    var slope_gradient = world_manager.get_slope_gradient_at_position(check_position)
-                    
-                    # Normalize gradient for dot product calculation
-                    if slope_gradient.length_squared() > 0.0001:  # Check if gradient is non-zero
-                        var normalized_gradient = slope_gradient.normalized()
-                        
-                        # Check if we're moving uphill by checking dot product
-                        # If dot product > 0, we're moving in the uphill direction
-                        var uphill_component = direction.dot(normalized_gradient)
-                        
-                        # Only block movement if we're moving uphill (positive dot product)
-                        # Allow movement if going sideways (near 0) or downhill (negative)
-                        if uphill_component > 0.1:  # Small threshold to allow slight angles
-                            can_move = false
-                            break  # Stop checking once we find a blocking slope
-        
-        if can_move:
-            velocity.x = direction.x * move_speed
-            velocity.z = direction.z * move_speed
-            
-            # Rotate towards movement direction
-            var target_rotation = atan2(direction.x, direction.z)
-            rotation.y = lerp_angle(rotation.y, target_rotation, rotation_speed * delta)
-            
-            # Update head bob when moving in first-person
-            if is_first_person:
-                head_bob_time += delta * head_bob_frequency
-            
-            # Handle footstep sounds
-            _update_footsteps(delta)
-        else:
-            # Stop movement if trying to climb too steep slope
-            velocity.x = move_toward(velocity.x, 0, move_speed * delta * 2.0)
-            velocity.z = move_toward(velocity.z, 0, move_speed * delta * 2.0)
-    else:
-        velocity.x = move_toward(velocity.x, 0, move_speed * delta)
-        velocity.z = move_toward(velocity.z, 0, move_speed * delta)
-        
-        # Reset head bob when not moving
-        if is_first_person:
-            head_bob_time = 0.0
-        
-        # Reset footstep timer when not moving
-        footstep_timer = 0.0
-    
-    move_and_slide()
-    
-    # Apply head bobbing in first-person
-    if is_first_person and camera:
-        var bob_offset = sin(head_bob_time) * head_bob_amplitude
-        camera.position.y = first_person_height + bob_offset
-    
-    # Snap to terrain
-    if world_manager:
-        var target_height = world_manager.get_height_at_position(global_position)
-        var water_depth = world_manager.get_water_depth_at_position(global_position)
-        
-        # Sink into water (knee-deep means player height is reduced)
-        global_position.y = target_height + 1.0 - water_depth
+	# Get input - support both keyboard and mobile controls
+	var input_dir = Vector2.ZERO
+	
+	# Try mobile controls first
+	if mobile_controls:
+		input_dir = mobile_controls.get_input_vector()
+	
+	# Fall back to keyboard if no mobile input
+	# Note: ui_left/right/up/down are default Godot actions that work with arrow keys and WASD
+	if input_dir.length() < 0.1:
+		input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	
+	# Convert input to direction vector
+	# In first-person mode, direction is relative to player's facing direction
+	# In third-person mode, direction is world-relative (original behavior)
+	var direction = Vector3.ZERO
+	if input_dir.length() > 0.01:
+		if is_first_person:
+			# First-person: Transform input by player's rotation
+			# Forward (input_dir.y) should move in the direction player is facing
+			var input_3d = Vector3(input_dir.x, 0, input_dir.y).normalized()
+			direction = input_3d.rotated(Vector3.UP, rotation.y)
+		else:
+			# Third-person: World-relative movement (original behavior)
+			direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
+	
+	if direction:
+		# Check slope along intended movement path
+		var can_move = true
+		
+		if world_manager:
+			# Check multiple points along the movement path to catch steep edges
+			# Use configurable lookahead distances to ensure consistent behavior
+			var check_distances = [slope_check_near, slope_check_medium, slope_check_far]
+			
+			for check_dist in check_distances:
+				var check_position = global_position + direction * check_dist
+				var slope_at_position = world_manager.get_slope_at_position(check_position)
+				
+				# Only restrict movement if slope is too steep AND we're moving uphill
+				if slope_at_position > max_slope_angle:
+					# Get the slope gradient (direction of steepest ascent)
+					var slope_gradient = world_manager.get_slope_gradient_at_position(check_position)
+					
+					# Normalize gradient for dot product calculation
+					if slope_gradient.length_squared() > 0.0001:  # Check if gradient is non-zero
+						var normalized_gradient = slope_gradient.normalized()
+						
+						# Check if we're moving uphill by checking dot product
+						# If dot product > 0, we're moving in the uphill direction
+						var uphill_component = direction.dot(normalized_gradient)
+						
+						# Only block movement if we're moving uphill (positive dot product)
+						# Allow movement if going sideways (near 0) or downhill (negative)
+						if uphill_component > 0.1:  # Small threshold to allow slight angles
+							can_move = false
+							break  # Stop checking once we find a blocking slope
+		
+		if can_move:
+			velocity.x = direction.x * move_speed
+			velocity.z = direction.z * move_speed
+			
+			# Rotate towards movement direction (in both first and third person)
+			# This allows turning with joystick in first-person mode
+			var target_rotation = atan2(direction.x, direction.z)
+			rotation.y = lerp_angle(rotation.y, target_rotation, rotation_speed * delta)
+			
+			# Update head bob when moving in first-person
+			if is_first_person:
+				head_bob_time += delta * head_bob_frequency
+			
+			# Handle footstep sounds
+			_update_footsteps(delta)
+		else:
+			# Stop movement if trying to climb too steep slope
+			velocity.x = move_toward(velocity.x, 0, move_speed * delta * 2.0)
+			velocity.z = move_toward(velocity.z, 0, move_speed * delta * 2.0)
+	else:
+		velocity.x = move_toward(velocity.x, 0, move_speed * delta)
+		velocity.z = move_toward(velocity.z, 0, move_speed * delta)
+		
+		# Reset head bob when not moving
+		if is_first_person:
+			head_bob_time = 0.0
+		
+		# Reset footstep timer when not moving
+		footstep_timer = 0.0
+	
+	move_and_slide()
+	
+	# Apply head bobbing in first-person
+	if is_first_person and camera:
+		var bob_offset = sin(head_bob_time) * head_bob_amplitude
+		camera.position.y = first_person_height + bob_offset
+	
+	# Snap to terrain
+	if world_manager:
+		var target_height = world_manager.get_height_at_position(global_position)
+		var water_depth = world_manager.get_water_depth_at_position(global_position)
+		
+		# Sink into water (knee-deep means player height is reduced)
+		global_position.y = target_height + 1.0 - water_depth
 
 func _input(event):
     # Camera view toggle
