@@ -137,7 +137,7 @@ After the initial fix above, it was discovered that **first-person mode still ha
 - Pushing joystick LEFT made the player turn/look RIGHT
 
 ### Root Cause
-The first-person camera is rotated 180° (PI radians) on the Y-axis to look forward from the player's position (see `scripts/player.gd` line 201):
+The first-person camera is rotated 180° (PI radians) on the Y-axis to look forward from the player's position (see `scripts/player.gd` line 204):
 ```gdscript
 camera.rotation = Vector3(0, PI, 0)
 ```
@@ -148,7 +148,7 @@ This 180° rotation inverts the left/right axis from the player's perspective. T
 Negate `input_dir.x` when in first-person mode to compensate for the 180° camera rotation.
 
 **File:** `scripts/player.gd`  
-**Line 100:** Changed `input_dir.x` to `-input_dir.x` in first-person mode only
+**line 100:** Changed `input_dir.x` to `-input_dir.x` in first-person mode only
 
 ```gdscript
 # Before (INCORRECT for first-person):
