@@ -80,7 +80,11 @@ func _setup_environment():
         
         # Get reference to the sky material
         if fog_environment.sky and fog_environment.sky.sky_material:
-            sky_material = fog_environment.sky.sky_material
+            # Verify it's a PhysicalSkyMaterial
+            if fog_environment.sky.sky_material is PhysicalSkyMaterial:
+                sky_material = fog_environment.sky.sky_material
+            else:
+                push_warning("WeatherSystem: Sky material is not PhysicalSkyMaterial, sky effects will not work")
         else:
             push_warning("WeatherSystem: Could not find Sky material, sky effects may not work")
     else:

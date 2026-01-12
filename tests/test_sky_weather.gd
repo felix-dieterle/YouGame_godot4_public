@@ -3,13 +3,21 @@ extends Node
 # Test suite for sky weather integration
 const WeatherSystem = preload("res://scripts/weather_system.gd")
 
+var test_failed = false
+
 func _ready():
 	print("=== Starting Sky Weather Tests ===")
 	test_weather_params_structure()
 	test_sky_parameter_ranges()
 	test_weather_state_consistency()
 	print("=== All Sky Weather Tests Completed ===")
-	get_tree().quit()
+	
+	if test_failed:
+		print("OVERALL: FAILED")
+		get_tree().quit(1)
+	else:
+		print("OVERALL: PASSED")
+		get_tree().quit(0)
 
 func test_weather_params_structure():
 	print("\n--- Test: Weather Parameters Structure ---")
@@ -45,6 +53,8 @@ func test_weather_params_structure():
 	
 	if all_valid:
 		print("PASS: All weather states have required parameters with correct types")
+	else:
+		test_failed = true
 	
 	weather_system.free()
 
@@ -90,6 +100,8 @@ func test_sky_parameter_ranges():
 	
 	if all_valid:
 		print("PASS: All sky parameters are within valid ranges")
+	else:
+		test_failed = true
 	
 	weather_system.free()
 
@@ -136,5 +148,7 @@ func test_weather_state_consistency():
 		print("  Sky darkens as weather worsens (rayleigh decreases)")
 		print("  Clouds increase as weather worsens (turbidity increases)")
 		print("  Haze increases as weather worsens (mie increases)")
+	else:
+		test_failed = true
 	
 	weather_system.free()
