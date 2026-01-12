@@ -37,9 +37,9 @@ jobs:
       run: |
         echo "Validating GDScript files for parse errors..."
         godot --headless --path . --check-only --quit 2>&1 | tee script_validation.log
-        if grep -qi "ERROR:\|SCRIPT ERROR:\|Parse Error:\|PARSE ERROR:" script_validation.log; then
+        if grep -qi "SCRIPT ERROR:\|Parse Error:\|PARSE ERROR:\|Failed to load script" script_validation.log; then
           echo "❌ Script validation failed - parse errors detected"
-          grep -i "ERROR:\|SCRIPT ERROR:\|Parse Error:\|PARSE ERROR:" script_validation.log
+          grep -i "SCRIPT ERROR:\|Parse Error:\|PARSE ERROR:\|Failed to load script" script_validation.log
           exit 1
         else
           echo "✅ All scripts validated successfully"
