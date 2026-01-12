@@ -116,7 +116,7 @@ static func _create_forest_cluster(chunk_pos: Vector2i, world_seed: int, rng: Ra
     )
     
     var radius = rng.randf_range(FOREST_MIN_RADIUS, FOREST_MAX_RADIUS)
-    var density = rng.randf_range(0.3, 0.7)  # Trees per square unit
+    var density = rng.randf_range(0.5, 1.0)  # Increased density for proper forests
     
     var cluster = ClusterData.new(
         cluster_id,

@@ -6,6 +6,7 @@ class_name ProceduralModels
 ## Generates simple, performance-friendly 3D models for:
 ## - Trees (for forests)
 ## - Buildings (for settlements)
+## - Rocks (for terrain decoration)
 ## All models are optimized for mobile rendering
 
 # Tree generation constants
@@ -23,29 +24,94 @@ const BUILDING_MIN_HEIGHT = 2.5
 const BUILDING_MAX_HEIGHT = 5.0
 const BUILDING_WALL_SEGMENTS = 4
 
-## Create a low-poly tree mesh
-static func create_tree_mesh(seed_val: int = 0) -> ArrayMesh:
+# Rock generation constants
+const ROCK_MIN_SIZE = 0.5
+const ROCK_MAX_SIZE = 1.5
+const ROCK_SEGMENTS = 6
+
+# Tree type enum
+enum TreeType {
+	CONIFER,  # Pine/spruce trees
+	BROAD_LEAF,  # Oak/maple style
+	SMALL_BUSH  # Small vegetation
+}
+
+## Create a low-poly tree mesh with variations
+static func create_tree_mesh(seed_val: int = 0, tree_type: TreeType = TreeType.BROAD_LEAF) -> ArrayMesh:
     var rng = RandomNumberGenerator.new()
     rng.seed = seed_val
+    
+    # Automatically pick tree type based on seed if not specified
+    if tree_type == TreeType.BROAD_LEAF and seed_val > 0:
+        var type_choice = rng.randi() % 10
+        if type_choice < 4:
+            tree_type = TreeType.CONIFER
+        elif type_choice < 8:
+            tree_type = TreeType.BROAD_LEAF
+        else:
+            tree_type = TreeType.SMALL_BUSH
     
     var surface_tool = SurfaceTool.new()
     surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
     
-    # Randomize tree proportions slightly
+    match tree_type:
+        TreeType.CONIFER:
+            _create_conifer_tree(surface_tool, rng)
+        TreeType.BROAD_LEAF:
+            _create_broadleaf_tree(surface_tool, rng)
+        TreeType.SMALL_BUSH:
+            _create_small_bush(surface_tool, rng)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create a conifer (pine/spruce) tree
+static func _create_conifer_tree(st: SurfaceTool, rng: RandomNumberGenerator):
+    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(1.2, 1.5)
+    var base_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.6, 0.8)
+    
+    # Trunk (brown cylinder)
+    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS * 0.8, 
+                  TREE_TRUNK_SEGMENTS, Color(0.35, 0.22, 0.13))
+    
+    # Multiple cone layers for conifer shape
+    var layer_count = 3
+    for i in range(layer_count):
+        var layer_height = trunk_height + i * 0.8
+        var cone_height = 1.5
+        var cone_radius = base_radius * (1.0 - i * 0.25)
+        var green_shade = rng.randf_range(0.15, 0.25)
+        _add_cone(st, Vector3(0, layer_height, 0), cone_height, 
+                  cone_radius, TREE_CANOPY_SEGMENTS, Color(green_shade, 0.5 + green_shade, green_shade))
+
+## Create a broad-leaf tree (original style)
+static func _create_broadleaf_tree(st: SurfaceTool, rng: RandomNumberGenerator):
     var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(0.9, 1.1)
     var canopy_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.8, 1.2)
     var canopy_height = TREE_CANOPY_HEIGHT * rng.randf_range(0.9, 1.1)
     
-    # Generate trunk (brown cylinder)
-    _add_cylinder(surface_tool, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS, 
+    # Trunk (brown cylinder)
+    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS, 
                   TREE_TRUNK_SEGMENTS, Color(0.4, 0.25, 0.15))
     
-    # Generate canopy (green cone)
-    _add_cone(surface_tool, Vector3(0, trunk_height, 0), canopy_height, 
-              canopy_radius, TREE_CANOPY_SEGMENTS, Color(0.2, 0.6, 0.2))
+    # Canopy (green cone)
+    var green_variation = rng.randf_range(-0.1, 0.1)
+    _add_cone(st, Vector3(0, trunk_height, 0), canopy_height, 
+              canopy_radius, TREE_CANOPY_SEGMENTS, Color(0.2 + green_variation, 0.6 + green_variation, 0.2 + green_variation))
+
+## Create a small bush
+static func _create_small_bush(st: SurfaceTool, rng: RandomNumberGenerator):
+    var bush_height = 1.0 * rng.randf_range(0.8, 1.3)
+    var bush_radius = 0.8 * rng.randf_range(0.9, 1.2)
     
-    surface_tool.generate_normals()
-    return surface_tool.commit()
+    # Small trunk stub
+    _add_cylinder(st, Vector3.ZERO, bush_height * 0.3, TREE_TRUNK_RADIUS * 0.5, 
+                  4, Color(0.3, 0.2, 0.1))
+    
+    # Round bush top (cone with wide base)
+    var green_shade = rng.randf_range(0.25, 0.35)
+    _add_cone(st, Vector3(0, bush_height * 0.2, 0), bush_height, 
+              bush_radius, 6, Color(green_shade, 0.55, green_shade))
 
 ## Create a low-poly building mesh
 static func create_building_mesh(seed_val: int = 0) -> ArrayMesh:
@@ -232,5 +298,81 @@ static func create_building_material() -> StandardMaterial3D:
     material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
     material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
     material.roughness = 0.8
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
+## Create a low-poly rock mesh
+static func create_rock_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Randomize rock size and proportions
+    var base_size = rng.randf_range(ROCK_MIN_SIZE, ROCK_MAX_SIZE)
+    var height = base_size * rng.randf_range(0.6, 1.2)
+    
+    # Create irregular rock shape by deforming vertices
+    var vertices = []
+    var angle_step = TAU / ROCK_SEGMENTS
+    
+    # Generate base vertices with random deformation
+    for i in range(ROCK_SEGMENTS):
+        var angle = i * angle_step
+        var radius_variation = rng.randf_range(0.7, 1.3)
+        var x = cos(angle) * base_size * radius_variation
+        var z = sin(angle) * base_size * radius_variation
+        vertices.append(Vector3(x, 0, z))
+    
+    # Top point with random offset
+    var top_offset = Vector3(
+        rng.randf_range(-0.2, 0.2) * base_size,
+        height,
+        rng.randf_range(-0.2, 0.2) * base_size
+    )
+    
+    # Rock color variations (gray/brown tones)
+    var color_choices = [
+        Color(0.45, 0.45, 0.47),  # Light gray
+        Color(0.35, 0.35, 0.37),  # Medium gray
+        Color(0.42, 0.40, 0.38),  # Brownish gray
+        Color(0.38, 0.36, 0.35)   # Dark brownish
+    ]
+    var rock_color = color_choices[rng.randi() % color_choices.size()]
+    
+    # Add slight color variation per face
+    var color_var = 0.08
+    
+    # Create bottom cap
+    for i in range(ROCK_SEGMENTS):
+        var next_i = (i + 1) % ROCK_SEGMENTS
+        var face_color = rock_color * rng.randf_range(1.0 - color_var, 1.0 + color_var)
+        
+        surface_tool.set_color(face_color)
+        surface_tool.add_vertex(Vector3.ZERO)
+        surface_tool.add_vertex(vertices[next_i])
+        surface_tool.add_vertex(vertices[i])
+    
+    # Create side faces to top
+    for i in range(ROCK_SEGMENTS):
+        var next_i = (i + 1) % ROCK_SEGMENTS
+        var face_color = rock_color * rng.randf_range(1.0 - color_var, 1.0 + color_var)
+        
+        surface_tool.set_color(face_color)
+        surface_tool.add_vertex(vertices[i])
+        surface_tool.add_vertex(vertices[next_i])
+        surface_tool.add_vertex(top_offset)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create a material for rocks
+static func create_rock_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.95  # Rocks are very rough
     material.cull_mode = BaseMaterial3D.CULL_BACK
     return material

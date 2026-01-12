@@ -77,6 +77,7 @@ func generate():
     _generate_narrative_markers()
     _generate_lake_if_valley()
     _create_mesh()
+    _place_rocks()  # Add rocks to terrain
     _place_cluster_objects()
     _generate_paths()
 
@@ -185,6 +186,27 @@ func _create_mesh():
     var surface_tool = SurfaceTool.new()
     surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
     
+    # Pre-calculate forest influences for this chunk to darken forest floor
+    var chunk_pos = Vector2i(chunk_x, chunk_z)
+    var forest_clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, seed_value)
+    var forest_influence_map = []
+    forest_influence_map.resize(RESOLUTION * RESOLUTION)
+    
+    # Calculate forest influence for each cell
+    for z in range(RESOLUTION):
+        for x in range(RESOLUTION):
+            var cell_center_x = chunk_x * CHUNK_SIZE + (x + 0.5) * CELL_SIZE
+            var cell_center_z = chunk_z * CHUNK_SIZE + (z + 0.5) * CELL_SIZE
+            var world_pos = Vector2(cell_center_x, cell_center_z)
+            
+            var max_forest_influence = 0.0
+            for cluster in forest_clusters:
+                if cluster.type == ClusterSystem.ClusterType.FOREST:
+                    var influence = ClusterSystem.get_cluster_influence_at_pos(world_pos, cluster)
+                    max_forest_influence = max(max_forest_influence, influence)
+            
+            forest_influence_map[z * RESOLUTION + x] = max_forest_influence
+    
     # Generate vertices and triangles
     for z in range(RESOLUTION):
         for x in range(RESOLUTION):
@@ -220,6 +242,13 @@ func _create_mesh():
             var is_walkable = walkable_map[z * RESOLUTION + x] == 1
             if not is_walkable:
                 base_color = base_color.lerp(Color(0.5, 0.4, 0.3), 0.2)  # Subtle brownish tint
+            
+            # Darken ground in forest areas
+            var forest_influence = forest_influence_map[z * RESOLUTION + x]
+            if forest_influence > 0.1:
+                # Make ground darker and more brown/earthy in forests
+                var dark_forest_color = Color(0.25, 0.2, 0.15)  # Dark brown forest floor
+                base_color = base_color.lerp(dark_forest_color, forest_influence * 0.5)
             
             # First triangle
             surface_tool.set_color(base_color)
@@ -584,6 +613,50 @@ func get_slope_gradient_at_world_pos(world_x: float, world_z: float) -> Vector3:
     # In 3D space: gradient points uphill
     return Vector3(dx, 0, dz)
 
+## Place rocks on terrain for decoration
+func _place_rocks():
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ 12345  # Different seed from trees
+    
+    # Determine rock count based on biome - more rocks in rocky/mountain areas
+    var rock_count = 0
+    if biome == "mountain":
+        rock_count = rng.randi_range(8, 15)
+    elif biome == "rocky_hills":
+        rock_count = rng.randi_range(5, 10)
+    else:
+        rock_count = rng.randi_range(2, 5)  # A few rocks even in grassland
+    
+    # Place rocks
+    for i in range(rock_count):
+        var local_x = rng.randf_range(1.0, CHUNK_SIZE - 1.0)
+        var local_z = rng.randf_range(1.0, CHUNK_SIZE - 1.0)
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        
+        # Get terrain height
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Skip if in lake
+        if has_lake:
+            var dist_to_lake = Vector2(local_x, local_z).distance_to(lake_center)
+            if dist_to_lake < lake_radius + 1.0:
+                continue
+        
+        # Create rock instance
+        var rock_instance = MeshInstance3D.new()
+        rock_instance.mesh = ProceduralModels.create_rock_mesh(rng.randi())
+        rock_instance.material_override = ProceduralModels.create_rock_material()
+        rock_instance.position = Vector3(local_x, height, local_z)
+        rock_instance.rotation.y = rng.randf_range(0, TAU)  # Random rotation
+        # Random tilt for more natural look
+        rock_instance.rotation.x = rng.randf_range(-0.1, 0.1)
+        rock_instance.rotation.z = rng.randf_range(-0.1, 0.1)
+        rock_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+        
+        add_child(rock_instance)
+        placed_objects.append(rock_instance)
+
 ## Place trees and buildings based on cluster system
 func _place_cluster_objects():
     # Get clusters affecting this chunk
@@ -619,7 +692,8 @@ func _place_forest_objects(cluster: ClusterSystem.ClusterData):
             sample_count += 1
     
     avg_influence /= sample_count
-    var tree_count = int(chunk_area * cluster.density * avg_influence * 0.02)  # Reduced for performance
+    # Increased multiplier from 0.02 to 0.05 for denser forests
+    var tree_count = int(chunk_area * cluster.density * avg_influence * 0.05)
     
     # Place trees
     for i in range(tree_count):
@@ -649,7 +723,7 @@ func _place_forest_objects(cluster: ClusterSystem.ClusterData):
             if dist_to_lake < lake_radius:
                 continue
         
-        # Create tree instance
+        # Create tree instance with automatic type variation
         var tree_instance = MeshInstance3D.new()
         tree_instance.mesh = ProceduralModels.create_tree_mesh(rng.randi())
         tree_instance.material_override = ProceduralModels.create_tree_material()
