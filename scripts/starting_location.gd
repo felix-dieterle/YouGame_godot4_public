@@ -8,9 +8,6 @@ class_name StartingLocation
 ## - Plausible and simple generation
 ## - Always on walkable terrain
 
-# Preload dependencies
-const ProceduralModels = preload("res://scripts/procedural_models.gd")
-
 # Constants
 const LOCATION_RADIUS = 8.0  # Radius of starting area
 const NUM_MARKER_STONES = 6  # Number of marker stones around the area

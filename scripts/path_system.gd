@@ -10,6 +10,9 @@ class_name PathSystem
 ## - Lead to forests and settlements
 ## - Can end with placeholder endpoints
 
+# Preload dependencies
+const ClusterSystem = preload("res://scripts/cluster_system.gd")
+
 # Path types
 enum PathType {
 	MAIN_PATH,      # Main path from starting location
@@ -42,8 +45,9 @@ static var all_segments: Dictionary = {}  # Key: segment_id, Value: PathSegment
 static var chunk_segments: Dictionary = {}  # Key: Vector2i chunk_pos, Value: Array[int] segment_ids
 static var next_segment_id: int = 0
 
-# Constants
-const CHUNK_SIZE = 32.0  # Must match Chunk.CHUNK_SIZE
+# Constants - Reference chunk size from a known constant
+# Note: Must match the chunk size used in the game
+const CHUNK_SIZE = 32.0  # Should match Chunk.CHUNK_SIZE
 const DEFAULT_PATH_WIDTH = 1.5
 const BRANCH_PROBABILITY = 0.15  # 15% chance to branch at each chunk
 const ENDPOINT_PROBABILITY = 0.05  # 5% chance to end path
@@ -276,17 +280,12 @@ static func _determine_branch_target(segment: PathSegment, world_seed: int, rng:
 
 ## Find nearest cluster to a segment
 static func _find_nearest_cluster(segment: PathSegment, world_seed: int, max_distance: float):
-	if not ClassDB.class_exists("ClusterSystem"):
-		return null
-	
-	var ClusterSystem = load("res://scripts/cluster_system.gd")
-	
 	var segment_world_pos = Vector2(
 		segment.chunk_pos.x * CHUNK_SIZE + segment.end_pos.x,
 		segment.chunk_pos.y * CHUNK_SIZE + segment.end_pos.y
 	)
 	
-	# Check surrounding chunks for clusters
+	# Check surrounding chunks for clusters using preloaded ClusterSystem
 	var nearest_cluster = null
 	var nearest_distance = max_distance
 	
@@ -333,18 +332,12 @@ static func _segment_end_world_pos(segment: PathSegment) -> Vector2:
 
 ## Check if position is near a forest or settlement cluster
 static func _is_near_cluster(world_pos: Vector2, world_seed: int) -> bool:
-	# Check if ClusterSystem is available
-	if not ClassDB.class_exists("ClusterSystem"):
-		return false
-	
-	var ClusterSystem = load("res://scripts/cluster_system.gd")
-	
 	# Get chunk position
 	var chunk_x = int(floor(world_pos.x / CHUNK_SIZE))
 	var chunk_y = int(floor(world_pos.y / CHUNK_SIZE))
 	var chunk_pos = Vector2i(chunk_x, chunk_y)
 	
-	# Check for clusters
+	# Check for clusters using preloaded ClusterSystem
 	var clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, world_seed)
 	
 	for cluster in clusters:
