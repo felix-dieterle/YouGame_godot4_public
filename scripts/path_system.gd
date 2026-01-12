@@ -81,17 +81,17 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 	
 	# Check if this is the starting chunk (0, 0)
 	if chunk_pos == Vector2i(0, 0):
-		# Create initial main path from center going outward
+		# Create initial main path from starting location (0, 0) going outward
 		# Make it more prominent and guaranteed to be visible
-		var center = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
+		var start_pos = Vector2(0, 0)  # Starting location is at world origin
 		var direction = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized()
 		# Ensure longer initial path for better visibility
 		var min_starting_length = MAX_SEGMENT_LENGTH * MIN_STARTING_PATH_RATIO
 		var length = rng.randf_range(min_starting_length, MAX_SEGMENT_LENGTH)
-		var end = center + direction * length
+		var end = start_pos + direction * length
 		
 		# Clamp to chunk bounds or continue to next chunk
-		var segment = _create_segment(chunk_pos, center, end, PathType.MAIN_PATH, rng)
+		var segment = _create_segment(chunk_pos, start_pos, end, PathType.MAIN_PATH, rng)
 		new_segments.append(segment)
 	else:
 		# Check for incoming paths from neighboring chunks

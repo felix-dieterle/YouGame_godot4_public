@@ -10,6 +10,10 @@ extends Node
 ## - Paths continue across chunk boundaries
 const PathSystem = preload("res://scripts/path_system.gd")
 
+# Test constants
+const POSITION_TOLERANCE = 0.1  # Tolerance for position comparisons
+const WIDTH_TOLERANCE = 0.01  # Tolerance for width comparisons
+
 func _ready():
 	print("=== Path Visibility Verification ===\n")
 	
@@ -61,10 +65,16 @@ func verify_starting_chunk_path():
 		# Verify main path properties
 		if segment.path_type == PathSystem.PathType.MAIN_PATH:
 			var expected_width = PathSystem.DEFAULT_PATH_WIDTH * PathSystem.MAIN_PATH_WIDTH_MULTIPLIER
-			if abs(segment.width - expected_width) < 0.01:
+			if abs(segment.width - expected_width) < WIDTH_TOLERANCE:
 				print("    ✓ Main path has correct width (", expected_width, ")")
 			else:
 				print("    ❌ Main path width incorrect: ", segment.width, " expected: ", expected_width)
+			
+			# Check if path starts at starting location (0, 0)
+			if segment.start_pos.distance_to(Vector2(0, 0)) < POSITION_TOLERANCE:
+				print("    ✓ Path starts at starting location (0, 0)")
+			else:
+				print("    ❌ Path does not start at starting location: ", segment.start_pos)
 			
 			# Check if path is long enough to be visible
 			if length >= PathSystem.MAX_SEGMENT_LENGTH * PathSystem.MIN_STARTING_PATH_RATIO:
@@ -80,7 +90,7 @@ func verify_path_width():
 	print("Default path width: ", PathSystem.DEFAULT_PATH_WIDTH)
 	print("Expected: 2.5 (was 1.5)")
 	
-	if abs(PathSystem.DEFAULT_PATH_WIDTH - 2.5) < 0.01:
+	if abs(PathSystem.DEFAULT_PATH_WIDTH - 2.5) < WIDTH_TOLERANCE:
 		print("✓ Path width increased correctly\n")
 	else:
 		print("❌ Path width not set correctly: ", PathSystem.DEFAULT_PATH_WIDTH, "\n")
