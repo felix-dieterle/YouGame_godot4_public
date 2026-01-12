@@ -207,5 +207,6 @@ func _create_version_label():
     version_label.offset_top = -30.0
     version_label.offset_right = -10.0
     version_label.offset_bottom = -10.0
+    version_label.visible = true  # Explicitly make visible
     
     add_child(version_label)

@@ -19,8 +19,15 @@ const VERSION_LABEL_OFFSET_LEFT: float = -200.0
 const VERSION_LABEL_OFFSET_TOP: float = -30.0
 const VERSION_LABEL_OFFSET_RIGHT: float = -10.0
 const VERSION_LABEL_OFFSET_BOTTOM: float = -10.0
+const VERSION_LABEL_Z_INDEX: int = 50  # Above most UI elements but below debug overlay
+
+# Game version
+var game_version: String = ""
 
 func _ready():
+    # Get game version
+    game_version = ProjectSettings.get_setting("application/config/version", "1.0.0")
+    
     # Create status label (top center)
     status_label = Label.new()
     status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -52,8 +59,9 @@ func _ready():
     version_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM
     version_label.add_theme_font_size_override("font_size", 16)
     version_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.8))
-    var version = ProjectSettings.get_setting("application/config/version", "1.0.0")
-    version_label.text = "v" + version
+    version_label.z_index = VERSION_LABEL_Z_INDEX
+    version_label.text = "v" + game_version
+    version_label.visible = true  # Explicitly make visible
     add_child(version_label)
     
     # Create timers
@@ -67,8 +75,8 @@ func _ready():
     chunk_timer.timeout.connect(_on_chunk_timer_timeout)
     add_child(chunk_timer)
     
-    # Show initial loading message
-    show_message("Loading terrain...", 0)
+    # Show initial loading message with version
+    show_message("YouGame v" + game_version + " - Loading terrain...", 0)
 
 func show_message(message: String, duration: float = 3.0):
     status_label.text = message
