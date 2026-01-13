@@ -328,8 +328,8 @@ func _load_state():
         lockout_end_time = 0.0
         current_time = 0.0
 
+# Create a moon that appears during night.
 func _create_moon():
-    """Create a moon that appears during night."""
     moon = Node3D.new()
     moon.name = "Moon"
     add_child(moon)
@@ -352,8 +352,8 @@ func _create_moon():
     moon.add_child(mesh_instance)
     moon.visible = false  # Start hidden
 
+# Update moon position based on time of day.
 func _update_moon_position():
-    """Update moon position based on time of day."""
     if not moon:
         return
     

@@ -202,8 +202,8 @@ func _update_night_countdown():
         
         night_label.text = "Sleeping...\n\nYou cannot play for:\n%02d:%02d:%02d" % [hours, minutes, seconds]
 
+# Update the in-game time display.
 func update_game_time(time_seconds: float, cycle_duration: float):
-    """Update the in-game time display."""
     current_game_time = time_seconds
     day_cycle_duration = cycle_duration
     
