@@ -5,6 +5,7 @@ class_name UIManager
 var status_label: Label
 var chunk_info_label: Label
 var version_label: Label
+var time_label: Label
 var night_overlay: ColorRect
 var night_label: Label
 var countdown_timer: Timer
@@ -13,6 +14,8 @@ var countdown_timer: Timer
 var initial_loading_complete: bool = false
 var chunks_loaded: int = 0
 var night_lockout_end_time: float = 0.0
+var current_game_time: float = 0.0
+var day_cycle_duration: float = 1800.0  # 30 minutes in seconds
 
 # Timers for managing async operations
 var status_timer: Timer
@@ -71,6 +74,24 @@ func _ready():
     version_label.text = "v" + game_version
     version_label.visible = true  # Explicitly make visible
     add_child(version_label)
+    
+    # Create time label (bottom right, above version)
+    time_label = Label.new()
+    time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    time_label.anchor_left = 1.0
+    time_label.anchor_top = 1.0
+    time_label.anchor_right = 1.0
+    time_label.anchor_bottom = 1.0
+    time_label.offset_left = VERSION_LABEL_OFFSET_LEFT
+    time_label.offset_top = VERSION_LABEL_OFFSET_TOP - 25.0  # Above version label
+    time_label.offset_right = VERSION_LABEL_OFFSET_RIGHT
+    time_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM - 25.0
+    time_label.add_theme_font_size_override("font_size", 16)
+    time_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.7, 0.9))
+    time_label.z_index = VERSION_LABEL_Z_INDEX
+    time_label.text = "00:00"
+    time_label.visible = true
+    add_child(time_label)
     
     # Create timers
     status_timer = Timer.new()
@@ -180,3 +201,21 @@ func _update_night_countdown():
         var seconds = int(time_remaining - hours * 3600 - minutes * 60)
         
         night_label.text = "Sleeping...\n\nYou cannot play for:\n%02d:%02d:%02d" % [hours, minutes, seconds]
+
+# Update the in-game time display.
+func update_game_time(time_seconds: float, cycle_duration: float):
+    current_game_time = time_seconds
+    day_cycle_duration = cycle_duration
+    
+    # Only update if time_label exists (may not exist during script validation)
+    if not time_label:
+        return
+    
+    # Convert game time to hours and minutes (24-hour format)
+    # Start at 6:00 AM (sunrise), cycle through 24 hours
+    var time_ratio = time_seconds / cycle_duration
+    var total_minutes = int(time_ratio * 24.0 * 60.0) + 360  # Start at 6:00 AM (360 minutes)
+    var hours = int(total_minutes / 60) % 24
+    var minutes = int(total_minutes) % 60
+    
+    time_label.text = "%02d:%02d" % [hours, minutes]

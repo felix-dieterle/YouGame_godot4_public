@@ -110,10 +110,37 @@ The DayNightCycle is added to `scenes/main.tscn`:
 - Requires UIManager node for displaying messages
 - Requires Player node for controlling input
 
+## Recent Improvements (v1.0.23+)
+
+### In-Game Clock Display
+- Added real-time clock display in bottom-right corner (above version label)
+- Shows 24-hour format starting at 06:00 (sunrise)
+- Updates continuously as the day progresses
+- Uses same style as version label for consistency
+
+### Moon System
+- Moon now appears in the sky during night and sunset/sunrise transitions
+- Moon moves opposite to the sun (when sun sets, moon rises)
+- Moon has soft yellowish glow using emission material
+- Moon is only visible when above the horizon
+- Positioned far away (2000 units) for realistic sky effect
+
+### Animation Continuity Fixes
+- Fixed sunrise animation angle discontinuity
+  - Sunrise now ends at -90° (matching day start)
+  - Previously ended at -30°, causing a backwards jump
+- Fixed sunset animation angle continuity
+  - Sunset now starts at 90° (matching day end)
+  - Previously started at 30°, causing a discontinuity
+- Fixed light intensity transitions
+  - Sunrise/sunset animations now use MIN_LIGHT_ENERGY (0.6)
+  - Previously used SUNRISE_LIGHT_ENERGY (0.8), causing jumps
+  - Ensures smooth brightness transitions between animations and day cycle
+
 ## Future Enhancements
 
 Possible improvements:
-- Add stars/moon during night
+- Add stars during night
 - Allow players to build shelters to skip the sleep requirement
 - Add weather system integration (storms at night, etc.)
 - Add time-of-day dependent gameplay mechanics
