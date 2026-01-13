@@ -50,6 +50,7 @@ var directional_light: DirectionalLight3D
 var world_environment: WorldEnvironment
 var ui_manager: Node
 var player: Node3D
+var moon: Node3D
 
 # Save file path
 const SAVE_FILE_PATH: String = "user://day_night_save.cfg"
@@ -77,6 +78,9 @@ func _ready():
     ui_manager = get_parent().get_node_or_null("UIManager")
     if not ui_manager:
         push_warning("DayNightCycle: UIManager not found - messages and night overlay will not work")
+    
+    # Create moon
+    _create_moon()
     
     # Load saved state
     _load_state()
@@ -191,6 +195,10 @@ func _update_lighting():
     if not directional_light:
         return
     
+    # Update UI time display
+    if ui_manager and ui_manager.has_method("update_game_time"):
+        ui_manager.update_game_time(current_time, DAY_CYCLE_DURATION)
+    
     # Calculate sun angle based on current time
     # 0 = sunrise, DAY_CYCLE_DURATION/2 = noon, DAY_CYCLE_DURATION = sunset
     var time_ratio = current_time / DAY_CYCLE_DURATION
@@ -213,6 +221,9 @@ func _update_lighting():
         var env = world_environment.environment
         var color_warmth = lerp(0.2, 0.0, intensity_curve)  # More orange at sunrise/sunset
         env.ambient_light_color = Color(1.0, 1.0 - color_warmth, 1.0 - color_warmth * 1.5)
+    
+    # Update moon position
+    _update_moon_position()
 
 func _animate_sunrise(progress: float):
     if not directional_light:
@@ -230,6 +241,9 @@ func _animate_sunrise(progress: float):
         var env = world_environment.environment
         var warmth = lerp(0.4, 0.1, progress)
         env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * 1.5)
+    
+    # Update moon (it should be setting during sunrise)
+    _update_moon_position()
 
 func _animate_sunset(progress: float):
     if not directional_light:
@@ -247,6 +261,9 @@ func _animate_sunset(progress: float):
         var env = world_environment.environment
         var warmth = lerp(0.1, 0.5, progress * SUNSET_WARMTH_FACTOR)
         env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * SUNSET_COLOR_INTENSITY)
+    
+    # Update moon (it should be rising during sunset)
+    _update_moon_position()
 
 func _set_night_lighting():
     if not directional_light:
@@ -260,6 +277,12 @@ func _set_night_lighting():
     if world_environment and world_environment.environment:
         var env = world_environment.environment
         env.ambient_light_color = Color(0.1, 0.1, 0.2)
+    
+    # Show moon during night
+    if moon:
+        moon.visible = true
+        # Position moon at zenith during night
+        moon.position = Vector3(0, 1500.0, 0)
 
 func _show_warning(message: String):
     if ui_manager and ui_manager.has_method("show_message"):
@@ -304,3 +327,52 @@ func _load_state():
         is_locked_out = false
         lockout_end_time = 0.0
         current_time = 0.0
+
+func _create_moon():
+    """Create a moon that appears during night."""
+    moon = Node3D.new()
+    moon.name = "Moon"
+    add_child(moon)
+    
+    # Create mesh instance for moon
+    var mesh_instance = MeshInstance3D.new()
+    var sphere_mesh = SphereMesh.new()
+    sphere_mesh.radius = 50.0  # Large moon
+    sphere_mesh.height = 100.0
+    mesh_instance.mesh = sphere_mesh
+    
+    # Create moon material with emission
+    var material = StandardMaterial3D.new()
+    material.albedo_color = Color(0.9, 0.9, 0.85)  # Slightly yellowish white
+    material.emission_enabled = true
+    material.emission = Color(0.8, 0.8, 0.7)  # Soft glow
+    material.emission_energy_multiplier = 0.5
+    mesh_instance.material_override = material
+    
+    moon.add_child(mesh_instance)
+    moon.visible = false  # Start hidden
+
+func _update_moon_position():
+    """Update moon position based on time of day."""
+    if not moon:
+        return
+    
+    var time_ratio = current_time / DAY_CYCLE_DURATION
+    
+    # Moon moves opposite to sun (180 degrees offset)
+    # When sun is at -90° (sunrise), moon is at 90° (setting)
+    # When sun is at 90° (sunset), moon is at -90° (rising)
+    var moon_angle = lerp(-90.0, 90.0, time_ratio) + 180.0
+    
+    # Position moon in sky (far from player, moves in arc)
+    var distance = 2000.0  # Far away
+    var angle_rad = deg_to_rad(moon_angle)
+    
+    # Calculate position on arc
+    moon.position.x = 0
+    moon.position.y = sin(angle_rad) * distance
+    moon.position.z = -cos(angle_rad) * distance
+    
+    # Show/hide moon based on whether it's above horizon (negative Y angle means above horizon from moon's perspective)
+    # Moon is visible when it's above the horizon (when sun is below)
+    moon.visible = moon_angle > 0.0 and moon_angle < 180.0
