@@ -207,6 +207,10 @@ func update_game_time(time_seconds: float, cycle_duration: float):
     current_game_time = time_seconds
     day_cycle_duration = cycle_duration
     
+    # Only update if time_label exists (may not exist during script validation)
+    if not time_label:
+        return
+    
     # Convert game time to hours and minutes (24-hour format)
     # Start at 6:00 AM (sunrise), cycle through 24 hours
     var time_ratio = time_seconds / cycle_duration

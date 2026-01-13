@@ -330,6 +330,10 @@ func _load_state():
 
 # Create a moon that appears during night.
 func _create_moon():
+    # Don't create moon in headless mode (e.g., during tests or script validation)
+    if DisplayServer.get_name() == "headless":
+        return
+    
     moon = Node3D.new()
     moon.name = "Moon"
     add_child(moon)
