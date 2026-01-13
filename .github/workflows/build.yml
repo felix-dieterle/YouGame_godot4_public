@@ -178,6 +178,12 @@ jobs:
         if [ -f release/YouGame.apk ]; then
           echo "APK rebuilt successfully with new version!"
           ls -lh release/YouGame.apk
+          
+          # Rename APK to include version number
+          VERSION="${{ steps.version.outputs.new_version }}"
+          mv release/YouGame.apk "release/YouGame-${VERSION}.apk"
+          echo "Renamed APK to YouGame-${VERSION}.apk"
+          ls -lh release/
         else
           echo "Error: APK was not created"
           exit 1
