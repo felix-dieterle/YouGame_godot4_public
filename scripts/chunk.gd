@@ -15,12 +15,12 @@ const MAX_SLOPE_WALKABLE = 30.0  # degrees
 const MIN_WALKABLE_PERCENTAGE = 0.8
 const HEIGHT_RANGE = 10.0  # Maximum height variation from noise (±10 units)
 const HEIGHT_COLOR_DIVISOR = HEIGHT_RANGE * 4.0  # Normalizes height to color range
-const PATH_ELEVATION_OFFSET = 0.15  # Height offset for paths above terrain for visibility
+const PATH_ELEVATION_OFFSET = 0.01  # Minimal offset to prevent z-fighting, path as ground texture
 
-# Path colors - bright and contrasting for visibility
-const BRANCH_PATH_COLOR = Color(0.65, 0.55, 0.4)  # Lighter dirt/sand
-const MAIN_PATH_COLOR = Color(0.75, 0.7, 0.55)  # Light tan/beige
-const ENDPOINT_PATH_COLOR = Color(0.8, 0.65, 0.4)  # Bright sandy
+# Path colors - subtle earth tones as ground texture variation
+const BRANCH_PATH_COLOR = Color(0.52, 0.48, 0.38)  # Subtle dirt path
+const MAIN_PATH_COLOR = Color(0.55, 0.50, 0.40)  # Slightly worn earth
+const ENDPOINT_PATH_COLOR = Color(0.58, 0.52, 0.42)  # Well-traveled ground
 
 # Rock placement constants
 const ROCK_SEED_OFFSET = 12345  # Offset for rock placement seed differentiation
@@ -838,16 +838,16 @@ func _create_path_mesh():
     path_mesh_instance = MeshInstance3D.new()
     path_mesh_instance.mesh = path_mesh
     
-    # Create path material - improved for better visibility
+    # Create path material - natural ground texture appearance
     var path_material = StandardMaterial3D.new()
     path_material.vertex_color_use_as_albedo = true
     path_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
-    path_material.roughness = 0.8  # Slightly less rough for subtle sheen
+    path_material.roughness = 0.9  # Natural earth surface
     path_material.metallic = 0.0
     path_material.albedo_texture = null
     path_material.emission_enabled = false
     path_mesh_instance.set_surface_override_material(0, path_material)
-    path_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON  # Enable shadows for depth
+    path_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # Ground texture, no distinct shadow
     
     add_child(path_mesh_instance)
     
@@ -872,13 +872,13 @@ func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment):
     var p3 = end + perpendicular * width / 2.0
     var p4 = end - perpendicular * width / 2.0
     
-    # Get heights at corners - elevate paths more for better visibility
+    # Get heights at corners - minimal elevation to prevent z-fighting
     var h1 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p1.x, chunk_z * CHUNK_SIZE + p1.y) + PATH_ELEVATION_OFFSET
     var h2 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p2.x, chunk_z * CHUNK_SIZE + p2.y) + PATH_ELEVATION_OFFSET
     var h3 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p3.x, chunk_z * CHUNK_SIZE + p3.y) + PATH_ELEVATION_OFFSET
     var h4 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p4.x, chunk_z * CHUNK_SIZE + p4.y) + PATH_ELEVATION_OFFSET
     
-    # Path color based on type - made more visible and distinct
+    # Path color based on type - subtle texture variation for ground paths
     var path_color = BRANCH_PATH_COLOR
     if segment.path_type == PathSystem.PathType.MAIN_PATH:
         path_color = MAIN_PATH_COLOR
