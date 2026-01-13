@@ -66,6 +66,10 @@ func _ready():
     
     # Create visual representation - Simple Robot
     _create_robot_body()
+    
+    # Load saved player state if available
+    _load_saved_state()
+
 
 func _physics_process(delta):
     # Check if input is disabled (e.g., during night)
@@ -386,3 +390,27 @@ func _play_footstep_sound():
 
 func set_input_enabled(enabled: bool):
     input_enabled = enabled
+
+func _load_saved_state():
+    # Load player state from save file if it exists
+    if SaveGameManager.has_save_file():
+        if SaveGameManager.load_game():
+            var player_data = SaveGameManager.get_player_data()
+            
+            # Restore player position
+            global_position = player_data["position"]
+            
+            # Restore player rotation
+            rotation.y = player_data["rotation_y"]
+            
+            # Restore camera mode
+            if player_data["is_first_person"] != is_first_person:
+                is_first_person = player_data["is_first_person"]
+                _update_camera()
+                
+                # Update robot parts visibility
+                for part in robot_parts:
+                    part.visible = not is_first_person
+            
+            print("Player: Loaded saved position: ", global_position)
+

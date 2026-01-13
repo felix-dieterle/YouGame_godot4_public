@@ -324,7 +324,38 @@ func _toggle_settings():
     panel.visible = not settings_visible
 
 func _on_quit_pressed():
+    # Save game before quitting
+    _save_game_state()
     get_tree().quit()
+
+func _save_game_state():
+    # Collect current game state and save it
+    var player = get_tree().get_first_node_in_group("Player")
+    var world_manager = get_tree().get_first_node_in_group("WorldManager")
+    var day_night_cycle = get_tree().get_first_node_in_group("DayNightCycle")
+    
+    if player:
+        SaveGameManager.update_player_data(
+            player.global_position,
+            player.rotation.y,
+            player.is_first_person if player.has("is_first_person") else false
+        )
+    
+    if world_manager:
+        SaveGameManager.update_world_data(
+            world_manager.WORLD_SEED,
+            world_manager.player_chunk
+        )
+    
+    if day_night_cycle:
+        SaveGameManager.update_day_night_data(
+            day_night_cycle.current_time,
+            day_night_cycle.is_locked_out,
+            day_night_cycle.lockout_end_time
+        )
+    
+    SaveGameManager.save_game()
+
 
 func _on_master_volume_changed(value: float):
     # Convert 0-100 to decibels (-40 to 0 dB)

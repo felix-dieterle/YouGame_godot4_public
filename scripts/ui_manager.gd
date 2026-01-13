@@ -36,6 +36,9 @@ const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
 var game_version: String = ""
 
 func _ready():
+    # Ensure UI manager can function during pause
+    process_mode = Node.PROCESS_MODE_ALWAYS
+    
     # Get game version
     game_version = ProjectSettings.get_setting("application/config/version", "1.0.0")
     
@@ -135,6 +138,9 @@ func _ready():
     countdown_timer.timeout.connect(_on_countdown_timer_timeout)
     add_child(countdown_timer)
     
+    # Create and show start menu if save file exists
+    _create_start_menu()
+    
     # Show initial loading message with version
     show_message("YouGame v" + game_version + " - Loading terrain...", 0)
 
@@ -219,3 +225,133 @@ func update_game_time(time_seconds: float, cycle_duration: float):
     var minutes = int(total_minutes) % 60
     
     time_label.text = "%02d:%02d" % [hours, minutes]
+
+func _create_start_menu():
+    # Only show start menu if a save file exists
+    if not SaveGameManager.has_save_file():
+        return
+    
+    # Create overlay
+    var start_overlay = ColorRect.new()
+    start_overlay.name = "StartMenu"
+    start_overlay.anchor_right = 1.0
+    start_overlay.anchor_bottom = 1.0
+    start_overlay.color = Color(0.0, 0.0, 0.0, 0.85)
+    start_overlay.z_index = 250  # Above everything
+    add_child(start_overlay)
+    
+    # Create panel
+    var panel = Panel.new()
+    panel.set_anchors_preset(Control.PRESET_CENTER)
+    panel.size = Vector2(500, 400)
+    panel.position = Vector2(-250, -200)
+    
+    var panel_style = StyleBoxFlat.new()
+    panel_style.bg_color = Color(0.15, 0.15, 0.15, 0.95)
+    panel_style.corner_radius_top_left = 15
+    panel_style.corner_radius_top_right = 15
+    panel_style.corner_radius_bottom_left = 15
+    panel_style.corner_radius_bottom_right = 15
+    panel_style.border_color = Color(0.5, 0.5, 0.5, 1.0)
+    panel_style.border_width_left = 3
+    panel_style.border_width_right = 3
+    panel_style.border_width_top = 3
+    panel_style.border_width_bottom = 3
+    panel.add_theme_stylebox_override("panel", panel_style)
+    start_overlay.add_child(panel)
+    
+    # Create vbox
+    var vbox = VBoxContainer.new()
+    vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+    vbox.add_theme_constant_override("separation", 20)
+    panel.add_child(vbox)
+    
+    # Add margin
+    var margin = MarginContainer.new()
+    margin.add_theme_constant_override("margin_left", 40)
+    margin.add_theme_constant_override("margin_right", 40)
+    margin.add_theme_constant_override("margin_top", 40)
+    margin.add_theme_constant_override("margin_bottom", 40)
+    vbox.add_child(margin)
+    
+    var inner_vbox = VBoxContainer.new()
+    inner_vbox.add_theme_constant_override("separation", 25)
+    margin.add_child(inner_vbox)
+    
+    # Title
+    var title = Label.new()
+    title.text = "YouGame"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 48)
+    title.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+    inner_vbox.add_child(title)
+    
+    # Spacer
+    var spacer1 = Control.new()
+    spacer1.custom_minimum_size = Vector2(0, 20)
+    inner_vbox.add_child(spacer1)
+    
+    # Continue button
+    var continue_button = Button.new()
+    continue_button.text = "▶ Continue Game"
+    continue_button.custom_minimum_size = Vector2(0, 70)
+    continue_button.add_theme_font_size_override("font_size", 24)
+    continue_button.focus_mode = Control.FOCUS_NONE
+    continue_button.add_theme_stylebox_override("normal", _create_button_style(Color(0.2, 0.5, 0.2, 1.0), 10))
+    continue_button.add_theme_stylebox_override("hover", _create_button_style(Color(0.3, 0.6, 0.3, 1.0), 10))
+    continue_button.add_theme_stylebox_override("pressed", _create_button_style(Color(0.4, 0.7, 0.4, 1.0), 10))
+    continue_button.pressed.connect(func(): _on_continue_game(start_overlay))
+    inner_vbox.add_child(continue_button)
+    
+    # New game button
+    var new_game_button = Button.new()
+    new_game_button.text = "🗘 New Game"
+    new_game_button.custom_minimum_size = Vector2(0, 70)
+    new_game_button.add_theme_font_size_override("font_size", 24)
+    new_game_button.focus_mode = Control.FOCUS_NONE
+    new_game_button.add_theme_stylebox_override("normal", _create_button_style(Color(0.3, 0.3, 0.5, 1.0), 10))
+    new_game_button.add_theme_stylebox_override("hover", _create_button_style(Color(0.4, 0.4, 0.6, 1.0), 10))
+    new_game_button.add_theme_stylebox_override("pressed", _create_button_style(Color(0.5, 0.5, 0.7, 1.0), 10))
+    new_game_button.pressed.connect(func(): _on_new_game(start_overlay))
+    inner_vbox.add_child(new_game_button)
+    
+    # Spacer
+    var spacer2 = Control.new()
+    spacer2.custom_minimum_size = Vector2(0, 10)
+    spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    inner_vbox.add_child(spacer2)
+    
+    # Info label
+    var info_label = Label.new()
+    info_label.text = "A saved game was found"
+    info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    info_label.add_theme_font_size_override("font_size", 16)
+    info_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1))
+    inner_vbox.add_child(info_label)
+    
+    # Pause the game until user makes a choice
+    get_tree().paused = true
+
+func _create_button_style(bg_color: Color, corner_radius: int) -> StyleBoxFlat:
+    var style = StyleBoxFlat.new()
+    style.bg_color = bg_color
+    style.corner_radius_top_left = corner_radius
+    style.corner_radius_top_right = corner_radius
+    style.corner_radius_bottom_left = corner_radius
+    style.corner_radius_bottom_right = corner_radius
+    return style
+
+func _on_continue_game(overlay: ColorRect):
+    # Load is already done by SaveGameManager in other scripts
+    # Just hide the menu and resume
+    overlay.queue_free()
+    get_tree().paused = false
+    show_message("Game loaded! Welcome back.", 3.0)
+
+func _on_new_game(overlay: ColorRect):
+    # Delete save file and start fresh
+    SaveGameManager.delete_save()
+    overlay.queue_free()
+    get_tree().paused = false
+    show_message("New game started! Welcome to YouGame.", 3.0)
+
