@@ -11,8 +11,8 @@ const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 
 # Sun angle constants
 const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
-const SUNRISE_END_ANGLE: float = -30.0     # Morning position
-const SUNSET_START_ANGLE: float = 30.0     # Evening position  
+const SUNRISE_END_ANGLE: float = -90.0     # Sunrise position (matches day start)
+const SUNSET_START_ANGLE: float = 90.0     # Sunset position (matches day end)
 const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end
 const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night
 
@@ -233,13 +233,13 @@ func _animate_sunrise(progress: float):
     var sun_angle = lerp(SUNRISE_START_ANGLE, SUNRISE_END_ANGLE, progress)
     directional_light.rotation_degrees.x = -sun_angle
     
-    # Fade in light
-    directional_light.light_energy = lerp(0.0, SUNRISE_LIGHT_ENERGY, progress)
+    # Fade in light to match the start-of-day intensity
+    directional_light.light_energy = lerp(0.0, MIN_LIGHT_ENERGY, progress)
     
     # Adjust colors - start with warm sunrise colors
     if world_environment and world_environment.environment:
         var env = world_environment.environment
-        var warmth = lerp(0.4, 0.1, progress)
+        var warmth = lerp(0.4, 0.2, progress)  # End with same warmth as day start
         env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * 1.5)
     
     # Update moon (it should be setting during sunrise)
@@ -253,13 +253,13 @@ func _animate_sunset(progress: float):
     var sun_angle = lerp(SUNSET_START_ANGLE, SUNSET_END_ANGLE, progress)
     directional_light.rotation_degrees.x = -sun_angle
     
-    # Fade out light
-    directional_light.light_energy = lerp(SUNRISE_LIGHT_ENERGY, 0.0, progress)
+    # Fade out light from end-of-day intensity to darkness
+    directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, 0.0, progress)
     
     # Adjust colors - warm sunset colors
     if world_environment and world_environment.environment:
         var env = world_environment.environment
-        var warmth = lerp(0.1, 0.5, progress * SUNSET_WARMTH_FACTOR)
+        var warmth = lerp(0.2, 0.5, progress * SUNSET_WARMTH_FACTOR)  # Start from day-end warmth
         env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * SUNSET_COLOR_INTENSITY)
     
     # Update moon (it should be rising during sunset)
