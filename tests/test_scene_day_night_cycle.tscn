@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://test_day_night_cycle"]
+
+[ext_resource type="Script" path="res://tests/test_day_night_cycle.gd" id="1"]
+
+[node name="TestDayNightCycle" type="Node"]
+script = ExtResource("1")

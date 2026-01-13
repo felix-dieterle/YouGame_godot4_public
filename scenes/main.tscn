@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/ui_manager.gd" id="5_ui"]
 [ext_resource type="Script" path="res://scripts/mobile_controls.gd" id="6_mobile"]
 [ext_resource type="Script" path="res://scripts/debug_narrative_ui.gd" id="7_debug_narrative"]
+[ext_resource type="Script" path="res://scripts/day_night_cycle.gd" id="8_day_night"]
 [ext_resource type="Script" path="res://scripts/weather_system.gd" id="9_weather"]
 [ext_resource type="Script" path="res://scripts/pause_menu.gd" id="10_pause"]
 [ext_resource type="Script" path="res://scripts/ruler_overlay.gd" id="11_ruler"]
@@ -39,7 +40,7 @@ tonemap_exposure = 1.2
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." groups=["WorldEnvironment"]]
 environment = SubResource("Environment_1")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." groups=["DirectionalLight3D"]]
 transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 50, 0)
 light_energy = 1.2
 shadow_enabled = true
@@ -58,6 +59,9 @@ script = ExtResource("1_4f8k2")
 
 [node name="WeatherSystem" type="Node3D" parent="."]
 script = ExtResource("9_weather")
+
+[node name="DayNightCycle" type="Node3D" parent="."]
+script = ExtResource("8_day_night")
 
 [node name="DebugVisualization" type="Node3D" parent="."]
 script = ExtResource("2_3h7j5")

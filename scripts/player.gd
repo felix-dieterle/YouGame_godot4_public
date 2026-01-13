@@ -39,6 +39,9 @@ var mobile_controls: Node = null
 # Robot body parts for visibility toggle
 var robot_parts: Array[Node3D] = []
 
+# Input control
+var input_enabled: bool = true
+
 func _ready():
     # Add to Player group so other systems can find this node
     add_to_group("Player")
@@ -65,6 +68,10 @@ func _ready():
     _create_robot_body()
 
 func _physics_process(delta):
+    # Check if input is disabled (e.g., during night)
+    if not input_enabled:
+        return
+    
     # Get input - support both keyboard and mobile controls
     var input_dir = Vector2.ZERO
     
@@ -376,3 +383,6 @@ func _play_footstep_sound():
         var sample = (tone + noise_val) * envelope * 0.3
         
         playback.push_frame(Vector2(sample, sample))
+
+func set_input_enabled(enabled: bool):
+    input_enabled = enabled
