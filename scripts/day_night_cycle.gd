@@ -16,6 +16,11 @@ const SUNSET_START_ANGLE: float = 90.0     # Sunset position (matches day end)
 const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end
 const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night
 
+# Celestial object distance constants
+const CELESTIAL_DISTANCE: float = 2000.0   # Distance for sun and moon
+const MOON_ZENITH_HEIGHT: float = 1500.0   # Moon height at zenith during night
+const STAR_DISTANCE: float = 1800.0        # Distance for stars (closer than sun/moon)
+
 # Lighting intensity constants
 const MIN_LIGHT_ENERGY: float = 0.6        # Minimum light at sunrise/sunset
 const MAX_LIGHT_ENERGY: float = 1.5        # Maximum light at noon
@@ -304,7 +309,7 @@ func _set_night_lighting():
     if moon:
         moon.visible = true
         # Position moon at zenith during night
-        moon.position = Vector3(0, 1500.0, 0)
+        moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
     
     # Hide sun during night
     if sun:
@@ -386,41 +391,43 @@ func _create_moon():
     moon.add_child(mesh_instance)
     moon.visible = false  # Start hidden
 
+# Calculate current sun angle based on animation/time state.
+func _calculate_current_sun_angle() -> float:
+    if is_animating_sunrise:
+        var progress = sunrise_animation_time / SUNRISE_DURATION
+        return lerp(SUNRISE_START_ANGLE, SUNRISE_END_ANGLE, progress)
+    elif is_animating_sunset:
+        var progress = sunset_animation_time / SUNSET_DURATION
+        return lerp(SUNSET_START_ANGLE, SUNSET_END_ANGLE, progress)
+    elif is_night:
+        return NIGHT_SUN_ANGLE
+    else:
+        # Normal day progression
+        var time_ratio = current_time / DAY_CYCLE_DURATION
+        return lerp(-90.0, 90.0, time_ratio)
+
 # Update moon position based on time of day.
 func _update_moon_position():
     if not moon:
         return
     
-    var sun_angle: float
-    
-    # Calculate sun angle based on current state
-    if is_animating_sunrise:
-        var progress = sunrise_animation_time / SUNRISE_DURATION
-        sun_angle = lerp(SUNRISE_START_ANGLE, SUNRISE_END_ANGLE, progress)
-    elif is_animating_sunset:
-        var progress = sunset_animation_time / SUNSET_DURATION
-        sun_angle = lerp(SUNSET_START_ANGLE, SUNSET_END_ANGLE, progress)
-    elif is_night:
-        # During night, position moon at zenith (handled separately in _set_night_lighting)
+    # During night, position moon at zenith
+    if is_night:
         moon.visible = true
-        moon.position = Vector3(0, 1500.0, 0)
+        moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
         return
-    else:
-        # Normal day progression
-        var time_ratio = current_time / DAY_CYCLE_DURATION
-        sun_angle = lerp(-90.0, 90.0, time_ratio)
     
-    # Moon moves opposite to sun (180 degrees offset)
+    # Calculate sun angle and moon moves opposite (180 degrees offset)
+    var sun_angle = _calculate_current_sun_angle()
     var moon_angle = sun_angle + 180.0
     
     # Position moon in sky (far from player, moves in arc)
-    var distance = 2000.0  # Far away
     var angle_rad = deg_to_rad(moon_angle)
     
     # Calculate position on arc
     moon.position.x = 0
-    moon.position.y = sin(angle_rad) * distance
-    moon.position.z = -cos(angle_rad) * distance
+    moon.position.y = sin(angle_rad) * CELESTIAL_DISTANCE
+    moon.position.z = -cos(angle_rad) * CELESTIAL_DISTANCE
     
     # Show/hide moon based on whether it's above horizon
     # Moon is visible when it's above the horizon (y > 0)
@@ -460,31 +467,16 @@ func _update_sun_position():
     if not sun:
         return
     
-    var sun_angle: float
-    
-    # During animations, use animation-specific angles
-    if is_animating_sunrise:
-        var progress = sunrise_animation_time / SUNRISE_DURATION
-        sun_angle = lerp(SUNRISE_START_ANGLE, SUNRISE_END_ANGLE, progress)
-    elif is_animating_sunset:
-        var progress = sunset_animation_time / SUNSET_DURATION
-        sun_angle = lerp(SUNSET_START_ANGLE, SUNSET_END_ANGLE, progress)
-    elif is_night:
-        # Sun is below horizon during night
-        sun_angle = NIGHT_SUN_ANGLE
-    else:
-        # Normal day progression
-        var time_ratio = current_time / DAY_CYCLE_DURATION
-        sun_angle = lerp(-90.0, 90.0, time_ratio)
+    # Calculate current sun angle
+    var sun_angle = _calculate_current_sun_angle()
     
     # Position sun in sky (far from player, moves in arc)
-    var distance = 2000.0  # Far away
     var angle_rad = deg_to_rad(sun_angle)
     
     # Calculate position on arc
     sun.position.x = 0
-    sun.position.y = sin(angle_rad) * distance
-    sun.position.z = -cos(angle_rad) * distance
+    sun.position.y = sin(angle_rad) * CELESTIAL_DISTANCE
+    sun.position.z = -cos(angle_rad) * CELESTIAL_DISTANCE
     
     # Show/hide sun based on whether it's above horizon
     # Sun is visible when it's above the horizon (y > 0)
@@ -502,7 +494,6 @@ func _create_stars():
     
     # Create multiple small stars at random positions in the night sky
     var star_count = 100
-    var sky_radius = 1800.0  # Just inside the moon/sun distance
     
     for i in range(star_count):
         # Create star mesh
@@ -527,9 +518,9 @@ func _create_stars():
         var theta = randf() * TAU  # Azimuth angle (0 to 2π)
         var phi = randf_range(0, PI * 0.4)  # Elevation angle (0 to ~70° from zenith, avoiding horizon)
         
-        var x = sky_radius * sin(phi) * cos(theta)
-        var y = sky_radius * cos(phi)  # Height (positive = up)
-        var z = sky_radius * sin(phi) * sin(theta)
+        var x = STAR_DISTANCE * sin(phi) * cos(theta)
+        var y = STAR_DISTANCE * cos(phi)  # Height (positive = up)
+        var z = STAR_DISTANCE * sin(phi) * sin(theta)
         
         star_mesh_instance.position = Vector3(x, y, z)
         stars.add_child(star_mesh_instance)
@@ -541,15 +532,8 @@ func _update_stars_visibility():
     if not stars:
         return
     
-    # Stars are only visible at night and during sunset/sunrise transitions
-    # They fade in during sunset and fade out during sunrise
-    if is_night:
+    # Stars are visible at night and during sunset/sunrise transitions
+    if is_night or is_animating_sunset or is_animating_sunrise:
         stars.visible = true
-    elif is_animating_sunset:
-        stars.visible = true
-        # Could add fade-in effect here if desired
-    elif is_animating_sunrise:
-        stars.visible = true
-        # Could add fade-out effect here if desired
     else:
         stars.visible = false
