@@ -293,7 +293,7 @@ func _create_start_menu():
     
     # Continue button
     var continue_button = Button.new()
-    continue_button.text = "▶ Continue Game"
+    continue_button.text = "Continue Game"
     continue_button.custom_minimum_size = Vector2(0, 70)
     continue_button.add_theme_font_size_override("font_size", 24)
     continue_button.focus_mode = Control.FOCUS_NONE
@@ -305,7 +305,7 @@ func _create_start_menu():
     
     # New game button
     var new_game_button = Button.new()
-    new_game_button.text = "🗘 New Game"
+    new_game_button.text = "New Game"
     new_game_button.custom_minimum_size = Vector2(0, 70)
     new_game_button.add_theme_font_size_override("font_size", 24)
     new_game_button.focus_mode = Control.FOCUS_NONE

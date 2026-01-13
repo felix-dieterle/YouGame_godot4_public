@@ -319,16 +319,15 @@ func _save_state():
         push_warning("Failed to save day/night state: " + str(error))
 
 func _load_state():
-    # First try loading from SaveGameManager
+    # Get day/night state from SaveGameManager (already loaded at startup)
     var loaded_from_manager = false
     if SaveGameManager.has_save_file():
-        if SaveGameManager.load_game():
-            var day_night_data = SaveGameManager.get_day_night_data()
-            is_locked_out = day_night_data["is_locked_out"]
-            lockout_end_time = day_night_data["lockout_end_time"]
-            current_time = day_night_data["current_time"]
-            loaded_from_manager = true
-            print("DayNightCycle: Loaded state from SaveGameManager")
+        var day_night_data = SaveGameManager.get_day_night_data()
+        is_locked_out = day_night_data["is_locked_out"]
+        lockout_end_time = day_night_data["lockout_end_time"]
+        current_time = day_night_data["current_time"]
+        loaded_from_manager = true
+        print("DayNightCycle: Loaded state from SaveGameManager")
     
     # Fall back to legacy save file if SaveGameManager didn't have data
     if not loaded_from_manager:

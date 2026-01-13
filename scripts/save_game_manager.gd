@@ -1,7 +1,6 @@
 extends Node
-class_name SaveGameManager
+# SaveGameManager - Singleton for save/load functionality
 
-# Singleton instance for save/load functionality
 # This manager handles saving and loading game state in a performant way
 
 # Save file path - stored in user directory
@@ -33,9 +32,16 @@ var save_data: Dictionary = {
 signal save_completed
 signal load_completed(success: bool)
 
+# Track if data has been loaded to avoid duplicate loads
+var _data_loaded: bool = false
+
 func _ready():
     # Add to autoload group for easy access
     add_to_group("SaveGameManager")
+    
+    # Auto-load save data at startup if available
+    if has_save_file():
+        load_game()
 
 # Check if a save file exists
 func has_save_file() -> bool:
@@ -79,6 +85,11 @@ func save_game() -> bool:
 
 # Load the game state from file
 func load_game() -> bool:
+    # Avoid loading multiple times
+    if _data_loaded:
+        print("SaveGameManager: Data already loaded, skipping")
+        return true
+    
     if not has_save_file():
         push_warning("SaveGameManager: No save file found")
         load_completed.emit(false)
@@ -115,6 +126,7 @@ func load_game() -> bool:
     save_data["meta"]["version"] = config.get_value("meta", "version", "1.0")
     save_data["meta"]["timestamp"] = config.get_value("meta", "timestamp", 0)
     
+    _data_loaded = true
     print("SaveGameManager: Game loaded successfully from: " + SAVE_FILE_PATH)
     load_completed.emit(true)
     return true
@@ -155,8 +167,9 @@ func delete_save() -> bool:
     
     var dir = DirAccess.open("user://")
     if dir:
-        var error = dir.remove(SAVE_FILE_PATH.get_file())
+        var error = dir.remove("game_save.cfg")
         if error == OK:
+            _data_loaded = false  # Reset loaded flag
             print("SaveGameManager: Save file deleted")
             return true
         else:

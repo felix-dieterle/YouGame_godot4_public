@@ -392,25 +392,24 @@ func set_input_enabled(enabled: bool):
     input_enabled = enabled
 
 func _load_saved_state():
-    # Load player state from save file if it exists
+    # Get player state from SaveGameManager (already loaded at startup)
     if SaveGameManager.has_save_file():
-        if SaveGameManager.load_game():
-            var player_data = SaveGameManager.get_player_data()
+        var player_data = SaveGameManager.get_player_data()
+        
+        # Restore player position
+        global_position = player_data["position"]
+        
+        # Restore player rotation
+        rotation.y = player_data["rotation_y"]
+        
+        # Restore camera mode
+        if player_data["is_first_person"] != is_first_person:
+            is_first_person = player_data["is_first_person"]
+            _update_camera()
             
-            # Restore player position
-            global_position = player_data["position"]
-            
-            # Restore player rotation
-            rotation.y = player_data["rotation_y"]
-            
-            # Restore camera mode
-            if player_data["is_first_person"] != is_first_person:
-                is_first_person = player_data["is_first_person"]
-                _update_camera()
-                
-                # Update robot parts visibility
-                for part in robot_parts:
-                    part.visible = not is_first_person
-            
-            print("Player: Loaded saved position: ", global_position)
+            # Update robot parts visibility
+            for part in robot_parts:
+                part.visible = not is_first_person
+        
+        print("Player: Loaded saved position: ", global_position)
 
