@@ -281,8 +281,8 @@ func update_game_time(time_seconds: float, cycle_duration: float):
     if not time_label:
         return
     
-    # Convert game time to hours and minutes (24-hour format)
-    # Start at 6:00 AM (sunrise), end at 6:00 PM (sunset) - 12 hour day
+    # Convert game time to hours and minutes for 12-hour day cycle display
+    # Maps the day cycle (sunrise to sunset) to 6:00 AM - 6:00 PM
     var time_ratio = time_seconds / cycle_duration
     var total_minutes = int(time_ratio * 12.0 * 60.0) + 360  # Map to 12 hours starting at 6:00 AM (360 minutes)
     var hours = int(total_minutes / 60) % 24
