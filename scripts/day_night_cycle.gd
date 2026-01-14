@@ -554,9 +554,6 @@ func _update_stars_visibility():
         stars.visible = true
     else:
         stars.visible = false
-    # Show/hide moon based on whether it's above horizon (negative Y angle means above horizon from moon's perspective)
-    # Moon is visible when it's above the horizon (when sun is below)
-    moon.visible = moon_angle > 0.0 and moon_angle < 180.0
 
 func _save_game_state():
     # Save the game state when bedtime/pause starts
