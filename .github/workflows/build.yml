@@ -155,7 +155,7 @@ jobs:
         fi
         
         # Bump version code (extract current code and increment, use -m 1 for first match only)
-        CURRENT_CODE=$(grep -m 1 "^version/code=" export_presets.cfg | sed 's/version\/code=//')
+        CURRENT_CODE=$(grep -m 1 "^version/code=" export_presets.cfg | sed 's#version/code=##')
         if [ -z "$CURRENT_CODE" ]; then
           echo "Error: Could not find version/code in export_presets.cfg"
           exit 1
