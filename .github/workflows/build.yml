@@ -161,6 +161,19 @@ jobs:
         # Show the changes
         grep "version/" export_presets.cfg
     
+    - name: Update project.godot with new version
+      run: |
+        VERSION_NUMBER="${{ steps.version.outputs.new_version }}"
+        VERSION_NUMBER=${VERSION_NUMBER#v}  # Remove 'v' prefix
+        
+        # Update config/version in project.godot
+        sed -i "s/^config\/version=\"[^\"]*\"/config\/version=\"${VERSION_NUMBER}\"/" project.godot
+        
+        echo "Updated project.godot config/version to ${VERSION_NUMBER}"
+        
+        # Show the change
+        grep "config/version=" project.godot
+    
     - name: Setup Godot
       uses: chickensoft-games/setup-godot@v1
       with:
@@ -193,7 +206,7 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add export_presets.cfg
+        git add export_presets.cfg project.godot
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
