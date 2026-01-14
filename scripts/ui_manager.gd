@@ -31,6 +31,15 @@ const VERSION_LABEL_OFFSET_RIGHT: float = -10.0
 const VERSION_LABEL_OFFSET_BOTTOM: float = -10.0
 const VERSION_LABEL_Z_INDEX: int = 50  # Above most UI elements but below debug overlay
 
+# Time control UI positioning constants
+const TIME_LABEL_OFFSET_Y: float = -25.0  # Offset above version label
+const TIME_SPEED_LABEL_OFFSET_Y: float = -50.0  # Offset above time label
+const TIME_SPEED_LABEL_BUTTON_SPACE: float = -60.0  # Space reserved for buttons
+const TIME_BUTTON_WIDTH: float = 25.0
+const TIME_BUTTON_HEIGHT: float = 20.0
+const TIME_MINUS_BUTTON_OFFSET_X: float = -55.0
+const TIME_PLUS_BUTTON_OFFSET_X: float = -25.0
+
 # Night overlay constants
 const NIGHT_OVERLAY_COLOR: Color = Color(0.0, 0.0, 0.1, 0.9)  # Very dark blue
 const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
@@ -89,9 +98,9 @@ func _ready():
     time_label.anchor_right = 1.0
     time_label.anchor_bottom = 1.0
     time_label.offset_left = VERSION_LABEL_OFFSET_LEFT
-    time_label.offset_top = VERSION_LABEL_OFFSET_TOP - 25.0  # Above version label
+    time_label.offset_top = VERSION_LABEL_OFFSET_TOP + TIME_LABEL_OFFSET_Y
     time_label.offset_right = VERSION_LABEL_OFFSET_RIGHT
-    time_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM - 25.0
+    time_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM + TIME_LABEL_OFFSET_Y
     time_label.add_theme_font_size_override("font_size", 16)
     time_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.7, 0.9))
     time_label.z_index = VERSION_LABEL_Z_INDEX
@@ -107,9 +116,9 @@ func _ready():
     time_speed_label.anchor_right = 1.0
     time_speed_label.anchor_bottom = 1.0
     time_speed_label.offset_left = VERSION_LABEL_OFFSET_LEFT
-    time_speed_label.offset_top = VERSION_LABEL_OFFSET_TOP - 50.0  # Above time label
-    time_speed_label.offset_right = VERSION_LABEL_OFFSET_RIGHT - 60.0  # Leave space for buttons
-    time_speed_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM - 50.0
+    time_speed_label.offset_top = VERSION_LABEL_OFFSET_TOP + TIME_SPEED_LABEL_OFFSET_Y
+    time_speed_label.offset_right = VERSION_LABEL_OFFSET_RIGHT + TIME_SPEED_LABEL_BUTTON_SPACE
+    time_speed_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM + TIME_SPEED_LABEL_OFFSET_Y
     time_speed_label.add_theme_font_size_override("font_size", 14)
     time_speed_label.add_theme_color_override("font_color", Color(0.7, 0.9, 0.7, 0.9))
     time_speed_label.z_index = VERSION_LABEL_Z_INDEX
@@ -124,10 +133,10 @@ func _ready():
     time_minus_button.anchor_top = 1.0
     time_minus_button.anchor_right = 1.0
     time_minus_button.anchor_bottom = 1.0
-    time_minus_button.offset_left = -55.0
-    time_minus_button.offset_top = VERSION_LABEL_OFFSET_TOP - 50.0
-    time_minus_button.offset_right = -30.0
-    time_minus_button.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM - 50.0 + 20.0
+    time_minus_button.offset_left = TIME_MINUS_BUTTON_OFFSET_X
+    time_minus_button.offset_top = VERSION_LABEL_OFFSET_TOP + TIME_SPEED_LABEL_OFFSET_Y
+    time_minus_button.offset_right = TIME_MINUS_BUTTON_OFFSET_X + TIME_BUTTON_WIDTH
+    time_minus_button.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM + TIME_SPEED_LABEL_OFFSET_Y + TIME_BUTTON_HEIGHT
     time_minus_button.add_theme_font_size_override("font_size", 14)
     time_minus_button.z_index = VERSION_LABEL_Z_INDEX
     time_minus_button.focus_mode = Control.FOCUS_NONE
@@ -141,10 +150,10 @@ func _ready():
     time_plus_button.anchor_top = 1.0
     time_plus_button.anchor_right = 1.0
     time_plus_button.anchor_bottom = 1.0
-    time_plus_button.offset_left = -25.0
-    time_plus_button.offset_top = VERSION_LABEL_OFFSET_TOP - 50.0
+    time_plus_button.offset_left = TIME_PLUS_BUTTON_OFFSET_X
+    time_plus_button.offset_top = VERSION_LABEL_OFFSET_TOP + TIME_SPEED_LABEL_OFFSET_Y
     time_plus_button.offset_right = VERSION_LABEL_OFFSET_RIGHT
-    time_plus_button.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM - 50.0 + 20.0
+    time_plus_button.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM + TIME_SPEED_LABEL_OFFSET_Y + TIME_BUTTON_HEIGHT
     time_plus_button.add_theme_font_size_override("font_size", 14)
     time_plus_button.z_index = VERSION_LABEL_Z_INDEX
     time_plus_button.focus_mode = Control.FOCUS_NONE
