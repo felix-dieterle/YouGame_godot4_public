@@ -211,20 +211,19 @@ func _create_look_joystick():
     look_joystick_base.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
     look_joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
     look_joystick_base.visible = true  # Explicitly make visible
-    look_joystick_base.mouse_filter = Control.MOUSE_FILTER_PASS  # Allow touch events to pass through
+    look_joystick_base.mouse_filter = Control.MOUSE_FILTER_STOP  # Capture touch events
     add_child(look_joystick_base)
     
     # Base circle
     var base_panel = Panel.new()
     base_panel.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
     base_panel.position = Vector2(-JOYSTICK_RADIUS, -JOYSTICK_RADIUS)
-    base_panel.modulate = Color(0.4, 0.3, 0.3, 0.5)  # Slightly reddish tint to differentiate
-    base_panel.visible = true  # Explicitly make visible
+    base_panel.modulate = Color(0.6, 0.3, 0.3, 0.7)  # More visible reddish tint (increased opacity and red channel)
     look_joystick_base.add_child(base_panel)
     
     # Add StyleBox for circular appearance
     var base_style = StyleBoxFlat.new()
-    base_style.bg_color = Color(0.4, 0.3, 0.3, 0.5)
+    base_style.bg_color = Color(0.6, 0.3, 0.3, 0.7)  # More visible reddish tint
     base_style.corner_radius_top_left = int(JOYSTICK_RADIUS)
     base_style.corner_radius_top_right = int(JOYSTICK_RADIUS)
     base_style.corner_radius_bottom_left = int(JOYSTICK_RADIUS)
@@ -236,27 +235,26 @@ func _create_look_joystick():
     look_joystick_stick.position = Vector2(0, 0)
     look_joystick_stick.size = Vector2(STICK_RADIUS * 2, STICK_RADIUS * 2)
     look_joystick_stick.pivot_offset = Vector2(STICK_RADIUS, STICK_RADIUS)
-    look_joystick_stick.visible = true  # Explicitly make visible
     look_joystick_base.add_child(look_joystick_stick)
     
     var stick_panel = Panel.new()
     stick_panel.size = Vector2(STICK_RADIUS * 2, STICK_RADIUS * 2)
     stick_panel.position = Vector2(-STICK_RADIUS, -STICK_RADIUS)
-    stick_panel.modulate = Color(0.8, 0.6, 0.6, 0.7)  # Slightly reddish tint
-    stick_panel.visible = true  # Explicitly make visible
+    stick_panel.modulate = Color(0.9, 0.5, 0.5, 0.85)  # More visible reddish stick (increased opacity and brightness)
     look_joystick_stick.add_child(stick_panel)
     
     var stick_style = StyleBoxFlat.new()
-    stick_style.bg_color = Color(0.8, 0.6, 0.6, 0.7)
+    stick_style.bg_color = Color(0.9, 0.5, 0.5, 0.85)  # More visible reddish stick
     stick_style.corner_radius_top_left = int(STICK_RADIUS)
     stick_style.corner_radius_top_right = int(STICK_RADIUS)
     stick_style.corner_radius_bottom_left = int(STICK_RADIUS)
     stick_style.corner_radius_bottom_right = int(STICK_RADIUS)
     stick_panel.add_theme_stylebox_override("panel", stick_style)
     
-    DebugLogOverlay.add_log("Look joystick created successfully", "green")
+    DebugLogOverlay.add_log("Look joystick created successfully with enhanced visibility", "green")
     DebugLogOverlay.add_log("Look joystick base visible: %s" % str(look_joystick_base.visible), "cyan")
     DebugLogOverlay.add_log("Look joystick stick visible: %s" % str(look_joystick_stick.visible), "cyan")
+    DebugLogOverlay.add_log("Look joystick colors: base=red(0.6,0.3,0.3,0.7), stick=red(0.9,0.5,0.5,0.85)", "cyan")
 
 func _update_look_joystick(touch_pos: Vector2):
     var joystick_center = look_joystick_base.position
