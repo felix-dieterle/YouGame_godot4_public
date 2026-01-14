@@ -15,6 +15,7 @@ func _ready():
 	test_save_load_state()
 	test_warning_timings()
 	test_celestial_objects()
+	test_time_scale()  # New test for time scale control
 	
 	# Print results
 	print("\n=== Test Results ===")
@@ -152,6 +153,64 @@ func test_celestial_objects():
 	assert_true("sun" in day_night, "Should have sun variable")
 	assert_true("moon" in day_night, "Should have moon variable")
 	assert_true("stars" in day_night, "Should have stars variable")
+	
+	# Cleanup
+	test_scene.queue_free()
+
+func test_time_scale():
+	print("\n--- Test: Time Scale Control ---")
+	
+	var test_scene = Node3D.new()
+	var day_night = DayNightCycle.new()
+	
+	# Add mock directional light and environment
+	var light = DirectionalLight3D.new()
+	light.add_to_group("DirectionalLight3D")
+	test_scene.add_child(light)
+	
+	var env_node = WorldEnvironment.new()
+	env_node.environment = Environment.new()
+	env_node.add_to_group("WorldEnvironment")
+	test_scene.add_child(env_node)
+	
+	test_scene.add_child(day_night)
+	
+	# Test initial time scale
+	assert_equal(day_night.time_scale, 1.0, "Initial time scale should be 1.0")
+	
+	# Test increase
+	day_night.increase_time_scale()
+	assert_equal(day_night.time_scale, 2.0, "Time scale should double to 2.0")
+	
+	day_night.increase_time_scale()
+	assert_equal(day_night.time_scale, 4.0, "Time scale should double to 4.0")
+	
+	day_night.increase_time_scale()
+	assert_equal(day_night.time_scale, 8.0, "Time scale should double to 8.0")
+	
+	# Test max limit
+	day_night.increase_time_scale()
+	day_night.increase_time_scale()
+	day_night.increase_time_scale()
+	assert_equal(day_night.time_scale, 32.0, "Time scale should cap at 32.0")
+	
+	# Reset to 1.0
+	day_night.time_scale = 1.0
+	
+	# Test decrease
+	day_night.decrease_time_scale()
+	assert_equal(day_night.time_scale, 0.5, "Time scale should halve to 0.5")
+	
+	day_night.decrease_time_scale()
+	assert_equal(day_night.time_scale, 0.25, "Time scale should halve to 0.25")
+	
+	# Test min limit
+	day_night.decrease_time_scale()
+	assert_equal(day_night.time_scale, 0.25, "Time scale should cap at 0.25")
+	
+	# Verify functions exist
+	assert_true(day_night.has_method("increase_time_scale"), "Should have increase_time_scale method")
+	assert_true(day_night.has_method("decrease_time_scale"), "Should have decrease_time_scale method")
 	
 	# Cleanup
 	test_scene.queue_free()

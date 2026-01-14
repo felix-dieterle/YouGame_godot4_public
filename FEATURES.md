@@ -347,7 +347,12 @@ Potential improvements for these features:
 - [ ] Multiple control schemes (swipe-to-move, tap-to-move)
 - [ ] More detailed UI with minimap
 - [ ] Settings menu for adjusting shadow quality
-- [ ] Day/night cycle with dynamic shadows
+- [x] Day/night cycle with dynamic shadows - **COMPLETED**
+  - Full 30-minute day cycle with sunrise/sunset animations
+  - 4-hour sleep lockout period after sunset
+  - Dynamic lighting and celestial objects (sun, moon, stars)
+  - In-game clock display
+  - **Time speed control with +/- buttons** (v1.0.24+)
 - [ ] Tutorial messages for first-time players
 - [ ] Additional biome types (desert, snow, forest)
 - [ ] Weather effects that affect footstep sounds
