@@ -149,17 +149,62 @@ jobs:
         VERSION_NUMBER=${VERSION_NUMBER#v}  # Remove 'v' prefix
         
         # Update version/name in export_presets.cfg (matches line starting with version/name=)
-        sed -i "s/^version\/name=\"[^\"]*\"/version\/name=\"${VERSION_NUMBER}\"/" export_presets.cfg
+        if ! sed -i "s#^version/name=\"[^\"]*\"#version/name=\"${VERSION_NUMBER}\"#" export_presets.cfg; then
+          echo "Error: Failed to update version/name in export_presets.cfg"
+          exit 1
+        fi
         
         # Bump version code (extract current code and increment, use -m 1 for first match only)
-        CURRENT_CODE=$(grep -m 1 "^version/code=" export_presets.cfg | sed 's/version\/code=//')
+        CURRENT_CODE=$(grep -m 1 "^version/code=" export_presets.cfg | sed 's#version/code=##')
+        if [ -z "$CURRENT_CODE" ]; then
+          echo "Error: Could not find version/code in export_presets.cfg"
+          exit 1
+        fi
         NEW_CODE=$((CURRENT_CODE + 1))
-        sed -i "s/^version\/code=${CURRENT_CODE}/version\/code=${NEW_CODE}/" export_presets.cfg
+        if ! sed -i "s#^version/code=${CURRENT_CODE}#version/code=${NEW_CODE}#" export_presets.cfg; then
+          echo "Error: Failed to update version/code in export_presets.cfg"
+          exit 1
+        fi
+        
+        # Verify the updates were successful
+        if ! grep -qF "version/name=\"${VERSION_NUMBER}\"" export_presets.cfg; then
+          echo "Error: Version name update verification failed in export_presets.cfg"
+          exit 1
+        fi
+        if ! grep -qF "version/code=${NEW_CODE}" export_presets.cfg; then
+          echo "Error: Version code update verification failed in export_presets.cfg"
+          exit 1
+        fi
         
         echo "Updated version/name to ${VERSION_NUMBER} and version/code to ${NEW_CODE}"
         
         # Show the changes
         grep "version/" export_presets.cfg
+    
+    - name: Update project.godot with new version
+      run: |
+        VERSION_NUMBER="${{ steps.version.outputs.new_version }}"
+        VERSION_NUMBER=${VERSION_NUMBER#v}  # Remove 'v' prefix
+        
+        # Update config/version in project.godot (using # as delimiter to avoid conflicts with /)
+        if ! sed -i "s#^config/version=\"[^\"]*\"#config/version=\"${VERSION_NUMBER}\"#" project.godot; then
+          echo "Error: Failed to update project.godot"
+          exit 1
+        fi
+        
+        # Verify the update was successful (using -F for literal matching)
+        if ! grep -qF "config/version=\"${VERSION_NUMBER}\"" project.godot; then
+          echo "Error: Version update verification failed in project.godot"
+          echo "Expected: config/version=\"${VERSION_NUMBER}\""
+          echo "Current content:"
+          grep "config/version=" project.godot || echo "No config/version line found"
+          exit 1
+        fi
+        
+        echo "Updated project.godot config/version to ${VERSION_NUMBER}"
+        
+        # Show the change
+        grep "config/version=" project.godot
     
     - name: Setup Godot
       uses: chickensoft-games/setup-godot@v1
@@ -193,7 +238,7 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add export_presets.cfg
+        git add export_presets.cfg project.godot
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
