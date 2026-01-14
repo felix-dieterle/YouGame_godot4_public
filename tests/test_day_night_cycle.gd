@@ -14,6 +14,7 @@ func _ready():
 	test_time_progression()
 	test_save_load_state()
 	test_warning_timings()
+	test_celestial_objects()
 	
 	# Print results
 	print("\n=== Test Results ===")
@@ -117,6 +118,43 @@ func test_warning_timings():
 	var trigger_time_1min = day_duration - warning_1min
 	assert_true(trigger_time_1min > trigger_time_2min, "1-minute warning should come after 2-minute warning")
 	assert_true(trigger_time_1min < day_duration, "1-minute warning should be before end of day")
+
+func test_celestial_objects():
+	print("\n--- Test: Celestial Objects ---")
+	
+	# In headless mode, celestial objects are not created
+	# This is expected behavior, so we just verify the functions exist
+	var test_scene = Node3D.new()
+	var day_night = DayNightCycle.new()
+	
+	# Add mock directional light and environment
+	var light = DirectionalLight3D.new()
+	light.add_to_group("DirectionalLight3D")
+	test_scene.add_child(light)
+	
+	var env_node = WorldEnvironment.new()
+	env_node.environment = Environment.new()
+	env_node.add_to_group("WorldEnvironment")
+	test_scene.add_child(env_node)
+	
+	test_scene.add_child(day_night)
+	
+	# Verify functions are callable
+	assert_true(day_night.has_method("_create_sun"), "Should have _create_sun method")
+	assert_true(day_night.has_method("_create_moon"), "Should have _create_moon method")
+	assert_true(day_night.has_method("_create_stars"), "Should have _create_stars method")
+	assert_true(day_night.has_method("_update_sun_position"), "Should have _update_sun_position method")
+	assert_true(day_night.has_method("_update_moon_position"), "Should have _update_moon_position method")
+	assert_true(day_night.has_method("_update_stars_visibility"), "Should have _update_stars_visibility method")
+	
+	# In headless mode, objects should be null
+	# But we can still verify the variables exist
+	assert_true("sun" in day_night, "Should have sun variable")
+	assert_true("moon" in day_night, "Should have moon variable")
+	assert_true("stars" in day_night, "Should have stars variable")
+	
+	# Cleanup
+	test_scene.queue_free()
 
 # Helper functions
 func assert_equal(actual, expected, message: String):

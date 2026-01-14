@@ -125,6 +125,20 @@ The DayNightCycle is added to `scenes/main.tscn`:
 - Moon is only visible when above the horizon
 - Positioned far away (2000 units) for realistic sky effect
 
+### Visible Sun System
+- Added visible sun mesh that moves across the sky during the day
+- Sun is a bright yellow sphere with emission material
+- Sun moves from east to west following the DirectionalLight3D rotation
+- Sun is positioned far away (2000 units) to appear in the sky
+- Sun automatically hides when below the horizon (during night)
+
+### Star System
+- Added 100 stars visible during night
+- Stars appear during sunset and fade during sunrise
+- Each star has random size (2-5 units) and brightness (0.7-1.0)
+- Stars are positioned in the upper hemisphere using spherical coordinates
+- Stars use emission material for a twinkling effect
+
 ### Animation Continuity Fixes
 - Fixed sunrise animation angle discontinuity
   - Sunrise now ends at -90° (matching day start)
@@ -140,8 +154,9 @@ The DayNightCycle is added to `scenes/main.tscn`:
 ## Future Enhancements
 
 Possible improvements:
-- Add stars during night
 - Allow players to build shelters to skip the sleep requirement
 - Add weather system integration (storms at night, etc.)
 - Add time-of-day dependent gameplay mechanics
 - Add quick sleep option when player is in safe location
+- Add moon phases (new moon, crescent, full moon, etc.)
+- Make stars twinkle with animated brightness

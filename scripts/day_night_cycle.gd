@@ -16,6 +16,11 @@ const SUNSET_START_ANGLE: float = 90.0     # Sunset position (matches day end)
 const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end
 const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night
 
+# Celestial object distance constants
+const CELESTIAL_DISTANCE: float = 2000.0   # Distance for sun and moon
+const MOON_ZENITH_HEIGHT: float = 1500.0   # Moon height at zenith during night
+const STAR_DISTANCE: float = 1800.0        # Distance for stars (closer than sun/moon)
+
 # Lighting intensity constants
 const MIN_LIGHT_ENERGY: float = 0.6        # Minimum light at sunrise/sunset
 const MAX_LIGHT_ENERGY: float = 1.5        # Maximum light at noon
@@ -51,6 +56,8 @@ var world_environment: WorldEnvironment
 var ui_manager: Node
 var player: Node3D
 var moon: Node3D
+var sun: Node3D
+var stars: Node3D
 
 # Save file path
 const SAVE_FILE_PATH: String = "user://day_night_save.cfg"
@@ -82,8 +89,10 @@ func _ready():
     if not ui_manager:
         push_warning("DayNightCycle: UIManager not found - messages and night overlay will not work")
     
-    # Create moon
+    # Create celestial objects
+    _create_sun()
     _create_moon()
+    _create_stars()
     
     # Load saved state
     _load_state()
@@ -228,6 +237,12 @@ func _update_lighting():
     
     # Update moon position
     _update_moon_position()
+    
+    # Update sun position
+    _update_sun_position()
+    
+    # Update stars visibility
+    _update_stars_visibility()
 
 func _animate_sunrise(progress: float):
     if not directional_light:
@@ -248,6 +263,12 @@ func _animate_sunrise(progress: float):
     
     # Update moon (it should be setting during sunrise)
     _update_moon_position()
+    
+    # Update sun (it should be rising during sunrise)
+    _update_sun_position()
+    
+    # Update stars (they should be fading out during sunrise)
+    _update_stars_visibility()
 
 func _animate_sunset(progress: float):
     if not directional_light:
@@ -268,6 +289,12 @@ func _animate_sunset(progress: float):
     
     # Update moon (it should be rising during sunset)
     _update_moon_position()
+    
+    # Update sun (it should be setting during sunset)
+    _update_sun_position()
+    
+    # Update stars (they should be appearing during sunset)
+    _update_stars_visibility()
 
 func _set_night_lighting():
     if not directional_light:
@@ -286,7 +313,15 @@ func _set_night_lighting():
     if moon:
         moon.visible = true
         # Position moon at zenith during night
-        moon.position = Vector3(0, 1500.0, 0)
+        moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
+    
+    # Hide sun during night
+    if sun:
+        sun.visible = false
+    
+    # Show stars during night
+    if stars:
+        stars.visible = true
 
 func _show_warning(message: String):
     if ui_manager and ui_manager.has_method("show_message"):
@@ -373,30 +408,152 @@ func _create_moon():
     moon.add_child(mesh_instance)
     moon.visible = false  # Start hidden
 
+# Calculate current sun angle based on animation/time state.
+func _calculate_current_sun_angle() -> float:
+    if is_animating_sunrise:
+        var progress = sunrise_animation_time / SUNRISE_DURATION
+        return lerp(SUNRISE_START_ANGLE, SUNRISE_END_ANGLE, progress)
+    elif is_animating_sunset:
+        var progress = sunset_animation_time / SUNSET_DURATION
+        return lerp(SUNSET_START_ANGLE, SUNSET_END_ANGLE, progress)
+    elif is_night:
+        return NIGHT_SUN_ANGLE
+    else:
+        # Normal day progression
+        var time_ratio = current_time / DAY_CYCLE_DURATION
+        return lerp(-90.0, 90.0, time_ratio)
+
 # Update moon position based on time of day.
 func _update_moon_position():
     if not moon:
         return
     
-    var time_ratio = current_time / DAY_CYCLE_DURATION
+    # During night, position moon at zenith
+    if is_night:
+        moon.visible = true
+        moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
+        return
     
-    # Moon moves opposite to sun (180 degrees offset)
-    # When sun is at -90° (sunrise), moon is at 90° (setting)
-    # When sun is at 90° (sunset), moon is at -90° (rising)
-    var moon_angle = lerp(-90.0, 90.0, time_ratio) + 180.0
+    # Calculate sun angle and moon moves opposite (180 degrees offset)
+    var sun_angle = _calculate_current_sun_angle()
+    var moon_angle = sun_angle + 180.0
     
     # Position moon in sky (far from player, moves in arc)
-    var distance = 2000.0  # Far away
     var angle_rad = deg_to_rad(moon_angle)
     
     # Calculate position on arc
     moon.position.x = 0
-    moon.position.y = sin(angle_rad) * distance
-    moon.position.z = -cos(angle_rad) * distance
+    moon.position.y = sin(angle_rad) * CELESTIAL_DISTANCE
+    moon.position.z = -cos(angle_rad) * CELESTIAL_DISTANCE
     
-    # Show/hide moon based on whether it's above horizon (negative Y angle means above horizon from moon's perspective)
-    # Moon is visible when it's above the horizon (when sun is below)
-    moon.visible = moon_angle > 0.0 and moon_angle < 180.0
+    # Show/hide moon based on whether it's above horizon
+    # Moon is visible when it's above the horizon (y > 0)
+    moon.visible = moon.position.y > 0
+
+# Create a visible sun that moves across the sky.
+func _create_sun():
+    # Don't create sun in headless mode (e.g., during tests or script validation)
+    if DisplayServer.get_name() == "headless":
+        return
+    
+    sun = Node3D.new()
+    sun.name = "Sun"
+    add_child(sun)
+    
+    # Create mesh instance for sun
+    var mesh_instance = MeshInstance3D.new()
+    var sphere_mesh = SphereMesh.new()
+    sphere_mesh.radius = 80.0  # Large sun
+    sphere_mesh.height = 160.0
+    mesh_instance.mesh = sphere_mesh
+    
+    # Create sun material with bright emission
+    var material = StandardMaterial3D.new()
+    material.albedo_color = Color(1.0, 0.95, 0.7)  # Warm yellow
+    material.emission_enabled = true
+    material.emission = Color(1.0, 0.9, 0.6)  # Bright warm glow
+    material.emission_energy_multiplier = 2.0  # Very bright
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED  # Always bright
+    mesh_instance.material_override = material
+    
+    sun.add_child(mesh_instance)
+    sun.visible = true  # Start visible
+
+# Update sun position based on time of day.
+func _update_sun_position():
+    if not sun:
+        return
+    
+    # Calculate current sun angle
+    var sun_angle = _calculate_current_sun_angle()
+    
+    # Position sun in sky (far from player, moves in arc)
+    var angle_rad = deg_to_rad(sun_angle)
+    
+    # Calculate position on arc
+    sun.position.x = 0
+    sun.position.y = sin(angle_rad) * CELESTIAL_DISTANCE
+    sun.position.z = -cos(angle_rad) * CELESTIAL_DISTANCE
+    
+    # Show/hide sun based on whether it's above horizon
+    # Sun is visible when it's above the horizon (y > 0)
+    sun.visible = sun.position.y > 0
+
+# Create stars that appear during night.
+func _create_stars():
+    # Don't create stars in headless mode (e.g., during tests or script validation)
+    if DisplayServer.get_name() == "headless":
+        return
+    
+    stars = Node3D.new()
+    stars.name = "Stars"
+    add_child(stars)
+    
+    # Create multiple small stars at random positions in the night sky
+    var star_count = 100
+    
+    for i in range(star_count):
+        # Create star mesh
+        var star_mesh_instance = MeshInstance3D.new()
+        var star_sphere = SphereMesh.new()
+        star_sphere.radius = randf_range(2.0, 5.0)  # Small stars with some variation
+        star_sphere.height = star_sphere.radius * 2.0
+        star_mesh_instance.mesh = star_sphere
+        
+        # Create star material with emission
+        var star_material = StandardMaterial3D.new()
+        var brightness = randf_range(0.7, 1.0)  # Vary brightness
+        star_material.albedo_color = Color(brightness, brightness, brightness)
+        star_material.emission_enabled = true
+        star_material.emission = Color(brightness, brightness, brightness)
+        star_material.emission_energy_multiplier = randf_range(0.5, 1.5)
+        star_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        star_mesh_instance.material_override = star_material
+        
+        # Random position in upper hemisphere (only visible at night)
+        # Use spherical coordinates for even distribution
+        var theta = randf() * TAU  # Azimuth angle (0 to 2π)
+        var phi = randf_range(0, PI * 0.4)  # Elevation angle (0 to ~70° from zenith, avoiding horizon)
+        
+        var x = STAR_DISTANCE * sin(phi) * cos(theta)
+        var y = STAR_DISTANCE * cos(phi)  # Height (positive = up)
+        var z = STAR_DISTANCE * sin(phi) * sin(theta)
+        
+        star_mesh_instance.position = Vector3(x, y, z)
+        stars.add_child(star_mesh_instance)
+    
+    stars.visible = false  # Start hidden
+
+# Update stars visibility based on time of day.
+func _update_stars_visibility():
+    if not stars:
+        return
+    
+    # Stars are visible at night and during sunset/sunrise transitions
+    if is_night or is_animating_sunset or is_animating_sunrise:
+        stars.visible = true
+    else:
+        stars.visible = false
 
 func _save_game_state():
     # Save the game state when bedtime/pause starts
