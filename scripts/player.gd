@@ -246,9 +246,16 @@ func _update_camera_rotation():
     # This works in both first-person and third-person modes
     if camera:
         if is_first_person:
-            # In first-person, apply pitch and yaw directly to camera
+            # In first-person, apply pitch and yaw with proper Euler order (Y-X-Z)
+            # to avoid gimbal lock issues
             # Base rotation is PI (180°) to look forward, then apply user rotation
-            camera.rotation = Vector3(camera_rotation_x, PI + camera_rotation_y, 0)
+            # Using rotation_degrees for clearer logic
+            var rotation_deg = Vector3(
+                rad_to_deg(camera_rotation_x),  # Pitch (X-axis)
+                rad_to_deg(PI + camera_rotation_y),  # Yaw (Y-axis) with base 180° rotation
+                0.0  # Roll (Z-axis)
+            )
+            camera.rotation_degrees = rotation_deg
         else:
             # In third-person, rotate camera orbit around player
             # This creates a third-person camera that can look around the player
@@ -273,7 +280,14 @@ func _toggle_camera_view():
     camera_rotation_x = 0.0
     camera_rotation_y = 0.0
     
+    # Update camera position and apply rotation reset
     _update_camera()
+    
+    # If there was any residual rotation, ensure it's cleared
+    if camera:
+        if is_first_person:
+            camera.rotation = Vector3(0, PI, 0)
+        # In third-person, look_at will handle the orientation
     
     DebugLogOverlay.add_log("Camera view toggled to: %s" % ("First Person" if is_first_person else "Third Person"), "green")
     

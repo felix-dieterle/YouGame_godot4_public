@@ -24,6 +24,7 @@ var settings_visible: bool = false
 const JOYSTICK_RADIUS: float = 80.0
 const STICK_RADIUS: float = 30.0
 const DEADZONE: float = 0.2
+const JOYSTICK_DETECTION_MULTIPLIER: float = 1.5  # Multiplier for joystick detection radius
 const BUTTON_SIZE: float = 60.0
 const PANEL_WIDTH: float = 300.0
 const PANEL_HEIGHT: float = 350.0
@@ -142,12 +143,12 @@ func _input(event: InputEvent):
         
         if touch.pressed:
             # Check which joystick is closer and within range
-            if dist < JOYSTICK_RADIUS * 1.5 and (look_dist >= JOYSTICK_RADIUS * 1.5 or dist < look_dist):
+            if dist < JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER and (look_dist >= JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER or dist < look_dist):
                 # Start movement joystick
                 joystick_active = true
                 joystick_touch_index = touch.index
                 _update_joystick(touch_pos)
-            elif look_dist < JOYSTICK_RADIUS * 1.5:
+            elif look_dist < JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER:
                 # Start look joystick
                 look_joystick_active = true
                 look_joystick_touch_index = touch.index
