@@ -72,6 +72,20 @@ To enable debug mode:
 1. Select the DayNightCycle node in main.tscn
 2. In the Inspector, check the debug_mode and/or debug_skip_lockout options
 
+### Time Speed Control (v1.0.24+)
+Players can now dynamically control the speed of time during gameplay:
+
+- **Plus (+) Button**: Speed up time progression (doubles the speed each press, up to 32x)
+- **Minus (-) Button**: Slow down time progression (halves the speed each press, down to 0.25x)
+- **Speed Display**: Shows current time multiplier (e.g., "1x", "2x", "0.5x")
+
+The buttons are located in the bottom-right corner, next to the in-game clock. This allows players to:
+- Speed up time to quickly reach specific times of day
+- Slow down time to enjoy sunset/sunrise animations or for precise timing
+- Experiment with different time flows for their preferred gameplay experience
+
+**Note**: Time speed control is disabled when debug_mode is enabled (debug_mode uses fixed 60x speed).
+
 ## Configuration
 
 All timing constants are defined in `scripts/day_night_cycle.gd`:
