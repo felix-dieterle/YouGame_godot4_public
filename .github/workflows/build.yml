@@ -149,7 +149,7 @@ jobs:
         VERSION_NUMBER=${VERSION_NUMBER#v}  # Remove 'v' prefix
         
         # Update version/name in export_presets.cfg (matches line starting with version/name=)
-        if ! sed -i "s/^version\/name=\"[^\"]*\"/version\/name=\"${VERSION_NUMBER}\"/" export_presets.cfg; then
+        if ! sed -i "s#^version/name=\"[^\"]*\"#version/name=\"${VERSION_NUMBER}\"#" export_presets.cfg; then
           echo "Error: Failed to update version/name in export_presets.cfg"
           exit 1
         fi
@@ -161,17 +161,17 @@ jobs:
           exit 1
         fi
         NEW_CODE=$((CURRENT_CODE + 1))
-        if ! sed -i "s/^version\/code=${CURRENT_CODE}/version\/code=${NEW_CODE}/" export_presets.cfg; then
+        if ! sed -i "s#^version/code=${CURRENT_CODE}#version/code=${NEW_CODE}#" export_presets.cfg; then
           echo "Error: Failed to update version/code in export_presets.cfg"
           exit 1
         fi
         
         # Verify the updates were successful
-        if ! grep -q "^version/name=\"${VERSION_NUMBER}\"" export_presets.cfg; then
+        if ! grep -qF "version/name=\"${VERSION_NUMBER}\"" export_presets.cfg; then
           echo "Error: Version name update verification failed in export_presets.cfg"
           exit 1
         fi
-        if ! grep -q "^version/code=${NEW_CODE}" export_presets.cfg; then
+        if ! grep -qF "version/code=${NEW_CODE}" export_presets.cfg; then
           echo "Error: Version code update verification failed in export_presets.cfg"
           exit 1
         fi
@@ -186,14 +186,14 @@ jobs:
         VERSION_NUMBER="${{ steps.version.outputs.new_version }}"
         VERSION_NUMBER=${VERSION_NUMBER#v}  # Remove 'v' prefix
         
-        # Update config/version in project.godot
-        if ! sed -i "s/^config\/version=\"[^\"]*\"/config\/version=\"${VERSION_NUMBER}\"/" project.godot; then
+        # Update config/version in project.godot (using # as delimiter to avoid conflicts with /)
+        if ! sed -i "s#^config/version=\"[^\"]*\"#config/version=\"${VERSION_NUMBER}\"#" project.godot; then
           echo "Error: Failed to update project.godot"
           exit 1
         fi
         
-        # Verify the update was successful
-        if ! grep -q "^config/version=\"${VERSION_NUMBER}\"" project.godot; then
+        # Verify the update was successful (using -F for literal matching)
+        if ! grep -qF "config/version=\"${VERSION_NUMBER}\"" project.godot; then
           echo "Error: Version update verification failed in project.godot"
           echo "Expected: config/version=\"${VERSION_NUMBER}\""
           echo "Current content:"
