@@ -63,6 +63,9 @@ var stars: Node3D
 const SAVE_FILE_PATH: String = "user://day_night_save.cfg"
 
 func _ready():
+    # Add to DayNightCycle group so other systems can find this node
+    add_to_group("DayNightCycle")
+    
     # Find references
     directional_light = get_tree().get_first_node_in_group("DirectionalLight3D")
     if not directional_light:
@@ -169,6 +172,7 @@ func _process(delta):
             is_locked_out = true
             lockout_end_time = Time.get_unix_time_from_system() + SLEEP_LOCKOUT_DURATION
             _save_state()
+            _save_game_state()  # Save game state when bedtime starts
             _show_night_screen()
             _set_night_lighting()
             _disable_player_input()
@@ -350,18 +354,31 @@ func _save_state():
         push_warning("Failed to save day/night state: " + str(error))
 
 func _load_state():
-    var config = ConfigFile.new()
-    var error = config.load(SAVE_FILE_PATH)
+    # Get day/night state from SaveGameManager (already loaded at startup)
+    var loaded_from_manager = false
+    if SaveGameManager.has_save_file():
+        var day_night_data = SaveGameManager.get_day_night_data()
+        is_locked_out = day_night_data["is_locked_out"]
+        lockout_end_time = day_night_data["lockout_end_time"]
+        current_time = day_night_data["current_time"]
+        loaded_from_manager = true
+        print("DayNightCycle: Loaded state from SaveGameManager")
     
-    if error == OK:
-        is_locked_out = config.get_value("day_night", "is_locked_out", false)
-        lockout_end_time = config.get_value("day_night", "lockout_end_time", 0.0)
-        current_time = config.get_value("day_night", "current_time", 0.0)
-    else:
-        # No save file or error loading, use defaults
-        is_locked_out = false
-        lockout_end_time = 0.0
-        current_time = 0.0
+    # Fall back to legacy save file if SaveGameManager didn't have data
+    if not loaded_from_manager:
+        var config = ConfigFile.new()
+        var error = config.load(SAVE_FILE_PATH)
+        
+        if error == OK:
+            is_locked_out = config.get_value("day_night", "is_locked_out", false)
+            lockout_end_time = config.get_value("day_night", "lockout_end_time", 0.0)
+            current_time = config.get_value("day_night", "current_time", 0.0)
+        else:
+            # No save file or error loading, use defaults
+            is_locked_out = false
+            lockout_end_time = 0.0
+            current_time = 0.0
+
 
 # Create a moon that appears during night.
 func _create_moon():
@@ -537,3 +554,34 @@ func _update_stars_visibility():
         stars.visible = true
     else:
         stars.visible = false
+    # Show/hide moon based on whether it's above horizon (negative Y angle means above horizon from moon's perspective)
+    # Moon is visible when it's above the horizon (when sun is below)
+    moon.visible = moon_angle > 0.0 and moon_angle < 180.0
+
+func _save_game_state():
+    # Save the game state when bedtime/pause starts
+    var player = get_tree().get_first_node_in_group("Player")
+    var world_manager = get_tree().get_first_node_in_group("WorldManager")
+    
+    if player:
+        SaveGameManager.update_player_data(
+            player.global_position,
+            player.rotation.y,
+            player.is_first_person if player.has("is_first_person") else false
+        )
+    
+    if world_manager:
+        SaveGameManager.update_world_data(
+            world_manager.WORLD_SEED,
+            world_manager.player_chunk
+        )
+    
+    # Update day/night data
+    SaveGameManager.update_day_night_data(
+        current_time,
+        is_locked_out,
+        lockout_end_time
+    )
+    
+    SaveGameManager.save_game()
+

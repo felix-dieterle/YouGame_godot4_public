@@ -19,6 +19,7 @@ run/main_scene="res://scenes/main.tscn"
 [autoload]
 
 DebugLogOverlay="*res://scripts/debug_log_overlay.gd"
+SaveGameManager="*res://scripts/save_game_manager.gd"
 
 [display]
 
