@@ -23,6 +23,12 @@ var camera: Camera3D
 var is_first_person: bool = false
 var head_bob_time: float = 0.0
 
+# Camera rotation (for mouse/joystick look)
+var camera_rotation_x: float = 0.0  # Vertical rotation (pitch)
+var camera_rotation_y: float = 0.0  # Horizontal rotation (yaw)
+@export var camera_sensitivity: float = 0.5
+@export var camera_max_pitch: float = 80.0  # Maximum vertical look angle in degrees
+
 # Footstep sound system
 var footstep_player: AudioStreamPlayer
 var footstep_timer: float = 0.0
@@ -75,6 +81,24 @@ func _physics_process(delta):
     # Check if input is disabled (e.g., during night)
     if not input_enabled:
         return
+    
+    # Handle camera rotation from look joystick
+    var look_input = Vector2.ZERO
+    if mobile_controls and mobile_controls.has_method("get_look_vector"):
+        look_input = mobile_controls.get_look_vector()
+        
+        if look_input.length() > 0.01:
+            # Apply camera rotation based on joystick input
+            # X-axis controls horizontal rotation (yaw)
+            # Y-axis controls vertical rotation (pitch)
+            camera_rotation_y -= look_input.x * camera_sensitivity * delta * 60.0
+            camera_rotation_x -= look_input.y * camera_sensitivity * delta * 60.0
+            
+            # Clamp vertical rotation to prevent looking too far up/down
+            camera_rotation_x = clamp(camera_rotation_x, -deg_to_rad(camera_max_pitch), deg_to_rad(camera_max_pitch))
+            
+            # Apply rotation to camera
+            _update_camera_rotation()
     
     # Get input - support both keyboard and mobile controls
     var input_dir = Vector2.ZERO
@@ -217,11 +241,53 @@ func _update_camera():
             camera.position = Vector3(0, camera_height, camera_distance)
             camera.look_at(global_position, Vector3.UP)
 
+func _update_camera_rotation():
+    # Apply rotation from joystick look controls
+    # This works in both first-person and third-person modes
+    if camera:
+        if is_first_person:
+            # In first-person, apply pitch and yaw with proper Euler order (Y-X-Z)
+            # to avoid gimbal lock issues
+            # Base rotation is PI (180°) to look forward, then apply user rotation
+            # Using rotation_degrees for clearer logic
+            var rotation_deg = Vector3(
+                rad_to_deg(camera_rotation_x),  # Pitch (X-axis)
+                rad_to_deg(PI + camera_rotation_y),  # Yaw (Y-axis) with base 180° rotation
+                0.0  # Roll (Z-axis)
+            )
+            camera.rotation_degrees = rotation_deg
+        else:
+            # In third-person, rotate camera orbit around player
+            # This creates a third-person camera that can look around the player
+            var orbit_distance = camera_distance
+            var orbit_height = camera_height
+            
+            # Calculate camera position based on rotation
+            var horizontal_distance = orbit_distance * cos(camera_rotation_x)
+            var camera_x = horizontal_distance * sin(camera_rotation_y)
+            var camera_z = horizontal_distance * cos(camera_rotation_y)
+            var camera_y = orbit_height + orbit_distance * sin(camera_rotation_x)
+            
+            camera.position = Vector3(camera_x, camera_y, camera_z)
+            camera.look_at(global_position, Vector3.UP)
+
 func _toggle_camera_view():
     DebugLogOverlay.add_log("Player._toggle_camera_view() called", "yellow")
     
     is_first_person = not is_first_person
+    
+    # Reset camera rotation when toggling views
+    camera_rotation_x = 0.0
+    camera_rotation_y = 0.0
+    
+    # Update camera position and apply rotation reset
     _update_camera()
+    
+    # If there was any residual rotation, ensure it's cleared
+    if camera:
+        if is_first_person:
+            camera.rotation = Vector3(0, PI, 0)
+        # In third-person, look_at will handle the orientation
     
     DebugLogOverlay.add_log("Camera view toggled to: %s" % ("First Person" if is_first_person else "Third Person"), "green")
     

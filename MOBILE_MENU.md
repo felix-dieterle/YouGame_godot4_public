@@ -1,17 +1,19 @@
-# Mobile Settings Menu Feature
+# Mobile Controls Feature
 
-This document describes the mobile settings menu implementation added to the YouGame Godot4 project.
+This document describes the mobile controls implementation in the YouGame Godot4 project.
 
 ## Overview
 
-A hamburger menu button has been added to the bottom-right corner of the Android app (replacing the previous camera toggle button). When tapped, it opens a settings panel with various options.
+The mobile controls include:
+1. A movement joystick in the bottom-left corner for character movement
+2. A look/camera joystick in the bottom-right corner for camera control
+3. A hamburger menu button for accessing settings
 
 ## UI Layout
 
 ```
 ┌─────────────────────────────────────────────┐
-│                                             │
-│                                             │
+│ ☰ Menu                                      │
 │                                             │
 │                                             │
 │                  GAME VIEW                  │
@@ -24,26 +26,42 @@ A hamburger menu button has been added to the bottom-right corner of the Android
 │              │ First Person │               │
 │              │              │               │
 │              ├──────────────┤               │
-│              │   Actions    │               │
-│              │  (coming     │               │
-│              │   soon)      │               │
+│              │   ⏸ Pause    │               │
 │              │              │               │
 │              │   [Close]    │               │
 │              └──────────────┘               │
 │                                             │
-│    (o)                                 ☰    │
-│   Joystick                          Menu    │
+│    (o)                              (o)     │
+│  Movement                          Look     │
+│  Joystick                        Joystick   │
 └─────────────────────────────────────────────┘
 ```
 
 ## Components
 
-### 1. Menu Button (☰)
-- **Location**: Bottom-right corner
+### 1. Movement Joystick (Left)
+- **Location**: Bottom-left corner
+- **Style**: Circular base (dark gray) with movable stick
+- **Radius**: 80 pixels
+- **Function**: Controls character movement (up/down/left/right)
+- **Input**: Touch and drag to move character
+- **Deadzone**: 20% to prevent drift
+
+### 2. Look/Camera Joystick (Right)
+- **Location**: Bottom-right corner, positioned with spacing from version/time labels
+- **Style**: Circular base (reddish tint) with movable stick
+- **Radius**: 80 pixels
+- **Function**: Controls camera rotation (pan up/down/left/right)
+- **Input**: Touch and drag to look around
+- **Deadzone**: 20% to prevent drift
+- **Color**: Slightly reddish tint to differentiate from movement joystick
+
+### 3. Menu Button (☰)
+- **Location**: Top-left corner (next to debug buttons)
 - **Style**: Circular button with dark gray background (semi-transparent)
 - **Icon**: Hamburger menu symbol (☰)
 - **Size**: 60x60 pixels
-- **Function**: Opens/closes the settings panel
+- **Function**: Opens the pause menu
 
 ### 2. Settings Panel
 - **Appearance**: Dark panel with rounded corners and border
@@ -85,6 +103,19 @@ A hamburger menu button has been added to the bottom-right corner of the Android
 
 #### Key Variables
 ```gdscript
+# Movement joystick
+var joystick_base: Control
+var joystick_stick: Control
+var joystick_active: bool = false
+var joystick_vector: Vector2 = Vector2.ZERO
+
+# Look/camera joystick
+var look_joystick_base: Control
+var look_joystick_stick: Control
+var look_joystick_active: bool = false
+var look_joystick_vector: Vector2 = Vector2.ZERO
+
+# Menu button and settings panel
 var menu_button: Button
 var settings_panel: Panel
 var settings_visible: bool = false
@@ -92,34 +123,69 @@ var settings_visible: bool = false
 
 #### Main Functions
 
-1. **`_create_menu_button()`**
-   - Creates the hamburger menu button
-   - Positions it in bottom-right corner
-   - Connects to `_on_menu_button_pressed()`
+1. **`_create_look_joystick()`**
+   - Creates the look/camera joystick on the right side
+   - Positions it with proper spacing from version/time labels
+   - Uses reddish tint to differentiate from movement joystick
 
-2. **`_create_settings_panel()`**
-   - Creates the settings panel with all UI elements
-   - Sets up styling and layout
-   - Adds camera toggle and actions sections
-   - Initially hidden
+2. **`get_input_vector()`**
+   - Returns the movement joystick input as Vector2
+   - Used by player for character movement
 
-3. **`_on_menu_button_pressed()`**
-   - Toggles settings panel visibility
-   - Updates panel position when shown
+3. **`get_look_vector()`**
+   - Returns the look joystick input as Vector2
+   - Used by player for camera rotation
 
-4. **`_on_camera_toggle_pressed()`**
-   - Calls player's `_toggle_camera_view()` method
-   - Closes the settings menu automatically
+4. **`_update_look_joystick()`**
+   - Updates look joystick stick position based on touch
+   - Applies deadzone and normalization
 
-5. **`_on_close_settings_pressed()`**
-   - Hides the settings panel
+### File: `scripts/player.gd`
+
+#### Camera Rotation Variables
+```gdscript
+var camera_rotation_x: float = 0.0  # Vertical rotation (pitch)
+var camera_rotation_y: float = 0.0  # Horizontal rotation (yaw)
+@export var camera_sensitivity: float = 0.5
+@export var camera_max_pitch: float = 80.0  # Maximum vertical look angle
+```
+
+#### Camera Control Functions
+
+1. **`_physics_process(delta)`**
+   - Reads look joystick input from mobile_controls
+   - Applies rotation to camera based on joystick input
+   - Updates camera position/rotation in real-time
+
+2. **`_update_camera_rotation()`**
+   - Applies pitch and yaw rotation to camera
+   - In first-person: rotates camera directly
+   - In third-person: orbits camera around player
+
+3. **`_toggle_camera_view()`**
+   - Resets camera rotation when switching views
+   - Prevents jarring transitions
 
 ## User Experience
 
+### Movement Control
+1. Touch and drag the left joystick to move character
+2. Character moves in the direction of the joystick
+3. Release to stop moving
+
+### Camera Control (NEW)
+1. Touch and drag the right joystick to look around
+2. Horizontal movement (left/right) rotates camera horizontally (yaw)
+3. Vertical movement (up/down) rotates camera vertically (pitch)
+4. Works in both first-person and third-person views:
+   - **First-person**: Direct camera rotation for looking around
+   - **Third-person**: Camera orbits around the player
+5. Release to stop rotating
+
 ### Opening the Menu
-1. User taps the menu button (☰) in bottom-right corner
-2. Settings panel slides/appears in center-bottom of screen
-3. Panel displays available settings and actions
+1. User taps the menu button (☰) in top-left corner
+2. Pause menu opens with game options
+3. Menu displays available settings and actions
 
 ### Using Settings
 1. User can tap "Toggle First Person View" to switch camera modes
@@ -133,12 +199,13 @@ var settings_visible: bool = false
 
 ## Future Enhancements
 
-The "Actions" section is designed to accommodate future features:
-- Quick action buttons for game mechanics
-- Inventory shortcuts
-- Game settings (sound, graphics, etc.)
-- Character abilities or skills
-- Map/navigation tools
+Potential improvements for mobile controls:
+- Customizable joystick positions and sizes
+- Sensitivity settings for camera rotation
+- Optional inverted Y-axis for camera
+- Haptic feedback on touch
+- Visual indicators for camera rotation limits
+- Touch gesture support (pinch to zoom, swipe, etc.)
 
 ## Mobile Optimization
 
@@ -148,13 +215,21 @@ The "Actions" section is designed to accommodate future features:
 - `MOUSE_FILTER_STOP` prevents touch events from passing through
 - Semi-transparent backgrounds for visibility
 - Large font sizes (18-24pt) for readability
+- Dual joystick support with simultaneous touch tracking
+- Independent touch indices for each joystick
+- Proper spacing between joysticks and UI elements (version/time labels)
+- Color differentiation between movement (gray) and look (reddish) joysticks
 
 ## Testing Recommendations
 
 When testing on Android:
-1. Verify menu button appears in bottom-right
-2. Check that tapping opens the settings panel
-3. Confirm camera toggle works and closes menu
-4. Test panel positioning on different screen sizes
-5. Verify touch responsiveness of all buttons
-6. Check that panel doesn't interfere with joystick
+1. Verify both joysticks appear correctly (left and right)
+2. Test movement joystick for character movement
+3. Test look joystick for camera rotation in both views
+4. Confirm joysticks don't overlap with version/time labels
+5. Check that both joysticks can be used simultaneously
+6. Verify menu button functionality
+7. Test camera toggle between first-person and third-person
+8. Check touch responsiveness on different screen sizes
+9. Verify camera rotation limits (max pitch angle)
+10. Test that camera rotation resets when switching views
