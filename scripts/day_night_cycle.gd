@@ -34,6 +34,9 @@ const SUNSET_COLOR_INTENSITY: float = 1.5  # Intensity of warm colors
 @export var debug_mode: bool = false  # When true, time runs 60x faster
 @export var debug_skip_lockout: bool = false  # When true, skip the 4-hour lockout
 
+# Time scaling
+var time_scale: float = 1.0  # Multiplier for time progression (1.0 = normal speed)
+
 # Time tracking
 var current_time: float = 0.0  # Current time in the day cycle (0 to DAY_CYCLE_DURATION)
 var is_night: bool = false
@@ -117,10 +120,12 @@ func _ready():
         _update_lighting()
 
 func _process(delta):
-    # Apply debug time multiplier
+    # Apply debug time multiplier and time scale
     var time_delta = delta
     if debug_mode:
         time_delta *= 60.0  # 60x faster for testing
+    else:
+        time_delta *= time_scale  # Apply user-controlled time scale
     
     # Handle lockout check
     if is_locked_out and not is_night:
@@ -581,4 +586,19 @@ func _save_game_state():
     )
     
     SaveGameManager.save_game()
+
+# Increase time scale (speed up time)
+func increase_time_scale():
+    time_scale = min(time_scale * 2.0, 32.0)  # Double the speed, max 32x
+    _notify_time_scale_changed()
+
+# Decrease time scale (slow down time)
+func decrease_time_scale():
+    time_scale = max(time_scale / 2.0, 0.25)  # Half the speed, min 0.25x
+    _notify_time_scale_changed()
+
+# Notify UI of time scale change
+func _notify_time_scale_changed():
+    if ui_manager and ui_manager.has_method("update_time_scale"):
+        ui_manager.update_time_scale(time_scale)
 

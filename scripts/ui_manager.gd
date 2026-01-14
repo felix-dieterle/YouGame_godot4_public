@@ -6,6 +6,9 @@ var status_label: Label
 var chunk_info_label: Label
 var version_label: Label
 var time_label: Label
+var time_speed_label: Label  # Shows current time speed multiplier
+var time_minus_button: Button  # Slow down time
+var time_plus_button: Button  # Speed up time
 var night_overlay: ColorRect
 var night_label: Label
 var countdown_timer: Timer
@@ -95,6 +98,58 @@ func _ready():
     time_label.text = "00:00"
     time_label.visible = true
     add_child(time_label)
+    
+    # Create time speed label (bottom right, above time label)
+    time_speed_label = Label.new()
+    time_speed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    time_speed_label.anchor_left = 1.0
+    time_speed_label.anchor_top = 1.0
+    time_speed_label.anchor_right = 1.0
+    time_speed_label.anchor_bottom = 1.0
+    time_speed_label.offset_left = VERSION_LABEL_OFFSET_LEFT
+    time_speed_label.offset_top = VERSION_LABEL_OFFSET_TOP - 50.0  # Above time label
+    time_speed_label.offset_right = VERSION_LABEL_OFFSET_RIGHT - 60.0  # Leave space for buttons
+    time_speed_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM - 50.0
+    time_speed_label.add_theme_font_size_override("font_size", 14)
+    time_speed_label.add_theme_color_override("font_color", Color(0.7, 0.9, 0.7, 0.9))
+    time_speed_label.z_index = VERSION_LABEL_Z_INDEX
+    time_speed_label.text = "1x"
+    time_speed_label.visible = true
+    add_child(time_speed_label)
+    
+    # Create minus button (slow down time)
+    time_minus_button = Button.new()
+    time_minus_button.text = "-"
+    time_minus_button.anchor_left = 1.0
+    time_minus_button.anchor_top = 1.0
+    time_minus_button.anchor_right = 1.0
+    time_minus_button.anchor_bottom = 1.0
+    time_minus_button.offset_left = -55.0
+    time_minus_button.offset_top = VERSION_LABEL_OFFSET_TOP - 50.0
+    time_minus_button.offset_right = -30.0
+    time_minus_button.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM - 50.0 + 20.0
+    time_minus_button.add_theme_font_size_override("font_size", 14)
+    time_minus_button.z_index = VERSION_LABEL_Z_INDEX
+    time_minus_button.focus_mode = Control.FOCUS_NONE
+    time_minus_button.pressed.connect(_on_time_minus_pressed)
+    add_child(time_minus_button)
+    
+    # Create plus button (speed up time)
+    time_plus_button = Button.new()
+    time_plus_button.text = "+"
+    time_plus_button.anchor_left = 1.0
+    time_plus_button.anchor_top = 1.0
+    time_plus_button.anchor_right = 1.0
+    time_plus_button.anchor_bottom = 1.0
+    time_plus_button.offset_left = -25.0
+    time_plus_button.offset_top = VERSION_LABEL_OFFSET_TOP - 50.0
+    time_plus_button.offset_right = VERSION_LABEL_OFFSET_RIGHT
+    time_plus_button.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM - 50.0 + 20.0
+    time_plus_button.add_theme_font_size_override("font_size", 14)
+    time_plus_button.z_index = VERSION_LABEL_Z_INDEX
+    time_plus_button.focus_mode = Control.FOCUS_NONE
+    time_plus_button.pressed.connect(_on_time_plus_pressed)
+    add_child(time_plus_button)
     
     # Create timers
     status_timer = Timer.new()
@@ -354,4 +409,27 @@ func _on_new_game(overlay: ColorRect):
     overlay.queue_free()
     get_tree().paused = false
     show_message("New game started! Welcome to YouGame.", 3.0)
+
+# Handle minus button press - slow down time
+func _on_time_minus_pressed():
+    var day_night_cycle = get_tree().get_first_node_in_group("DayNightCycle")
+    if day_night_cycle and day_night_cycle.has_method("decrease_time_scale"):
+        day_night_cycle.decrease_time_scale()
+
+# Handle plus button press - speed up time
+func _on_time_plus_pressed():
+    var day_night_cycle = get_tree().get_first_node_in_group("DayNightCycle")
+    if day_night_cycle and day_night_cycle.has_method("increase_time_scale"):
+        day_night_cycle.increase_time_scale()
+
+# Update time scale display
+func update_time_scale(scale: float):
+    if not time_speed_label:
+        return
+    
+    # Format the scale nicely
+    if scale >= 1.0:
+        time_speed_label.text = "%dx" % int(scale)
+    else:
+        time_speed_label.text = "%.2fx" % scale
 
