@@ -72,6 +72,12 @@ func test_time_progression():
 func test_save_load_state():
 	print("\n--- Test: Save/Load State ---")
 	
+	# Clean up any existing save files first to ensure fresh start
+	var dir = DirAccess.open("user://")
+	if dir:
+		dir.remove("day_night_save.cfg")
+		dir.remove("game_save.cfg")
+	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
 	test_scene.add_child(day_night)
@@ -80,6 +86,7 @@ func test_save_load_state():
 	day_night.is_locked_out = true
 	day_night.lockout_end_time = 1000000.0
 	day_night.current_time = 500.0
+	day_night.time_scale = 4.0
 	
 	# Save state
 	day_night._save_state()
@@ -93,12 +100,12 @@ func test_save_load_state():
 	assert_equal(day_night2.is_locked_out, true, "Lockout state should be saved")
 	assert_equal(day_night2.lockout_end_time, 1000000.0, "Lockout end time should be saved")
 	assert_equal(day_night2.current_time, 500.0, "Current time should be saved")
+	assert_equal(day_night2.time_scale, 4.0, "Time scale should be saved")
 	
 	# Cleanup
 	test_scene.queue_free()
 	
 	# Clean up save file
-	var dir = DirAccess.open("user://")
 	if dir:
 		dir.remove("day_night_save.cfg")
 
@@ -160,6 +167,12 @@ func test_celestial_objects():
 func test_time_scale():
 	print("\n--- Test: Time Scale Control ---")
 	
+	# Clean up any existing save files first to ensure fresh start
+	var dir = DirAccess.open("user://")
+	if dir:
+		dir.remove("day_night_save.cfg")
+		dir.remove("game_save.cfg")
+	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
 	
@@ -175,8 +188,11 @@ func test_time_scale():
 	
 	test_scene.add_child(day_night)
 	
-	# Test initial time scale
-	assert_equal(day_night.time_scale, 1.0, "Initial time scale should be 1.0")
+	# Test initial time scale for fresh start (no save file)
+	assert_equal(day_night.time_scale, 2.0, "Initial time scale should be 2.0 for fresh start")
+	
+	# Reset to 1.0 to test increase/decrease functions
+	day_night.time_scale = 1.0
 	
 	# Test increase
 	day_night.increase_time_scale()

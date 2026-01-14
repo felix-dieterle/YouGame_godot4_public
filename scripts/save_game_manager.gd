@@ -20,7 +20,8 @@ var save_data: Dictionary = {
     "day_night": {
         "current_time": 0.0,
         "is_locked_out": false,
-        "lockout_end_time": 0.0
+        "lockout_end_time": 0.0,
+        "time_scale": 1.0
     },
     "meta": {
         "version": "1.0",
@@ -68,6 +69,7 @@ func save_game() -> bool:
     config.set_value("day_night", "current_time", save_data["day_night"]["current_time"])
     config.set_value("day_night", "is_locked_out", save_data["day_night"]["is_locked_out"])
     config.set_value("day_night", "lockout_end_time", save_data["day_night"]["lockout_end_time"])
+    config.set_value("day_night", "time_scale", save_data["day_night"]["time_scale"])
     
     # Save metadata
     config.set_value("meta", "version", save_data["meta"]["version"])
@@ -121,6 +123,7 @@ func load_game() -> bool:
     save_data["day_night"]["current_time"] = config.get_value("day_night", "current_time", 0.0)
     save_data["day_night"]["is_locked_out"] = config.get_value("day_night", "is_locked_out", false)
     save_data["day_night"]["lockout_end_time"] = config.get_value("day_night", "lockout_end_time", 0.0)
+    save_data["day_night"]["time_scale"] = config.get_value("day_night", "time_scale", 1.0)
     
     # Load metadata
     save_data["meta"]["version"] = config.get_value("meta", "version", "1.0")
@@ -143,10 +146,11 @@ func update_world_data(seed: int, player_chunk: Vector2i):
     save_data["world"]["player_chunk"] = player_chunk
 
 # Update day/night data for saving
-func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end_time: float):
+func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end_time: float, time_scale: float = 1.0):
     save_data["day_night"]["current_time"] = current_time
     save_data["day_night"]["is_locked_out"] = is_locked_out
     save_data["day_night"]["lockout_end_time"] = lockout_end_time
+    save_data["day_night"]["time_scale"] = time_scale
 
 # Get player data
 func get_player_data() -> Dictionary:
