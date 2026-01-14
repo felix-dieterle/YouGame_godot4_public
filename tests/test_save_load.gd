@@ -113,8 +113,9 @@ func test_save_and_load_day_night_data():
     var test_time = 1234.56
     var test_locked = true
     var test_lockout = 9876543.21
+    var test_time_scale = 4.0
     
-    SaveGameManager.update_day_night_data(test_time, test_locked, test_lockout)
+    SaveGameManager.update_day_night_data(test_time, test_locked, test_lockout, test_time_scale)
     
     # Save
     var save_success = SaveGameManager.save_game()
@@ -126,6 +127,7 @@ func test_save_and_load_day_night_data():
     SaveGameManager.save_data["day_night"]["current_time"] = 0.0
     SaveGameManager.save_data["day_night"]["is_locked_out"] = false
     SaveGameManager.save_data["day_night"]["lockout_end_time"] = 0.0
+    SaveGameManager.save_data["day_night"]["time_scale"] = 1.0
     
     # Load
     var load_success = SaveGameManager.load_game()
@@ -138,12 +140,13 @@ func test_save_and_load_day_night_data():
     var time_match = abs(day_night_data["current_time"] - test_time) < 0.001
     var locked_match = day_night_data["is_locked_out"] == test_locked
     var lockout_match = abs(day_night_data["lockout_end_time"] - test_lockout) < 0.001
+    var time_scale_match = abs(day_night_data["time_scale"] - test_time_scale) < 0.001
     
-    if time_match and locked_match and lockout_match:
+    if time_match and locked_match and lockout_match and time_scale_match:
         add_test_result(test_name, true, "Day/night data saved and loaded correctly")
     else:
         add_test_result(test_name, false, 
-            "Day/night data mismatch - Time: %s, Locked: %s, Lockout: %s" % [time_match, locked_match, lockout_match])
+            "Day/night data mismatch - Time: %s, Locked: %s, Lockout: %s, TimeScale: %s" % [time_match, locked_match, lockout_match, time_scale_match])
 
 func test_delete_save_file():
     var test_name = "Delete save file"

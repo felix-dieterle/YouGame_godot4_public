@@ -100,6 +100,9 @@ func _ready():
     # Load saved state
     _load_state()
     
+    # Notify UI of loaded time scale
+    _notify_time_scale_changed()
+    
     # Check if we need to show sunrise animation
     if is_locked_out:
         var current_unix_time = Time.get_unix_time_from_system()
@@ -353,6 +356,7 @@ func _save_state():
     config.set_value("day_night", "is_locked_out", is_locked_out)
     config.set_value("day_night", "lockout_end_time", lockout_end_time)
     config.set_value("day_night", "current_time", current_time)
+    config.set_value("day_night", "time_scale", time_scale)
     
     var error = config.save(SAVE_FILE_PATH)
     if error != OK:
@@ -366,6 +370,8 @@ func _load_state():
         is_locked_out = day_night_data["is_locked_out"]
         lockout_end_time = day_night_data["lockout_end_time"]
         current_time = day_night_data["current_time"]
+        # Load time_scale if available (with default of 1.0 for old saves)
+        time_scale = day_night_data.get("time_scale", 1.0)
         loaded_from_manager = true
         print("DayNightCycle: Loaded state from SaveGameManager")
     
@@ -378,11 +384,13 @@ func _load_state():
             is_locked_out = config.get_value("day_night", "is_locked_out", false)
             lockout_end_time = config.get_value("day_night", "lockout_end_time", 0.0)
             current_time = config.get_value("day_night", "current_time", 0.0)
+            time_scale = config.get_value("day_night", "time_scale", 1.0)
         else:
-            # No save file or error loading, use defaults
+            # No save file or error loading, use defaults for first start
             is_locked_out = false
             lockout_end_time = 0.0
-            current_time = 0.0
+            current_time = 0.0  # Start at sunrise (dawn)
+            time_scale = 2.0  # Start with double speed time progression
 
 
 # Create a moon that appears during night.
@@ -582,7 +590,8 @@ func _save_game_state():
     SaveGameManager.update_day_night_data(
         current_time,
         is_locked_out,
-        lockout_end_time
+        lockout_end_time,
+        time_scale
     )
     
     SaveGameManager.save_game()

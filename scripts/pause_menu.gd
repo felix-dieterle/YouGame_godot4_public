@@ -351,7 +351,8 @@ func _save_game_state():
         SaveGameManager.update_day_night_data(
             day_night_cycle.current_time,
             day_night_cycle.is_locked_out,
-            day_night_cycle.lockout_end_time
+            day_night_cycle.lockout_end_time,
+            day_night_cycle.time_scale
         )
     
     SaveGameManager.save_game()
