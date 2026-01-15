@@ -274,7 +274,7 @@ func _create_settings_panel():
     settings_vbox.add_child(ruler_hbox)
     
     var ruler_checkbox = CheckBox.new()
-    ruler_checkbox.button_pressed = true  # Initially visible
+    ruler_checkbox.button_pressed = false  # Initially hidden
     ruler_checkbox.custom_minimum_size = Vector2(30, 30)
     ruler_checkbox.focus_mode = Control.FOCUS_NONE
     ruler_checkbox.toggled.connect(_on_ruler_toggled)

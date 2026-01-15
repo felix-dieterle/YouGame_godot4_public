@@ -60,19 +60,19 @@ func test_ruler_overlay_methods():
 		
 		# Test visibility state management
 		var initial_state = ruler.get_visible_state()
-		if initial_state == true:
-			print("  PASS: RulerOverlay is initially visible")
+		if initial_state == false:
+			print("  PASS: RulerOverlay is initially hidden")
 		else:
-			print("  FAIL: RulerOverlay should be initially visible")
+			print("  FAIL: RulerOverlay should be initially hidden")
 		
-		ruler.set_visible_state(false)
-		if ruler.get_visible_state() == false:
-			print("  PASS: RulerOverlay visibility state can be set to false")
+		ruler.set_visible_state(true)
+		if ruler.get_visible_state() == true:
+			print("  PASS: RulerOverlay visibility state can be set to true")
 		else:
-			print("  FAIL: RulerOverlay visibility state should be false")
+			print("  FAIL: RulerOverlay visibility state should be true")
 		
 		ruler.toggle_visibility()
-		if ruler.get_visible_state() == true:
+		if ruler.get_visible_state() == false:
 			print("  PASS: RulerOverlay visibility can be toggled")
 		else:
 			print("  FAIL: RulerOverlay visibility toggle failed")
