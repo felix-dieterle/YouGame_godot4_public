@@ -280,8 +280,8 @@ func _create_settings_panel():
     ruler_hbox.add_theme_constant_override("separation", 10)
     settings_vbox.add_child(ruler_hbox)
     
-    ruler_checkbox = CheckBox.new()
-    ruler_checkbox.button_pressed = true  # Initially visible
+    var ruler_checkbox = CheckBox.new()
+    ruler_checkbox.button_pressed = false  # Initially hidden
     ruler_checkbox.custom_minimum_size = Vector2(30, 30)
     ruler_checkbox.focus_mode = Control.FOCUS_NONE
     ruler_checkbox.toggled.connect(_on_ruler_toggled)

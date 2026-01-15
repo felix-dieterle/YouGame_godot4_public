@@ -41,8 +41,8 @@ const TIME_MINUS_BUTTON_OFFSET_X: float = -55.0
 const TIME_PLUS_BUTTON_OFFSET_X: float = -25.0
 
 # Day/night cycle time display constants
-const SUNRISE_TIME_MINUTES: int = 420  # 7:00 AM = 420 minutes from midnight
-const DAY_DURATION_HOURS: float = 10.0  # 10-hour day cycle from 7:00 AM to 5:00 PM
+const SUNRISE_TIME_MINUTES: int = 360  # 6:00 AM = 360 minutes from midnight (sunrise starts at 6:00, completes at 7:00)
+const DAY_DURATION_HOURS: float = 11.0  # 11-hour day cycle from 6:00 AM (sunrise start) to 5:00 PM (sunset start)
 
 # Night overlay constants
 const NIGHT_OVERLAY_COLOR: Color = Color(0.0, 0.0, 0.1, 0.9)  # Very dark blue

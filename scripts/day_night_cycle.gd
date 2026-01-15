@@ -11,8 +11,8 @@ const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 
 # Sun angle constants
 const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
-const SUNRISE_END_ANGLE: float = -90.0     # Sunrise position (matches day start)
-const SUNSET_START_ANGLE: float = 90.0     # Sunset position (matches day end)
+const SUNRISE_END_ANGLE: float = -60.0     # Sunrise position (sun higher for brighter morning)
+const SUNSET_START_ANGLE: float = 60.0     # Sunset position (matches day end, symmetric)
 const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end
 const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night
 
@@ -22,9 +22,9 @@ const MOON_ZENITH_HEIGHT: float = 1500.0   # Moon height at zenith during night
 const STAR_DISTANCE: float = 1800.0        # Distance for stars (closer than sun/moon)
 
 # Lighting intensity constants
-const MIN_LIGHT_ENERGY: float = 0.6        # Minimum light at sunrise/sunset
-const MAX_LIGHT_ENERGY: float = 1.5        # Maximum light at noon
-const SUNRISE_LIGHT_ENERGY: float = 0.8    # Light energy at end of sunrise
+const MIN_LIGHT_ENERGY: float = 0.8        # Minimum light at sunrise/sunset (increased from 0.6 for brighter days)
+const MAX_LIGHT_ENERGY: float = 2.0        # Maximum light at noon (increased from 1.5 for brighter days)
+# Note: SUNRISE_LIGHT_ENERGY was removed - sunrise/sunset now use MIN_LIGHT_ENERGY for smooth transitions
 
 # Color constants
 const SUNSET_WARMTH_FACTOR: float = 0.7    # How quickly warmth builds during sunset
@@ -231,9 +231,9 @@ func _update_lighting():
     # 0 = sunrise, DAY_CYCLE_DURATION/2 = noon, DAY_CYCLE_DURATION = sunset
     var time_ratio = current_time / DAY_CYCLE_DURATION
     
-    # Sun moves from east (-90°) to west (90°) over the course of the day
+    # Sun moves from sunrise angle (-60°) to sunset angle (60°) over the course of the day
     # At noon, sun is directly overhead (0°)
-    var sun_angle = lerp(-90.0, 90.0, time_ratio)
+    var sun_angle = lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
     
     # Apply rotation to directional light
     # Rotate around X axis for sun elevation
@@ -464,7 +464,7 @@ func _calculate_current_sun_angle() -> float:
     else:
         # Normal day progression
         var time_ratio = current_time / DAY_CYCLE_DURATION
-        return lerp(-90.0, 90.0, time_ratio)
+        return lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
 
 # Update moon position based on time of day.
 func _update_moon_position():

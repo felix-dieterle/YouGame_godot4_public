@@ -4,7 +4,7 @@ class_name RulerOverlay
 # Ruler overlay - displays a horizontal line with markers every 50 pixels
 # Starting from the right edge at lower quarter (75% down) to the left edge
 
-var is_visible: bool = true  # Initially visible
+var is_visible: bool = false  # Initially hidden
 const MARKER_SPACING: int = 50  # Markers every 50 pixels
 const LABEL_OFFSET: float = 15.0  # Offset for label below the marker
 
