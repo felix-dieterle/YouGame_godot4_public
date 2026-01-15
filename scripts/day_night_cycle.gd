@@ -22,9 +22,9 @@ const MOON_ZENITH_HEIGHT: float = 1500.0   # Moon height at zenith during night
 const STAR_DISTANCE: float = 1800.0        # Distance for stars (closer than sun/moon)
 
 # Lighting intensity constants
-const MIN_LIGHT_ENERGY: float = 0.6        # Minimum light at sunrise/sunset
-const MAX_LIGHT_ENERGY: float = 1.5        # Maximum light at noon
-const SUNRISE_LIGHT_ENERGY: float = 0.8    # Light energy at end of sunrise
+const MIN_LIGHT_ENERGY: float = 0.8        # Minimum light at sunrise/sunset (increased from 0.6 for brighter days)
+const MAX_LIGHT_ENERGY: float = 2.0        # Maximum light at noon (increased from 1.5 for brighter days)
+const SUNRISE_LIGHT_ENERGY: float = 1.0    # Light energy at end of sunrise
 
 # Color constants
 const SUNSET_WARMTH_FACTOR: float = 0.7    # How quickly warmth builds during sunset
