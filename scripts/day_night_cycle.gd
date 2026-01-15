@@ -109,15 +109,14 @@ func _ready():
     if is_locked_out:
         var current_unix_time = Time.get_unix_time_from_system()
         if debug_skip_lockout or current_unix_time >= lockout_end_time:
-            # Lockout has expired or debug skip enabled, show sunrise animation
-            # This is a new day!
+            # Lockout expired: start new day with sunrise animation and increment day counter
             is_locked_out = false
             is_animating_sunrise = true
             sunrise_animation_time = 0.0
             current_time = 0.0  # Start of new day
-            day_count += 1  # Increment day count
+            day_count += 1
             _disable_player_input()
-            _show_day_message()  # Show "Day X" message
+            _show_day_message()
         else:
             # Still in lockout, show night screen
             is_night = true
@@ -141,15 +140,15 @@ func _process(delta):
         # Validate time makes sense (not in the past relative to lockout start)
         # Also skip lockout if debug mode is enabled
         if debug_skip_lockout or current_unix_time >= lockout_end_time:
-            # Time to wake up, show sunrise - new day!
+            # Lockout expired: start new day with sunrise animation and increment day counter
             is_locked_out = false
             is_animating_sunrise = true
             sunrise_animation_time = 0.0
             current_time = 0.0
-            day_count += 1  # Increment day count
+            day_count += 1
             _disable_player_input()
             _hide_night_screen()
-            _show_day_message()  # Show "Day X" message
+            _show_day_message()
         elif current_unix_time < lockout_end_time - SLEEP_LOCKOUT_DURATION:
             # System time appears to have been set backwards significantly
             # Reset to reasonable lockout end time (4 hours from now)
