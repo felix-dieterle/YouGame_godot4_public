@@ -45,14 +45,14 @@ On different operating systems, this translates to:
    - Auto-loads save data on game startup
 
 2. **DayNightCycle** (`scripts/day_night_cycle.gd`)
-   - Triggers save when night begins (line 183)
+   - Triggers save when night begins (in sunset completion handler)
    - Loads time and lockout state on startup
 
 3. **PauseMenu** (`scripts/pause_menu.gd`)
-   - Triggers save when quitting via menu (line 328)
+   - Triggers save when quitting via menu (in `_on_quit_pressed()`)
 
 4. **Player** (`scripts/player.gd`)
-   - Loads saved position and orientation on startup (line 77)
+   - Loads saved position and orientation on startup (in `_ready()` via `_load_saved_state()`)
 
 ### Save Data Structure
 

@@ -180,3 +180,7 @@ func delete_save() -> bool:
             push_error("SaveGameManager: Failed to delete save file: " + str(error))
             return false
     return false
+
+# Reset the loaded flag (useful for testing)
+func reset_loaded_flag():
+    _data_loaded = false

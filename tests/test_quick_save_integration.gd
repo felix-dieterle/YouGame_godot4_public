@@ -101,7 +101,7 @@ func test_time_position_orientation_saved():
 	SaveGameManager.save_data["player"]["rotation_y"] = 0.0
 	SaveGameManager.save_data["day_night"]["current_time"] = 0.0
 	SaveGameManager.save_data["day_night"]["time_scale"] = 1.0
-	SaveGameManager._data_loaded = false
+	SaveGameManager.reset_loaded_flag()
 	
 	# Load data
 	SaveGameManager.load_game()
