@@ -69,11 +69,14 @@ func _on_initial_loading_complete():
 
 func _process(_delta):
     if player:
+        # Convert player world position to chunk coordinates
+        # Note: Chunk coordinates are integers, world position is continuous
         var player_pos = player.global_position
         var new_chunk_x = int(floor(player_pos.x / CHUNK_SIZE))
         var new_chunk_z = int(floor(player_pos.z / CHUNK_SIZE))
         var new_player_chunk = Vector2i(new_chunk_x, new_chunk_z)
         
+        # Only update chunks when player moves to a new chunk (performance optimization)
         if new_player_chunk != player_chunk:
             player_chunk = new_player_chunk
             _update_chunks()
@@ -82,7 +85,7 @@ func _update_chunks():
     var chunks_to_load = []
     var chunks_to_keep = {}
     
-    # Determine which chunks should be loaded
+    # Determine which chunks should be loaded based on VIEW_DISTANCE
     # Note: Vector2i.x stores world x-coord, Vector2i.y stores world z-coord
     for x in range(player_chunk.x - VIEW_DISTANCE, player_chunk.x + VIEW_DISTANCE + 1):
         for z in range(player_chunk.y - VIEW_DISTANCE, player_chunk.y + VIEW_DISTANCE + 1):
@@ -90,7 +93,7 @@ func _update_chunks():
             chunks_to_load.append(chunk_pos)
             chunks_to_keep[chunk_pos] = true
     
-    # Unload chunks that are too far away
+    # Unload chunks that are too far away from player
     var chunks_to_remove = []
     for chunk_pos in chunks.keys():
         if not chunks_to_keep.has(chunk_pos):

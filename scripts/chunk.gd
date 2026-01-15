@@ -77,6 +77,9 @@ func _init(x: int, z: int, world_seed: int):
     seed_value = world_seed
     name = "Chunk_%d_%d" % [x, z]
 
+## Generates all terrain data and visuals for this chunk
+## This is the main entry point called after chunk creation
+## Pipeline: noise → heightmap → walkability → metadata → markers → lake → mesh → objects → paths
 func generate():
     _setup_noise()
     _generate_heightmap()
@@ -134,8 +137,10 @@ func _generate_heightmap():
             heightmap[z * (RESOLUTION + 1) + x] = height
 
 func _calculate_walkability():
+    # Initialize walkability map - 1D array indexed by [z * RESOLUTION + x]
     walkable_map.resize(RESOLUTION * RESOLUTION)
     
+    # Calculate slope for each cell and mark as walkable if <= 30 degrees
     for z in range(RESOLUTION):
         for x in range(RESOLUTION):
             var slope = _calculate_slope(x, z)
@@ -155,6 +160,7 @@ func _calculate_slope(x: int, z: int) -> float:
     return rad_to_deg(slope_rad)
 
 func _ensure_walkable_area():
+    # Count walkable cells to ensure minimum 80% walkability requirement
     var walkable_count = 0
     for i in range(walkable_map.size()):
         if walkable_map[i] == 1:
@@ -162,6 +168,7 @@ func _ensure_walkable_area():
     
     var walkable_percentage = float(walkable_count) / float(walkable_map.size())
     
+    # If below threshold, smooth terrain and recalculate walkability
     if walkable_percentage < MIN_WALKABLE_PERCENTAGE:
         _smooth_terrain()
 
