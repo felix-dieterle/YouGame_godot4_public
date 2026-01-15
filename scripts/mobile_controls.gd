@@ -249,7 +249,7 @@ func _create_look_joystick():
     stick_style.corner_radius_bottom_right = int(STICK_RADIUS)
     stick_panel.add_theme_stylebox_override("panel", stick_style)
     
-    DebugLogOverlay.add_log("Look joystick created successfully", "green")
+    DebugLogOverlay.add_log("Look joystick visuals created", "green")
     DebugLogOverlay.add_log("Look joystick base visible: %s" % str(look_joystick_base.visible), "cyan")
     DebugLogOverlay.add_log("Look joystick stick visible: %s" % str(look_joystick_stick.visible), "cyan")
 
