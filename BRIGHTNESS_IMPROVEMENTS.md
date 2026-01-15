@@ -58,7 +58,23 @@ Make the sunrise even earlier, so it's already bright at 7:00 AM. Also, the whol
 - CLEAR weather mie_coefficient: 0.005 → 0.003
 - CLEAR weather rayleigh_coefficient: 2.0 → 3.0
 
-### 7. Documentation Updates ✅
+### 7. Sun Angle Adjustment (NEW - v1.0.25) ✅
+**Problem:** Despite clock showing 7:00 AM after sunrise, the sun was still at horizon (-90°), making the scene dark until ~11:00 AM when sun rose higher.
+**Solution:** Adjusted sun angles so the sun starts higher in the sky at 7:00 AM.
+
+**Changes in `scripts/day_night_cycle.gd`:**
+- SUNRISE_END_ANGLE: -90° → -60° (sun now 30° higher at 7:00 AM)
+- SUNSET_START_ANGLE: 90° → 60° (symmetric sunset angle)
+- Updated day cycle sun movement to use new angles (lerp from -60° to +60° instead of -90° to +90°)
+
+**Impact:**
+- At 7:00 AM (after sunrise), sun is now at -60° instead of -90°
+- Sun reaches zenith (0°) at 11:30 AM game time (midpoint of day cycle)
+- At 5:00 PM (before sunset), sun is at +60° instead of +90°
+- The higher sun angle provides proper daylight throughout the entire day
+- Scene is bright and properly lit immediately after sunrise
+
+### 8. Documentation Updates ✅
 **Changes in `DAY_NIGHT_CYCLE.md`:**
 - Updated time display description to reflect 6:00 AM start time
 - Clarified that day is fully bright at 7:00 AM
@@ -80,10 +96,11 @@ Make the sunrise even earlier, so it's already bright at 7:00 AM. Also, the whol
 
 Players will now experience:
 1. **Sunrise at 6:00 AM**: 1-minute animation where sun rises and light fades in
-2. **Bright day at 7:00 AM**: Day is fully bright with radiant sunlight
-3. **Vibrant blue sky**: Sky appears as a beautiful bright blue (not washed out)
-4. **Brighter overall scene**: Everything is more visible and less dim
-5. **Natural daylight**: Resembles a clear, sunny day in real life
+2. **Bright day at 7:00 AM**: Day is fully bright with radiant sunlight - sun is now 30° above horizon
+3. **No more dark mornings**: Sun is high enough in sky to provide proper daylight from 7:00 AM onwards
+4. **Vibrant blue sky**: Sky appears as a beautiful bright blue (not washed out)
+5. **Brighter overall scene**: Everything is more visible and less dim
+6. **Natural daylight**: Resembles a clear, sunny day in real life throughout the entire day
 
 ## Files Modified
 
