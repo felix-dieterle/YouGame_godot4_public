@@ -13,6 +13,10 @@ var title_label: Label
 var settings_panel: Panel
 var settings_visible: bool = false
 
+# Settings UI references
+var master_slider: HSlider
+var ruler_checkbox: CheckBox
+
 # Configuration
 const PANEL_WIDTH: float = 400.0
 const PANEL_HEIGHT: float = 500.0
@@ -31,6 +35,9 @@ func _ready():
     
     # Create settings panel
     _create_settings_panel()
+    
+    # Load saved settings
+    _load_saved_settings()
     
     # Listen for pause input
     set_process_input(true)
@@ -230,7 +237,7 @@ func _create_settings_panel():
     master_label.add_theme_font_size_override("font_size", 16)
     master_hbox.add_child(master_label)
     
-    var master_slider = HSlider.new()
+    master_slider = HSlider.new()
     master_slider.min_value = 0.0
     master_slider.max_value = 100.0
     master_slider.value = 80.0
@@ -333,6 +340,7 @@ func _save_game_state():
     var player = get_tree().get_first_node_in_group("Player")
     var world_manager = get_tree().get_first_node_in_group("WorldManager")
     var day_night_cycle = get_tree().get_first_node_in_group("DayNightCycle")
+    var ruler = get_tree().get_first_node_in_group("RulerOverlay")
     
     if player:
         SaveGameManager.update_player_data(
@@ -352,10 +360,42 @@ func _save_game_state():
             day_night_cycle.current_time,
             day_night_cycle.is_locked_out,
             day_night_cycle.lockout_end_time,
-            day_night_cycle.time_scale
+            day_night_cycle.time_scale,
+            day_night_cycle.day_count,
+            day_night_cycle.night_start_time
         )
     
+    # Save settings (volume and ruler visibility)
+    var ruler_visible = true  # Default
+    if ruler and ruler.has_method("get_visible_state"):
+        ruler_visible = ruler.get_visible_state()
+    elif ruler_checkbox:
+        ruler_visible = ruler_checkbox.button_pressed
+    
+    SaveGameManager.update_settings_data(
+        master_slider.value if master_slider else 80.0,
+        ruler_visible
+    )
+    
     SaveGameManager.save_game()
+
+func _load_saved_settings():
+    # Load settings from SaveGameManager if available
+    if SaveGameManager.has_save_file():
+        var settings_data = SaveGameManager.get_settings_data()
+        
+        # Apply master volume
+        if master_slider:
+            master_slider.value = settings_data["master_volume"]
+            # This will trigger _on_master_volume_changed automatically
+        
+        # Apply ruler visibility
+        if ruler_checkbox:
+            ruler_checkbox.button_pressed = settings_data["ruler_visible"]
+            # Apply to ruler overlay
+            var ruler = get_tree().get_first_node_in_group("RulerOverlay")
+            if ruler and ruler.has_method("set_visible_state"):
+                ruler.set_visible_state(settings_data["ruler_visible"])
 
 
 func _on_master_volume_changed(value: float):

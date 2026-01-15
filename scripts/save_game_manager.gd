@@ -21,7 +21,13 @@ var save_data: Dictionary = {
         "current_time": 0.0,
         "is_locked_out": false,
         "lockout_end_time": 0.0,
-        "time_scale": 1.0
+        "time_scale": 1.0,
+        "day_count": 1,
+        "night_start_time": 0.0
+    },
+    "settings": {
+        "master_volume": 80.0,
+        "ruler_visible": true
     },
     "meta": {
         "version": "1.0",
@@ -70,6 +76,12 @@ func save_game() -> bool:
     config.set_value("day_night", "is_locked_out", save_data["day_night"]["is_locked_out"])
     config.set_value("day_night", "lockout_end_time", save_data["day_night"]["lockout_end_time"])
     config.set_value("day_night", "time_scale", save_data["day_night"]["time_scale"])
+    config.set_value("day_night", "day_count", save_data["day_night"]["day_count"])
+    config.set_value("day_night", "night_start_time", save_data["day_night"]["night_start_time"])
+    
+    # Save settings data
+    config.set_value("settings", "master_volume", save_data["settings"]["master_volume"])
+    config.set_value("settings", "ruler_visible", save_data["settings"]["ruler_visible"])
     
     # Save metadata
     config.set_value("meta", "version", save_data["meta"]["version"])
@@ -124,6 +136,12 @@ func load_game() -> bool:
     save_data["day_night"]["is_locked_out"] = config.get_value("day_night", "is_locked_out", false)
     save_data["day_night"]["lockout_end_time"] = config.get_value("day_night", "lockout_end_time", 0.0)
     save_data["day_night"]["time_scale"] = config.get_value("day_night", "time_scale", 1.0)
+    save_data["day_night"]["day_count"] = config.get_value("day_night", "day_count", 1)
+    save_data["day_night"]["night_start_time"] = config.get_value("day_night", "night_start_time", 0.0)
+    
+    # Load settings data
+    save_data["settings"]["master_volume"] = config.get_value("settings", "master_volume", 80.0)
+    save_data["settings"]["ruler_visible"] = config.get_value("settings", "ruler_visible", true)
     
     # Load metadata
     save_data["meta"]["version"] = config.get_value("meta", "version", "1.0")
@@ -146,11 +164,18 @@ func update_world_data(seed: int, player_chunk: Vector2i):
     save_data["world"]["player_chunk"] = player_chunk
 
 # Update day/night data for saving
-func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end_time: float, time_scale: float = 1.0):
+func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end_time: float, time_scale: float = 1.0, day_count: int = 1, night_start_time: float = 0.0):
     save_data["day_night"]["current_time"] = current_time
     save_data["day_night"]["is_locked_out"] = is_locked_out
     save_data["day_night"]["lockout_end_time"] = lockout_end_time
     save_data["day_night"]["time_scale"] = time_scale
+    save_data["day_night"]["day_count"] = day_count
+    save_data["day_night"]["night_start_time"] = night_start_time
+
+# Update settings data for saving
+func update_settings_data(master_volume: float, ruler_visible: bool):
+    save_data["settings"]["master_volume"] = master_volume
+    save_data["settings"]["ruler_visible"] = ruler_visible
 
 # Get player data
 func get_player_data() -> Dictionary:
@@ -163,6 +188,10 @@ func get_world_data() -> Dictionary:
 # Get day/night data
 func get_day_night_data() -> Dictionary:
     return save_data["day_night"]
+
+# Get settings data
+func get_settings_data() -> Dictionary:
+    return save_data["settings"]
 
 # Delete the save file
 func delete_save() -> bool:
@@ -180,3 +209,7 @@ func delete_save() -> bool:
             push_error("SaveGameManager: Failed to delete save file: " + str(error))
             return false
     return false
+
+# Reset the loaded flag (useful for testing)
+func reset_loaded_flag():
+    _data_loaded = false

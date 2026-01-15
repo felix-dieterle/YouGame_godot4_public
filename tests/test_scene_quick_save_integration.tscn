@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://quick_save_test"]
+
+[ext_resource type="Script" path="res://tests/test_quick_save_integration.gd" id="1"]
+
+[node name="QuickSaveIntegrationTest" type="Node"]
+script = ExtResource("1")

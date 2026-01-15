@@ -42,6 +42,8 @@ var current_time: float = 0.0  # Current time in the day cycle (0 to DAY_CYCLE_D
 var is_night: bool = false
 var is_locked_out: bool = false
 var lockout_end_time: float = 0.0  # Unix timestamp when lockout ends
+var day_count: int = 1  # Track number of days passed
+var night_start_time: float = 0.0  # Unix timestamp when night began
 
 # Warning states
 var warning_2min_shown: bool = false
@@ -107,12 +109,14 @@ func _ready():
     if is_locked_out:
         var current_unix_time = Time.get_unix_time_from_system()
         if debug_skip_lockout or current_unix_time >= lockout_end_time:
-            # Lockout has expired or debug skip enabled, show sunrise animation
+            # Lockout expired: start new day with sunrise animation and increment day counter
             is_locked_out = false
             is_animating_sunrise = true
             sunrise_animation_time = 0.0
             current_time = 0.0  # Start of new day
+            day_count += 1
             _disable_player_input()
+            _show_day_message()
         else:
             # Still in lockout, show night screen
             is_night = true
@@ -136,13 +140,15 @@ func _process(delta):
         # Validate time makes sense (not in the past relative to lockout start)
         # Also skip lockout if debug mode is enabled
         if debug_skip_lockout or current_unix_time >= lockout_end_time:
-            # Time to wake up, show sunrise
+            # Lockout expired: start new day with sunrise animation and increment day counter
             is_locked_out = false
             is_animating_sunrise = true
             sunrise_animation_time = 0.0
             current_time = 0.0
+            day_count += 1
             _disable_player_input()
             _hide_night_screen()
+            _show_day_message()
         elif current_unix_time < lockout_end_time - SLEEP_LOCKOUT_DURATION:
             # System time appears to have been set backwards significantly
             # Reset to reasonable lockout end time (4 hours from now)
@@ -178,7 +184,8 @@ func _process(delta):
             sunset_animation_time = 0.0
             is_night = true
             is_locked_out = true
-            lockout_end_time = Time.get_unix_time_from_system() + SLEEP_LOCKOUT_DURATION
+            night_start_time = Time.get_unix_time_from_system()  # Record when night began
+            lockout_end_time = night_start_time + SLEEP_LOCKOUT_DURATION
             _save_state()
             _save_game_state()  # Save game state when bedtime starts
             _show_night_screen()
@@ -349,6 +356,10 @@ func _show_warning(message: String):
     if ui_manager and ui_manager.has_method("show_message"):
         ui_manager.show_message(message, 5.0)
 
+func _show_day_message():
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("Day %d" % day_count, 5.0)
+
 func _show_night_screen():
     if ui_manager and ui_manager.has_method("show_night_overlay"):
         ui_manager.show_night_overlay(lockout_end_time)
@@ -386,6 +397,9 @@ func _load_state():
         current_time = day_night_data["current_time"]
         # Load time_scale if available (with default of 1.0 for old saves)
         time_scale = day_night_data.get("time_scale", 1.0)
+        # Load day count and night start time (defaults for old saves)
+        day_count = day_night_data.get("day_count", 1)
+        night_start_time = day_night_data.get("night_start_time", 0.0)
         loaded_from_manager = true
         print("DayNightCycle: Loaded state from SaveGameManager")
     
@@ -399,6 +413,8 @@ func _load_state():
             lockout_end_time = config.get_value("day_night", "lockout_end_time", 0.0)
             current_time = config.get_value("day_night", "current_time", 0.0)
             time_scale = config.get_value("day_night", "time_scale", 1.0)
+            day_count = config.get_value("day_night", "day_count", 1)
+            night_start_time = config.get_value("day_night", "night_start_time", 0.0)
         else:
             # No save file or error loading, use defaults for first start
             is_locked_out = false
@@ -586,6 +602,8 @@ func _save_game_state():
     # Save the game state when bedtime/pause starts
     var player = get_tree().get_first_node_in_group("Player")
     var world_manager = get_tree().get_first_node_in_group("WorldManager")
+    var pause_menu = get_tree().get_first_node_in_group("PauseMenu")
+    var ruler = get_tree().get_first_node_in_group("RulerOverlay")
     
     if player:
         SaveGameManager.update_player_data(
@@ -605,8 +623,23 @@ func _save_game_state():
         current_time,
         is_locked_out,
         lockout_end_time,
-        time_scale
+        time_scale,
+        day_count,
+        night_start_time
     )
+    
+    # Save settings (volume and ruler visibility)
+    # Get master volume from audio bus (the source of truth)
+    var bus_index = AudioServer.get_bus_index("Master")
+    var db_volume = AudioServer.get_bus_volume_db(bus_index)
+    var master_volume = db_to_linear(db_volume) * 100.0
+    
+    # Get ruler visibility
+    var ruler_visible = true  # Default
+    if ruler and ruler.has_method("get_visible_state"):
+        ruler_visible = ruler.get_visible_state()
+    
+    SaveGameManager.update_settings_data(master_volume, ruler_visible)
     
     SaveGameManager.save_game()
 
