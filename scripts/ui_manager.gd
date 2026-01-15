@@ -287,7 +287,7 @@ func update_game_time(time_seconds: float, cycle_duration: float):
     
     # Convert game time to hours and minutes for day cycle display
     # Maps the day cycle (sunrise to sunset) to 7:00 AM - 5:00 PM
-    # This ensures noon (12:00) is at 50% of the day when sun is at zenith
+    # This ensures noon (12:00) is at 50% of the cycle duration when sun is at zenith
     var time_ratio = time_seconds / cycle_duration
     var total_minutes = int(time_ratio * DAY_DURATION_HOURS * 60.0) + SUNRISE_TIME_MINUTES
     var hours = int(total_minutes / 60) % 24
