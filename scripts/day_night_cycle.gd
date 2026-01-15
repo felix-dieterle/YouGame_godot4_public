@@ -586,6 +586,8 @@ func _save_game_state():
     # Save the game state when bedtime/pause starts
     var player = get_tree().get_first_node_in_group("Player")
     var world_manager = get_tree().get_first_node_in_group("WorldManager")
+    var pause_menu = get_tree().get_first_node_in_group("PauseMenu")
+    var ruler = get_tree().get_first_node_in_group("RulerOverlay")
     
     if player:
         SaveGameManager.update_player_data(
@@ -607,6 +609,14 @@ func _save_game_state():
         lockout_end_time,
         time_scale
     )
+    
+    # Save settings (volume and ruler visibility)
+    var master_volume = 80.0
+    if pause_menu and pause_menu.has("master_slider") and pause_menu.master_slider:
+        master_volume = pause_menu.master_slider.value
+    
+    var ruler_visible = ruler.get_visible_state() if ruler and ruler.has_method("get_visible_state") else true
+    SaveGameManager.update_settings_data(master_volume, ruler_visible)
     
     SaveGameManager.save_game()
 

@@ -110,6 +110,10 @@ The quick save includes the following data:
     "lockout_end_time": float,     # Unix timestamp when lockout ends
     "time_scale": float            # Game speed multiplier
   },
+  "settings": {
+    "master_volume": float,        # Master volume (0-100)
+    "ruler_visible": bool          # Ruler overlay visibility
+  },
   "meta": {
     "version": string,        # Save format version
     "timestamp": int          # Unix timestamp of save

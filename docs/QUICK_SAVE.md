@@ -25,6 +25,8 @@ When the game starts, if a save file exists, it is automatically loaded and the 
 - Time scale (game speed multiplier)
 - Night lockout state
 - World seed and chunk information
+- Master volume setting
+- Ruler overlay visibility
 
 ### Save File Location
 
@@ -72,6 +74,10 @@ On different operating systems, this translates to:
     "is_locked_out": bool,         # Night lockout active
     "lockout_end_time": float,     # Unix timestamp when lockout ends
     "time_scale": float            # Game speed multiplier
+  },
+  "settings": {
+    "master_volume": float,        # Master volume (0-100)
+    "ruler_visible": bool          # Ruler overlay visibility
   },
   "meta": {
     "version": string,        # Save format version

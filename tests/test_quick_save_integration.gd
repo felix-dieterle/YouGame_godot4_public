@@ -21,6 +21,7 @@ func run_tests():
 	test_save_on_menu_quit()
 	test_load_on_startup()
 	test_time_position_orientation_saved()
+	test_settings_saved()
 
 func test_save_manager_autoload():
 	var test_name = "SaveGameManager auto-loads on startup"
@@ -120,6 +121,43 @@ func test_time_position_orientation_saved():
 	else:
 		add_test_result(test_name, false, 
 			"Data mismatch - Position: %s, Rotation: %s, Time: %s, TimeScale: %s" % [position_ok, rotation_ok, time_ok, time_scale_ok])
+	
+	# Clean up
+	SaveGameManager.delete_save()
+
+func test_settings_saved():
+	var test_name = "Settings (volume and ruler) saved and loaded"
+	
+	# Clean up
+	SaveGameManager.delete_save()
+	
+	# Set test data
+	var test_volume = 65.0
+	var test_ruler_visible = false
+	
+	# Save settings data
+	SaveGameManager.update_settings_data(test_volume, test_ruler_visible)
+	SaveGameManager.save_game()
+	
+	# Clear in-memory data
+	SaveGameManager.save_data["settings"]["master_volume"] = 80.0
+	SaveGameManager.save_data["settings"]["ruler_visible"] = true
+	SaveGameManager.reset_loaded_flag()
+	
+	# Load data
+	SaveGameManager.load_game()
+	
+	# Verify
+	var settings_data = SaveGameManager.get_settings_data()
+	
+	var volume_ok = abs(settings_data["master_volume"] - test_volume) < 0.001
+	var ruler_ok = settings_data["ruler_visible"] == test_ruler_visible
+	
+	if volume_ok and ruler_ok:
+		add_test_result(test_name, true, "Settings (volume and ruler visibility) saved and loaded correctly")
+	else:
+		add_test_result(test_name, false, 
+			"Settings mismatch - Volume: %s, Ruler: %s" % [volume_ok, ruler_ok])
 	
 	# Clean up
 	SaveGameManager.delete_save()
