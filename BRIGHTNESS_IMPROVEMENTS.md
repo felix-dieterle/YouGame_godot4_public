@@ -69,7 +69,7 @@ Make the sunrise even earlier, so it's already bright at 7:00 AM. Also, the whol
 
 **Impact:**
 - At 7:00 AM (after sunrise), sun is now at -60° instead of -90°
-- Sun reaches zenith (0°) at noon (unchanged)
+- Sun reaches zenith (0°) at 11:30 AM game time (midpoint of day cycle)
 - At 5:00 PM (before sunset), sun is at +60° instead of +90°
 - The higher sun angle provides proper daylight throughout the entire day
 - Scene is bright and properly lit immediately after sunrise
