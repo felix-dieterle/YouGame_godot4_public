@@ -81,7 +81,7 @@ func test_load_on_startup():
 	SaveGameManager.delete_save()
 
 func test_time_position_orientation_saved():
-	var test_name = "Time, position, and orientation are saved and loaded"
+	var test_name = "Time, position, orientation, and day count saved and loaded"
 	
 	# Clean up
 	SaveGameManager.delete_save()
@@ -91,10 +91,12 @@ func test_time_position_orientation_saved():
 	var test_rotation = 3.14159
 	var test_time = 987.65
 	var test_time_scale = 4.0
+	var test_day_count = 5
+	var test_night_start = 1234567890.0
 	
 	# Save data
 	SaveGameManager.update_player_data(test_position, test_rotation, false)
-	SaveGameManager.update_day_night_data(test_time, false, 0.0, test_time_scale)
+	SaveGameManager.update_day_night_data(test_time, false, 0.0, test_time_scale, test_day_count, test_night_start)
 	SaveGameManager.save_game()
 	
 	# Clear in-memory data
@@ -102,6 +104,8 @@ func test_time_position_orientation_saved():
 	SaveGameManager.save_data["player"]["rotation_y"] = 0.0
 	SaveGameManager.save_data["day_night"]["current_time"] = 0.0
 	SaveGameManager.save_data["day_night"]["time_scale"] = 1.0
+	SaveGameManager.save_data["day_night"]["day_count"] = 1
+	SaveGameManager.save_data["day_night"]["night_start_time"] = 0.0
 	SaveGameManager.reset_loaded_flag()
 	
 	# Load data
@@ -115,12 +119,14 @@ func test_time_position_orientation_saved():
 	var rotation_ok = abs(player_data["rotation_y"] - test_rotation) < 0.001
 	var time_ok = abs(day_night_data["current_time"] - test_time) < 0.001
 	var time_scale_ok = abs(day_night_data["time_scale"] - test_time_scale) < 0.001
+	var day_count_ok = day_night_data["day_count"] == test_day_count
+	var night_start_ok = abs(day_night_data["night_start_time"] - test_night_start) < 0.001
 	
-	if position_ok and rotation_ok and time_ok and time_scale_ok:
-		add_test_result(test_name, true, "All data (position, rotation, time, time_scale) saved and loaded correctly")
+	if position_ok and rotation_ok and time_ok and time_scale_ok and day_count_ok and night_start_ok:
+		add_test_result(test_name, true, "All data (position, rotation, time, time_scale, day_count, night_start) saved and loaded correctly")
 	else:
 		add_test_result(test_name, false, 
-			"Data mismatch - Position: %s, Rotation: %s, Time: %s, TimeScale: %s" % [position_ok, rotation_ok, time_ok, time_scale_ok])
+			"Data mismatch - Position: %s, Rotation: %s, Time: %s, TimeScale: %s, DayCount: %s, NightStart: %s" % [position_ok, rotation_ok, time_ok, time_scale_ok, day_count_ok, night_start_ok])
 	
 	# Clean up
 	SaveGameManager.delete_save()

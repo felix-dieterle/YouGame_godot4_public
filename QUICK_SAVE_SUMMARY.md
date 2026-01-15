@@ -108,7 +108,9 @@ The quick save includes the following data:
     "current_time": float,         # Time in day cycle (0-1800 seconds)
     "is_locked_out": bool,         # Night lockout active
     "lockout_end_time": float,     # Unix timestamp when lockout ends
-    "time_scale": float            # Game speed multiplier
+    "time_scale": float,           # Game speed multiplier
+    "day_count": int,              # Number of days passed in game
+    "night_start_time": float      # Unix timestamp when night began
   },
   "settings": {
     "master_volume": float,        # Master volume (0-100)

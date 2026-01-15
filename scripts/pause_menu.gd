@@ -360,7 +360,9 @@ func _save_game_state():
             day_night_cycle.current_time,
             day_night_cycle.is_locked_out,
             day_night_cycle.lockout_end_time,
-            day_night_cycle.time_scale
+            day_night_cycle.time_scale,
+            day_night_cycle.day_count if day_night_cycle.has("day_count") else 1,
+            day_night_cycle.night_start_time if day_night_cycle.has("night_start_time") else 0.0
         )
     
     # Save settings (volume and ruler visibility)

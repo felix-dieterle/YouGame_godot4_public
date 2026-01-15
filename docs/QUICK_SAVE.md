@@ -24,9 +24,16 @@ When the game starts, if a save file exists, it is automatically loaded and the 
 - Current time of day
 - Time scale (game speed multiplier)
 - Night lockout state
+- Night start time (when night began)
+- Day count (number of days passed)
 - World seed and chunk information
 - Master volume setting
 - Ruler overlay visibility
+
+If the game was exited during night and the night lockout period has ended, the game will:
+- Start a new day at 7:00 AM (sunrise)
+- Increment the day count
+- Display a prominent "Day X" message
 
 ### Save File Location
 
@@ -73,7 +80,9 @@ On different operating systems, this translates to:
     "current_time": float,         # Time in day cycle (0-1800 seconds)
     "is_locked_out": bool,         # Night lockout active
     "lockout_end_time": float,     # Unix timestamp when lockout ends
-    "time_scale": float            # Game speed multiplier
+    "time_scale": float,           # Game speed multiplier
+    "day_count": int,              # Number of days passed in game
+    "night_start_time": float      # Unix timestamp when night began
   },
   "settings": {
     "master_volume": float,        # Master volume (0-100)
