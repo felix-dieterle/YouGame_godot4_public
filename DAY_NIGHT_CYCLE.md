@@ -128,7 +128,7 @@ The DayNightCycle is added to `scenes/main.tscn`:
 
 ### In-Game Clock Display
 - Added real-time clock display in bottom-right corner (above version label)
-- Shows 24-hour format starting at 07:00 (sunrise) and ending at 21:00 (sunset)
+- Shows 24-hour format starting at 07:00 (sunrise) and ending at 17:00 (sunset)
 - Updates continuously as the day progresses
 - Uses same style as version label for consistency
 

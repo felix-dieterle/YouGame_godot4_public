@@ -40,6 +40,10 @@ const TIME_BUTTON_HEIGHT: float = 20.0
 const TIME_MINUS_BUTTON_OFFSET_X: float = -55.0
 const TIME_PLUS_BUTTON_OFFSET_X: float = -25.0
 
+# Day/night cycle time display constants
+const SUNRISE_TIME_MINUTES: int = 420  # 7:00 AM = 420 minutes from midnight
+const DAY_DURATION_HOURS: float = 10.0  # 10-hour day cycle from 7:00 AM to 5:00 PM
+
 # Night overlay constants
 const NIGHT_OVERLAY_COLOR: Color = Color(0.0, 0.0, 0.1, 0.9)  # Very dark blue
 const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
@@ -281,10 +285,11 @@ func update_game_time(time_seconds: float, cycle_duration: float):
     if not time_label:
         return
     
-    # Convert game time to hours and minutes for 14-hour day cycle display
-    # Maps the day cycle (sunrise to sunset) to 7:00 AM - 9:00 PM
+    # Convert game time to hours and minutes for day cycle display
+    # Maps the day cycle (sunrise to sunset) to 7:00 AM - 5:00 PM
+    # This ensures noon (12:00) is at 50% of the cycle duration when sun is at zenith
     var time_ratio = time_seconds / cycle_duration
-    var total_minutes = int(time_ratio * 14.0 * 60.0) + 420  # Map to 14 hours starting at 7:00 AM (420 minutes)
+    var total_minutes = int(time_ratio * DAY_DURATION_HOURS * 60.0) + SUNRISE_TIME_MINUTES
     var hours = int(total_minutes / 60) % 24
     var minutes = int(total_minutes) % 60
     
