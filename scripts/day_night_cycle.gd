@@ -237,11 +237,17 @@ func _update_lighting():
     var intensity_curve = 1.0 - abs(time_ratio - 0.5) * 2.0  # 0 at edges, 1 at center
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, MAX_LIGHT_ENERGY, intensity_curve)
     
-    # Adjust ambient light color
+    # Keep ambient light color white when using Sky as ambient source
+    # This allows the PhysicalSkyMaterial's natural blue color to show through
     if world_environment and world_environment.environment:
         var env = world_environment.environment
-        var color_warmth = lerp(0.2, 0.0, intensity_curve)  # More orange at sunrise/sunset
-        env.ambient_light_color = Color(1.0, 1.0 - color_warmth, 1.0 - color_warmth * 1.5)
+        # When using Sky (ambient_light_source = 3), keep color white to avoid tinting the blue sky
+        if env.ambient_light_source == Environment.AMBIENT_SOURCE_SKY:
+            env.ambient_light_color = Color(1.0, 1.0, 1.0)
+        else:
+            # Fallback for other ambient light sources (e.g., Color mode)
+            var color_warmth = lerp(0.2, 0.0, intensity_curve)  # More orange at sunrise/sunset
+            env.ambient_light_color = Color(1.0, 1.0 - color_warmth, 1.0 - color_warmth * 1.5)
     
     # Update moon position
     _update_moon_position()
@@ -263,11 +269,15 @@ func _animate_sunrise(progress: float):
     # Fade in light to match the start-of-day intensity
     directional_light.light_energy = lerp(0.0, MIN_LIGHT_ENERGY, progress)
     
-    # Adjust colors - start with warm sunrise colors
+    # Keep sky blue during sunrise when using Sky as ambient source
     if world_environment and world_environment.environment:
         var env = world_environment.environment
-        var warmth = lerp(0.4, 0.2, progress)  # End with same warmth as day start
-        env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * 1.5)
+        if env.ambient_light_source == Environment.AMBIENT_SOURCE_SKY:
+            env.ambient_light_color = Color(1.0, 1.0, 1.0)
+        else:
+            # Fallback for other ambient light sources
+            var warmth = lerp(0.4, 0.2, progress)  # End with same warmth as day start
+            env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * 1.5)
     
     # Update moon (it should be setting during sunrise)
     _update_moon_position()
@@ -289,11 +299,15 @@ func _animate_sunset(progress: float):
     # Fade out light from end-of-day intensity to darkness
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, 0.0, progress)
     
-    # Adjust colors - warm sunset colors
+    # Keep sky blue during sunset when using Sky as ambient source
     if world_environment and world_environment.environment:
         var env = world_environment.environment
-        var warmth = lerp(0.2, 0.5, progress * SUNSET_WARMTH_FACTOR)  # Start from day-end warmth
-        env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * SUNSET_COLOR_INTENSITY)
+        if env.ambient_light_source == Environment.AMBIENT_SOURCE_SKY:
+            env.ambient_light_color = Color(1.0, 1.0, 1.0)
+        else:
+            # Fallback for other ambient light sources
+            var warmth = lerp(0.2, 0.5, progress * SUNSET_WARMTH_FACTOR)  # Start from day-end warmth
+            env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * SUNSET_COLOR_INTENSITY)
     
     # Update moon (it should be rising during sunset)
     _update_moon_position()
