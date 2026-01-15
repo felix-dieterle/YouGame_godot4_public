@@ -611,11 +611,16 @@ func _save_game_state():
     )
     
     # Save settings (volume and ruler visibility)
-    var master_volume = 80.0
-    if pause_menu and pause_menu.has("master_slider") and pause_menu.master_slider:
-        master_volume = pause_menu.master_slider.value
+    # Get master volume from audio bus (the source of truth)
+    var bus_index = AudioServer.get_bus_index("Master")
+    var db_volume = AudioServer.get_bus_volume_db(bus_index)
+    var master_volume = db_to_linear(db_volume) * 100.0
     
-    var ruler_visible = ruler.get_visible_state() if ruler and ruler.has_method("get_visible_state") else true
+    # Get ruler visibility
+    var ruler_visible = true  # Default
+    if ruler and ruler.has_method("get_visible_state"):
+        ruler_visible = ruler.get_visible_state()
+    
     SaveGameManager.update_settings_data(master_volume, ruler_visible)
     
     SaveGameManager.save_game()

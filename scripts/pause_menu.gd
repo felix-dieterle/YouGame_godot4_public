@@ -364,7 +364,12 @@ func _save_game_state():
         )
     
     # Save settings (volume and ruler visibility)
-    var ruler_visible = ruler.get_visible_state() if ruler and ruler.has_method("get_visible_state") else true
+    var ruler_visible = true  # Default
+    if ruler and ruler.has_method("get_visible_state"):
+        ruler_visible = ruler.get_visible_state()
+    elif ruler_checkbox:
+        ruler_visible = ruler_checkbox.button_pressed
+    
     SaveGameManager.update_settings_data(
         master_slider.value if master_slider else 80.0,
         ruler_visible
