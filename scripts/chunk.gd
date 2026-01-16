@@ -1,11 +1,33 @@
 extends Node3D
 class_name Chunk
 
+## Procedural terrain chunk with walkability analysis and content generation
+## 
+## This class represents a single 32x32 world unit chunk of procedural terrain.
+## It generates heightmaps, calculates walkability, places objects, and creates
+## visual meshes optimized for mobile rendering.
+##
+## Key features:
+## - Seed-based reproducible terrain generation
+## - Automatic walkability analysis (80% minimum)
+## - Edge blending with neighboring chunks
+## - Dynamic object placement (rocks, trees, buildings)
+## - Path generation and rendering
+## - Lake generation in valley biomes
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+
 # Preload dependencies
 const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
 const ClusterSystem = preload("res://scripts/cluster_system.gd")
 const ProceduralModels = preload("res://scripts/procedural_models.gd")
 const PathSystem = preload("res://scripts/path_system.gd")
+
+# ============================================================================
+# CONFIGURATION CONSTANTS
+# ============================================================================
 
 # Chunk configuration
 const CHUNK_SIZE = 32  # Size in world units
@@ -30,6 +52,10 @@ const ROCK_COUNT_ROCKY_MIN = 5
 const ROCK_COUNT_ROCKY_MAX = 10
 const ROCK_COUNT_GRASSLAND_MIN = 2
 const ROCK_COUNT_GRASSLAND_MAX = 5
+
+# ============================================================================
+# STATE VARIABLES
+# ============================================================================
 
 # Chunk position in grid
 var chunk_x: int = 0
@@ -71,6 +97,10 @@ var active_clusters: Array = []  # Clusters affecting this chunk
 var path_segments: Array = []  # Array of PathSystem.PathSegment
 var path_mesh_instance: MeshInstance3D = null
 
+# ============================================================================
+# INITIALIZATION
+# ============================================================================
+
 func _init(x: int, z: int, world_seed: int):
     chunk_x = x
     chunk_z = z
@@ -92,6 +122,10 @@ func generate() -> void:
     _place_rocks()  # Add rocks to terrain
     _place_cluster_objects()
     _generate_paths()
+
+# ============================================================================
+# TERRAIN GENERATION
+# ============================================================================
 
 func _setup_noise() -> void:
     noise = FastNoiseLite.new()
@@ -197,6 +231,10 @@ func _smooth_terrain() -> void:
     
     heightmap = new_heightmap
     _calculate_walkability()
+
+# ============================================================================
+# MESH GENERATION
+# ============================================================================
 
 func _create_mesh() -> void:
     var surface_tool = SurfaceTool.new()

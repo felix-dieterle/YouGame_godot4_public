@@ -1,14 +1,39 @@
 extends Node3D
 class_name WorldManager
 
+## Manages dynamic chunk loading and unloading based on player position
+##
+## The WorldManager is responsible for maintaining a VIEW_DISTANCE radius of chunks
+## around the player at all times. It dynamically loads new chunks as the player moves
+## and unloads chunks that are too far away to optimize memory usage.
+##
+## Key responsibilities:
+## - Track player position and convert to chunk coordinates
+## - Load chunks within VIEW_DISTANCE
+## - Unload distant chunks
+## - Coordinate with cluster systems for cross-chunk features
+## - Manage initial world setup and starting location
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+
 # Preload dependencies
 const Chunk = preload("res://scripts/chunk.gd")
 const StartingLocation = preload("res://scripts/starting_location.gd")
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
 
 # Configuration
 const CHUNK_SIZE = 32
 const VIEW_DISTANCE = 3  # Number of chunks to load in each direction
 const WORLD_SEED = 12345
+
+# ============================================================================
+# STATE
+# ============================================================================
 
 # Active chunks
 var chunks: Dictionary = {}  # Key: Vector2i(x, z), Value: Chunk
@@ -29,6 +54,10 @@ var initial_loading_timer: Timer
 
 # Starting location
 var starting_location: StartingLocation = null
+
+# ============================================================================
+# LIFECYCLE METHODS
+# ============================================================================
 
 func _ready() -> void:
     # Find player or create a simple camera for testing
@@ -66,6 +95,10 @@ func _on_initial_loading_complete() -> void:
     initial_loading_done = true
     if ui_manager:
         ui_manager.on_initial_loading_complete()
+
+# ============================================================================
+# CHUNK MANAGEMENT
+# ============================================================================
 
 func _process(_delta) -> void:
     if player:
