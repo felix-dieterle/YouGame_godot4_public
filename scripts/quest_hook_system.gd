@@ -28,10 +28,10 @@ var story_templates: Dictionary = {
     ]
 }
 
-func _ready():
+func _ready() -> void:
     pass
 
-func register_marker(marker: NarrativeMarker):
+func register_marker(marker: NarrativeMarker) -> void:
     available_markers.append(marker)
 
 func create_quest_from_marker(marker: NarrativeMarker) -> Dictionary:
@@ -70,7 +70,7 @@ func create_quest_from_marker(marker: NarrativeMarker) -> Dictionary:
     
     return quest
 
-func update_quest(quest_id: String, objective_index: int, completed: bool):
+func update_quest(quest_id: String, objective_index: int, completed: bool) -> void:
     if active_quests.has(quest_id):
         var quest = active_quests[quest_id]
         if objective_index < quest.objectives.size():
@@ -114,11 +114,11 @@ func select_quest_marker(position: Vector3, radius: float = 100.0) -> NarrativeM
     return best_marker
 
 # Demo mode functions for generating dummy story elements
-func enable_demo_mode():
+func enable_demo_mode() -> void:
     demo_mode = true
     print("QuestHookSystem: Demo mode enabled - will generate dummy story elements")
 
-func disable_demo_mode():
+func disable_demo_mode() -> void:
     demo_mode = false
 
 func generate_dummy_story_for_marker(marker: NarrativeMarker) -> String:
@@ -221,7 +221,7 @@ func get_active_demo_quest() -> Dictionary:
             return active_quests[quest_id]
     return {}
 
-func print_marker_summary():
+func print_marker_summary() -> void:
     # Debug function to print all available markers
     print("QuestHookSystem: %d markers available" % available_markers.size())
     for marker in available_markers:

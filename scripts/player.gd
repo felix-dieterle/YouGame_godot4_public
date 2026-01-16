@@ -48,7 +48,7 @@ var robot_parts: Array[Node3D] = []
 # Input control
 var input_enabled: bool = true
 
-func _ready():
+func _ready() -> void:
     # Add to Player group so other systems can find this node
     add_to_group("Player")
     
@@ -77,7 +77,7 @@ func _ready():
     _load_saved_state()
 
 
-func _physics_process(delta):
+func _physics_process(delta) -> void:
     # Check if input is disabled (e.g., during night)
     if not input_enabled:
         return
@@ -216,7 +216,7 @@ func _physics_process(delta):
         # Sink into water (knee-deep means player height is reduced)
         global_position.y = target_height + 1.0 - water_depth
 
-func _input(event):
+func _input(event) -> void:
     # Camera view toggle
     if event.is_action_pressed("toggle_camera_view"):
         _toggle_camera_view()
@@ -230,7 +230,7 @@ func _input(event):
             camera_distance = min(20.0, camera_distance + 1.0)
             _update_camera()
 
-func _update_camera():
+func _update_camera() -> void:
     if camera:
         if is_first_person:
             camera.position = Vector3(0, first_person_height, 0)
@@ -241,7 +241,7 @@ func _update_camera():
             camera.position = Vector3(0, camera_height, camera_distance)
             camera.look_at(global_position, Vector3.UP)
 
-func _update_camera_rotation():
+func _update_camera_rotation() -> void:
     # Apply rotation from joystick look controls
     # This works in both first-person and third-person modes
     if camera:
@@ -271,7 +271,7 @@ func _update_camera_rotation():
             camera.position = Vector3(camera_x, camera_y, camera_z)
             camera.look_at(global_position, Vector3.UP)
 
-func _toggle_camera_view():
+func _toggle_camera_view() -> void:
     DebugLogOverlay.add_log("Player._toggle_camera_view() called", "yellow")
     
     is_first_person = not is_first_person
@@ -295,7 +295,7 @@ func _toggle_camera_view():
     for part in robot_parts:
         part.visible = not is_first_person
 
-func _create_robot_body():
+func _create_robot_body() -> void:
     # Robot body (main torso) - a box
     var body = MeshInstance3D.new()
     var body_mesh = BoxMesh.new()
@@ -386,13 +386,13 @@ func _create_eye(eye_position: Vector3) -> MeshInstance3D:
     
     return eye
 
-func _setup_footstep_audio():
+func _setup_footstep_audio() -> void:
     # Create audio player for footstep sounds
     footstep_player = AudioStreamPlayer.new()
     footstep_player.volume_db = -10.0  # Slightly quieter
     add_child(footstep_player)
 
-func _update_footsteps(delta: float):
+func _update_footsteps(delta: float) -> void:
     # Update footstep timer
     footstep_timer += delta
     
@@ -401,7 +401,7 @@ func _update_footsteps(delta: float):
         footstep_timer = 0.0
         _play_footstep_sound()
 
-func _play_footstep_sound():
+func _play_footstep_sound() -> void:
     # Get terrain material at current position
     var terrain_material = "grass"
     if world_manager:
@@ -454,7 +454,7 @@ func _play_footstep_sound():
         
         playback.push_frame(Vector2(sample, sample))
 
-func set_input_enabled(enabled: bool):
+func set_input_enabled(enabled: bool) -> void:
     input_enabled = enabled
 
 func _load_saved_state():

@@ -40,7 +40,7 @@ var player: Node = null
 # Pause menu reference (cached)
 var pause_menu: Node = null
 
-func _ready():
+func _ready() -> void:
     DebugLogOverlay.add_log("MobileControls._ready() started", "yellow")
     
     # Ensure MobileControls can always process, even when game is paused
@@ -120,7 +120,7 @@ func _ready():
     
     DebugLogOverlay.add_log("MobileControls._ready() completed", "green")
 
-func _update_joystick_position():
+func _update_joystick_position() -> void:
     # Position joystick in bottom-left corner with margin
     var viewport_size = get_viewport().size
     joystick_base.position = Vector2(joystick_margin_x, viewport_size.y - joystick_margin_y)
@@ -136,7 +136,7 @@ func _update_joystick_position():
     
     _update_button_position()
 
-func _input(event: InputEvent):
+func _input(event: InputEvent) -> void:
     # Handle touch input for virtual joysticks
     if event is InputEventScreenTouch:
         var touch = event as InputEventScreenTouch
@@ -178,7 +178,7 @@ func _input(event: InputEvent):
         elif look_joystick_active and drag.index == look_joystick_touch_index:
             _update_look_joystick(drag.position)
 
-func _update_joystick(touch_pos: Vector2):
+func _update_joystick(touch_pos: Vector2) -> void:
     var joystick_center = joystick_base.position
     var offset = touch_pos - joystick_center
     
@@ -203,7 +203,7 @@ func get_input_vector() -> Vector2:
 func get_look_vector() -> Vector2:
     return look_joystick_vector
 
-func _create_look_joystick():
+func _create_look_joystick() -> void:
     DebugLogOverlay.add_log("Creating look joystick...", "cyan")
     
     # Create look joystick base
@@ -253,7 +253,7 @@ func _create_look_joystick():
     DebugLogOverlay.add_log("Look joystick base visible: %s" % str(look_joystick_base.visible), "cyan")
     DebugLogOverlay.add_log("Look joystick stick visible: %s" % str(look_joystick_stick.visible), "cyan")
 
-func _update_look_joystick(touch_pos: Vector2):
+func _update_look_joystick(touch_pos: Vector2) -> void:
     var joystick_center = look_joystick_base.position
     var offset = touch_pos - joystick_center
     
@@ -282,7 +282,7 @@ func _create_styled_button_style(bg_color: Color, corner_radius: int) -> StyleBo
     style.corner_radius_bottom_right = corner_radius
     return style
 
-func _create_menu_button():
+func _create_menu_button() -> void:
     DebugLogOverlay.add_log("Creating menu button...", "cyan")
     
     menu_button = Button.new()
@@ -322,7 +322,7 @@ func _create_menu_button():
     # Defer positioning to ensure viewport size is ready
     call_deferred("_update_button_position")
 
-func _create_settings_panel():
+func _create_settings_panel() -> void:
     DebugLogOverlay.add_log("Creating settings panel...", "cyan")
     
     # Create a panel for the settings menu
@@ -495,7 +495,7 @@ func _create_settings_panel():
     # Defer positioning to ensure viewport size is ready
     call_deferred("_update_settings_panel_position")
 
-func _on_menu_button_pressed():
+func _on_menu_button_pressed() -> void:
     DebugLogOverlay.add_log("Menu button pressed - opening pause menu", "yellow")
     
     # Instead of showing our own settings panel, open the pause menu
@@ -506,14 +506,14 @@ func _on_menu_button_pressed():
     else:
         DebugLogOverlay.add_log("Pause menu not found!", "red")
 
-func _on_close_settings_pressed():
+func _on_close_settings_pressed() -> void:
     DebugLogOverlay.add_log("Close settings button pressed", "yellow")
     
     # Hide settings panel
     settings_visible = false
     settings_panel.visible = false
 
-func _on_camera_toggle_pressed():
+func _on_camera_toggle_pressed() -> void:
     DebugLogOverlay.add_log("Camera toggle pressed", "yellow")
     
     # Toggle camera view on player and close menu (use cached reference)
@@ -526,13 +526,13 @@ func _on_camera_toggle_pressed():
     # Close the settings menu after action
     _on_close_settings_pressed()
 
-func _on_volume_changed(value: float):
+func _on_volume_changed(value: float) -> void:
     # Convert 0-100 to decibels (-40 to 0 dB)
     var db = linear_to_db(value / 100.0)
     AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), db)
     DebugLogOverlay.add_log("Volume changed to: %d%% (%.1f dB)" % [int(value), db], "cyan")
 
-func _on_pause_game_pressed():
+func _on_pause_game_pressed() -> void:
     DebugLogOverlay.add_log("Pause game button pressed", "yellow")
     
     # Close settings menu
@@ -545,7 +545,7 @@ func _on_pause_game_pressed():
     else:
         DebugLogOverlay.add_log("Pause menu not found!", "red")
 
-func _update_button_position():
+func _update_button_position() -> void:
     if not menu_button:
         DebugLogOverlay.add_log("ERROR: menu_button is null in _update_button_position", "red")
         return
@@ -589,7 +589,7 @@ func _check_button_bounds(button_global_pos: Vector2, viewport_size: Vector2) ->
         "button_bottom": button_bottom
     }
 
-func _log_button_bounds_check(bounds_check: Dictionary):
+func _log_button_bounds_check(bounds_check: Dictionary) -> void:
     # Helper function to log button bounds checking results with appropriate colors
     var top_left_color = "green" if bounds_check.top_left_in_bounds else "red"
     var fully_color = "green" if bounds_check.fully_in_bounds else "yellow"
@@ -599,7 +599,7 @@ func _log_button_bounds_check(bounds_check: Dictionary):
     DebugLogOverlay.add_log("Button fully in viewport: %s (may extend beyond due to centering)" % str(bounds_check.fully_in_bounds), 
                             fully_color)
 
-func _update_settings_panel_position():
+func _update_settings_panel_position() -> void:
     if not settings_panel:
         DebugLogOverlay.add_log("ERROR: settings_panel is null in _update_settings_panel_position", "red")
         return
@@ -616,7 +616,7 @@ func _update_settings_panel_position():
     
     DebugLogOverlay.add_log("Settings panel positioned at (%.0f, %.0f), size: %.0fx%.0f" % [panel_x, panel_y, PANEL_WIDTH, PANEL_HEIGHT], "cyan")
 
-func _log_control_info():
+func _log_control_info() -> void:
     # Log comprehensive information about the MobileControls control itself
     var viewport_size = get_viewport().size
     

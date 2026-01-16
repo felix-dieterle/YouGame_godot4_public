@@ -14,7 +14,7 @@ var walk_direction: Vector3 = Vector3.ZERO
 # References
 var world_manager: WorldManager
 
-func _ready():
+func _ready() -> void:
     # Create a simple visual representation
     var mesh_instance = MeshInstance3D.new()
     var box_mesh = BoxMesh.new()
@@ -32,7 +32,7 @@ func _ready():
     
     _transition_to_state(State.IDLE)
 
-func _physics_process(delta):
+func _physics_process(delta) -> void:
     state_timer -= delta
     
     match current_state:
@@ -46,18 +46,18 @@ func _physics_process(delta):
         var target_height = world_manager.get_height_at_position(global_position)
         global_position.y = target_height + 0.75  # Half of NPC height
 
-func _update_idle(_delta):
+func _update_idle(_delta) -> void:
     if state_timer <= 0.0:
         _transition_to_state(State.WALK)
 
-func _update_walk(delta):
+func _update_walk(delta) -> void:
     velocity = walk_direction * walk_speed
     move_and_slide()
     
     if state_timer <= 0.0:
         _transition_to_state(State.IDLE)
 
-func _transition_to_state(new_state: State):
+func _transition_to_state(new_state: State) -> void:
     current_state = new_state
     
     match new_state:

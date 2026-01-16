@@ -30,7 +30,7 @@ var initial_loading_timer: Timer
 # Starting location
 var starting_location: StartingLocation = null
 
-func _ready():
+func _ready() -> void:
     # Find player or create a simple camera for testing
     player = get_parent().get_node_or_null("Player")
     if not player:
@@ -62,12 +62,12 @@ func _ready():
     # Mark initial loading as complete after a short delay
     initial_loading_timer.start(0.5)
 
-func _on_initial_loading_complete():
+func _on_initial_loading_complete() -> void:
     initial_loading_done = true
     if ui_manager:
         ui_manager.on_initial_loading_complete()
 
-func _process(_delta):
+func _process(_delta) -> void:
     if player:
         # Convert player world position to chunk coordinates
         # Note: Chunk coordinates are integers, world position is continuous
@@ -81,7 +81,7 @@ func _process(_delta):
             player_chunk = new_player_chunk
             _update_chunks()
 
-func _update_chunks():
+func _update_chunks() -> void:
     var chunks_to_load = []
     var chunks_to_keep = {}
     
@@ -107,7 +107,7 @@ func _update_chunks():
         if not chunks.has(chunk_pos):
             _load_chunk(chunk_pos)
 
-func _load_chunk(chunk_pos: Vector2i):
+func _load_chunk(chunk_pos: Vector2i) -> void:
     var chunk = Chunk.new(chunk_pos.x, chunk_pos.y, WORLD_SEED)
     chunk.position = Vector3(chunk_pos.x * CHUNK_SIZE, 0, chunk_pos.y * CHUNK_SIZE)
     add_child(chunk)
@@ -124,7 +124,7 @@ func _load_chunk(chunk_pos: Vector2i):
     if ui_manager and initial_loading_done:
         ui_manager.on_chunk_generated(chunk_pos)
 
-func _unload_chunk(chunk_pos: Vector2i):
+func _unload_chunk(chunk_pos: Vector2i) -> void:
     if chunks.has(chunk_pos):
         var chunk = chunks[chunk_pos]
         chunk.queue_free()

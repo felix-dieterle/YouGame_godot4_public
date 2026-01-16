@@ -51,7 +51,7 @@ const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
 # Game version
 var game_version: String = ""
 
-func _ready():
+func _ready() -> void:
     # Ensure UI manager can function during pause
     process_mode = Node.PROCESS_MODE_ALWAYS
     
@@ -212,7 +212,7 @@ func _ready():
     # Show initial loading message with version
     show_message("YouGame v" + game_version + " - Loading terrain...", 0)
 
-func show_message(message: String, duration: float = 3.0):
+func show_message(message: String, duration: float = 3.0) -> void:
     status_label.text = message
     status_label.visible = true
     
@@ -223,10 +223,10 @@ func show_message(message: String, duration: float = 3.0):
     if duration > 0:
         status_timer.start(duration)
 
-func _on_status_timer_timeout():
+func _on_status_timer_timeout() -> void:
     status_label.visible = false
 
-func on_chunk_generated(chunk_pos: Vector2i):
+func on_chunk_generated(chunk_pos: Vector2i) -> void:
     chunks_loaded += 1
     chunk_info_label.text = "Chunk generated: (%d, %d)" % [chunk_pos.x, chunk_pos.y]
     chunk_info_label.visible = true
@@ -236,21 +236,21 @@ func on_chunk_generated(chunk_pos: Vector2i):
         chunk_timer.stop()
     chunk_timer.start(2.0)
 
-func _on_chunk_timer_timeout():
+func _on_chunk_timer_timeout() -> void:
     chunk_info_label.visible = false
 
-func on_initial_loading_complete():
+func on_initial_loading_complete() -> void:
     if not initial_loading_complete:
         initial_loading_complete = true
         show_message("Loading complete! Ready to explore.", 4.0)
 
-func show_night_overlay(lockout_end_time: float):
+func show_night_overlay(lockout_end_time: float) -> void:
     night_lockout_end_time = lockout_end_time
     night_overlay.visible = true
     _update_night_countdown()
     countdown_timer.start()
 
-func hide_night_overlay():
+func hide_night_overlay() -> void:
     night_overlay.visible = false
     countdown_timer.stop()
 
@@ -277,7 +277,7 @@ func _update_night_countdown():
         night_label.text = "Sleeping...\n\nYou cannot play for:\n%02d:%02d:%02d" % [hours, minutes, seconds]
 
 # Update the in-game time display.
-func update_game_time(time_seconds: float, cycle_duration: float):
+func update_game_time(time_seconds: float, cycle_duration: float) -> void:
     current_game_time = time_seconds
     day_cycle_duration = cycle_duration
     
@@ -437,7 +437,7 @@ func _on_time_plus_pressed():
         day_night_cycle.increase_time_scale()
 
 # Update time scale display
-func update_time_scale(scale: float):
+func update_time_scale(scale: float) -> void:
     if not time_speed_label:
         return
     

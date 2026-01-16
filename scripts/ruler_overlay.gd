@@ -8,12 +8,12 @@ var is_visible: bool = false  # Initially hidden
 const MARKER_SPACING: int = 50  # Markers every 50 pixels
 const LABEL_OFFSET: float = 15.0  # Offset for label below the marker
 
-func _ready():
+func _ready() -> void:
 	# Ensure the control covers the full viewport
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block mouse interactions
 
-func _draw():
+func _draw() -> void:
 	if not is_visible:
 		return
 	
@@ -45,11 +45,11 @@ func _draw():
 		var label_position = Vector2(x - text_size.x / 2.0, mid_height + marker_height + LABEL_OFFSET)
 		draw_string(font, label_position, label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, line_color)
 
-func toggle_visibility():
+func toggle_visibility() -> void:
 	is_visible = not is_visible
 	queue_redraw()  # Request redraw in Godot 4
 
-func set_visible_state(visible: bool):
+func set_visible_state(visible: bool) -> void:
 	is_visible = visible
 	queue_redraw()
 

@@ -23,7 +23,7 @@ const PANEL_HEIGHT: float = 500.0
 const SETTINGS_PANEL_WIDTH: float = 400.0
 const SETTINGS_PANEL_HEIGHT: float = 450.0
 
-func _ready():
+func _ready() -> void:
     # Add to PauseMenu group so other systems can find this node
     add_to_group("PauseMenu")
     
@@ -42,11 +42,11 @@ func _ready():
     # Listen for pause input
     set_process_input(true)
 
-func _input(event):
+func _input(event) -> void:
     if event.is_action_pressed("toggle_pause"):
         toggle_pause()
 
-func toggle_pause():
+func toggle_pause() -> void:
     visible = not visible
     
     if visible:
@@ -64,7 +64,7 @@ func toggle_pause():
         if settings_visible:
             _toggle_settings()
 
-func _create_pause_panel():
+func _create_pause_panel() -> void:
     # Create main panel
     panel = Panel.new()
     panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -169,7 +169,7 @@ func _create_pause_panel():
     info_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1))
     vbox.add_child(info_label)
 
-func _create_settings_panel():
+func _create_settings_panel() -> void:
     # Create settings panel
     settings_panel = Panel.new()
     settings_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -319,23 +319,23 @@ func _create_button_style(bg_color: Color, corner_radius: int) -> StyleBoxFlat:
     style.corner_radius_bottom_right = corner_radius
     return style
 
-func _on_resume_pressed():
+func _on_resume_pressed() -> void:
     toggle_pause()
 
-func _on_settings_pressed():
+func _on_settings_pressed() -> void:
     _toggle_settings()
 
-func _toggle_settings():
+func _toggle_settings() -> void:
     settings_visible = not settings_visible
     settings_panel.visible = settings_visible
     panel.visible = not settings_visible
 
-func _on_quit_pressed():
+func _on_quit_pressed() -> void:
     # Save game before quitting
     _save_game_state()
     get_tree().quit()
 
-func _save_game_state():
+func _save_game_state() -> void:
     # Collect current game state and save it
     var player = get_tree().get_first_node_in_group("Player")
     var world_manager = get_tree().get_first_node_in_group("WorldManager")
@@ -379,7 +379,7 @@ func _save_game_state():
     
     SaveGameManager.save_game()
 
-func _load_saved_settings():
+func _load_saved_settings() -> void:
     # Load settings from SaveGameManager if available
     if SaveGameManager.has_save_file():
         var settings_data = SaveGameManager.get_settings_data()
@@ -398,18 +398,18 @@ func _load_saved_settings():
                 ruler.set_visible_state(settings_data["ruler_visible"])
 
 
-func _on_master_volume_changed(value: float):
+func _on_master_volume_changed(value: float) -> void:
     # Convert 0-100 to decibels (-40 to 0 dB)
     var db = linear_to_db(value / 100.0)
     AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), db)
 
-func _on_camera_toggle_pressed():
+func _on_camera_toggle_pressed() -> void:
     # Find player and toggle camera
     var player = get_tree().get_first_node_in_group("Player")
     if player and player.has_method("_toggle_camera_view"):
         player._toggle_camera_view()
 
-func _on_ruler_toggled(pressed: bool):
+func _on_ruler_toggled(pressed: bool) -> void:
     # Find ruler overlay and toggle its visibility
     var ruler = get_tree().get_first_node_in_group("RulerOverlay")
     if ruler and ruler.has_method("set_visible_state"):

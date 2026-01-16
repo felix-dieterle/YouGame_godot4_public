@@ -9,10 +9,10 @@ var show_chunk_borders: bool = true
 var show_walkability: bool = false
 var world_manager  # WorldManager - type hint removed to avoid preload dependency
 
-func _ready():
+func _ready() -> void:
     world_manager = get_tree().get_first_node_in_group("WorldManager")
 
-func draw_chunk_borders(chunk):  # Chunk - type hint removed to avoid preload dependency
+func draw_chunk_borders(chunk) -> void:  # Chunk - type hint removed to avoid preload dependency
     if not show_chunk_borders:
         return
     
@@ -45,20 +45,20 @@ func draw_chunk_borders(chunk):  # Chunk - type hint removed to avoid preload de
     mesh_instance.position = chunk.position
     chunk.add_child(mesh_instance)
 
-func toggle_chunk_borders():
+func toggle_chunk_borders() -> void:
     show_chunk_borders = not show_chunk_borders
 
-func toggle_walkability():
+func toggle_walkability() -> void:
     show_walkability = not show_walkability
     # Walkability is already visualized in chunk mesh colors
 
 var show_clusters: bool = false
 
-func toggle_clusters():
+func toggle_clusters() -> void:
     show_clusters = not show_clusters
     _redraw_cluster_visualization()
 
-func _redraw_cluster_visualization():
+func _redraw_cluster_visualization() -> void:
     # Remove existing cluster visualizations
     for child in get_children():
         if child.name.begins_with("ClusterViz_"):
@@ -72,7 +72,7 @@ func _redraw_cluster_visualization():
         var cluster = ClusterSystem.all_clusters[cluster_key]
         _draw_cluster(cluster)
 
-func _draw_cluster(cluster):
+func _draw_cluster(cluster) -> void:
     # Calculate world position of cluster center
     var world_pos = Vector3(
         cluster.center_chunk.x * ClusterSystem.CHUNK_SIZE + cluster.center_pos.x,
