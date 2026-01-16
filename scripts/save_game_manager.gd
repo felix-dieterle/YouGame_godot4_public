@@ -42,7 +42,7 @@ signal load_completed(success: bool)
 # Track if data has been loaded to avoid duplicate loads
 var _data_loaded: bool = false
 
-func _ready():
+func _ready() -> void:
     # Add to autoload group for easy access
     add_to_group("SaveGameManager")
     
@@ -153,18 +153,18 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool):
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
     save_data["player"]["is_first_person"] = is_first_person
 
 # Update world data for saving
-func update_world_data(seed: int, player_chunk: Vector2i):
+func update_world_data(seed: int, player_chunk: Vector2i) -> void:
     save_data["world"]["seed"] = seed
     save_data["world"]["player_chunk"] = player_chunk
 
 # Update day/night data for saving
-func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end_time: float, time_scale: float = 1.0, day_count: int = 1, night_start_time: float = 0.0):
+func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end_time: float, time_scale: float = 1.0, day_count: int = 1, night_start_time: float = 0.0) -> void:
     save_data["day_night"]["current_time"] = current_time
     save_data["day_night"]["is_locked_out"] = is_locked_out
     save_data["day_night"]["lockout_end_time"] = lockout_end_time
@@ -173,7 +173,7 @@ func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end
     save_data["day_night"]["night_start_time"] = night_start_time
 
 # Update settings data for saving
-func update_settings_data(master_volume: float, ruler_visible: bool):
+func update_settings_data(master_volume: float, ruler_visible: bool) -> void:
     save_data["settings"]["master_volume"] = master_volume
     save_data["settings"]["ruler_visible"] = ruler_visible
 
@@ -211,5 +211,5 @@ func delete_save() -> bool:
     return false
 
 # Reset the loaded flag (useful for testing)
-func reset_loaded_flag():
+func reset_loaded_flag() -> void:
     _data_loaded = false

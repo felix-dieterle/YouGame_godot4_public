@@ -1,11 +1,33 @@
 extends Node3D
 class_name Chunk
 
+## Procedural terrain chunk with walkability analysis and content generation
+## 
+## This class represents a single 32x32 world unit chunk of procedural terrain.
+## It generates heightmaps, calculates walkability, places objects, and creates
+## visual meshes optimized for mobile rendering.
+##
+## Key features:
+## - Seed-based reproducible terrain generation
+## - Automatic walkability analysis (80% minimum)
+## - Edge blending with neighboring chunks
+## - Dynamic object placement (rocks, trees, buildings)
+## - Path generation and rendering
+## - Lake generation in valley biomes
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+
 # Preload dependencies
 const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
 const ClusterSystem = preload("res://scripts/cluster_system.gd")
 const ProceduralModels = preload("res://scripts/procedural_models.gd")
 const PathSystem = preload("res://scripts/path_system.gd")
+
+# ============================================================================
+# CONFIGURATION CONSTANTS
+# ============================================================================
 
 # Chunk configuration
 const CHUNK_SIZE = 32  # Size in world units
@@ -30,6 +52,10 @@ const ROCK_COUNT_ROCKY_MIN = 5
 const ROCK_COUNT_ROCKY_MAX = 10
 const ROCK_COUNT_GRASSLAND_MIN = 2
 const ROCK_COUNT_GRASSLAND_MAX = 5
+
+# ============================================================================
+# STATE VARIABLES
+# ============================================================================
 
 # Chunk position in grid
 var chunk_x: int = 0
@@ -71,13 +97,20 @@ var active_clusters: Array = []  # Clusters affecting this chunk
 var path_segments: Array = []  # Array of PathSystem.PathSegment
 var path_mesh_instance: MeshInstance3D = null
 
+# ============================================================================
+# INITIALIZATION
+# ============================================================================
+
 func _init(x: int, z: int, world_seed: int):
     chunk_x = x
     chunk_z = z
     seed_value = world_seed
     name = "Chunk_%d_%d" % [x, z]
 
-func generate():
+## Generates all terrain data and visuals for this chunk
+## This is the main entry point called after chunk creation
+## Pipeline: noise → heightmap → walkability → metadata → markers → lake → mesh → objects → paths
+func generate() -> void:
     _setup_noise()
     _generate_heightmap()
     _calculate_walkability()
@@ -90,7 +123,11 @@ func generate():
     _place_cluster_objects()
     _generate_paths()
 
-func _setup_noise():
+# ============================================================================
+# TERRAIN GENERATION
+# ============================================================================
+
+func _setup_noise() -> void:
     noise = FastNoiseLite.new()
     noise.seed = seed_value
     noise.noise_type = FastNoiseLite.TYPE_PERLIN
@@ -105,7 +142,7 @@ func _setup_noise():
     biome_noise.noise_type = FastNoiseLite.TYPE_PERLIN
     biome_noise.frequency = 0.008  # Lower frequency for larger regions
 
-func _generate_heightmap():
+func _generate_heightmap() -> void:
     heightmap.resize((RESOLUTION + 1) * (RESOLUTION + 1))
     
     for z in range(RESOLUTION + 1):
@@ -133,9 +170,11 @@ func _generate_heightmap():
             var height = noise.get_noise_2d(world_x, world_z) * height_multiplier + height_offset
             heightmap[z * (RESOLUTION + 1) + x] = height
 
-func _calculate_walkability():
+func _calculate_walkability() -> void:
+    # Initialize walkability map - 1D array indexed by [z * RESOLUTION + x]
     walkable_map.resize(RESOLUTION * RESOLUTION)
     
+    # Calculate slope for each cell and mark as walkable if <= 30 degrees
     for z in range(RESOLUTION):
         for x in range(RESOLUTION):
             var slope = _calculate_slope(x, z)
@@ -154,7 +193,8 @@ func _calculate_slope(x: int, z: int) -> float:
     var slope_rad = atan(max_height_diff / CELL_SIZE)
     return rad_to_deg(slope_rad)
 
-func _ensure_walkable_area():
+func _ensure_walkable_area() -> void:
+    # Count walkable cells to ensure minimum 80% walkability requirement
     var walkable_count = 0
     for i in range(walkable_map.size()):
         if walkable_map[i] == 1:
@@ -162,10 +202,11 @@ func _ensure_walkable_area():
     
     var walkable_percentage = float(walkable_count) / float(walkable_map.size())
     
+    # If below threshold, smooth terrain and recalculate walkability
     if walkable_percentage < MIN_WALKABLE_PERCENTAGE:
         _smooth_terrain()
 
-func _smooth_terrain():
+func _smooth_terrain() -> void:
     # Simple terrain smoothing: average heights with neighbors
     var new_heightmap = heightmap.duplicate()
     
@@ -191,7 +232,11 @@ func _smooth_terrain():
     heightmap = new_heightmap
     _calculate_walkability()
 
-func _create_mesh():
+# ============================================================================
+# MESH GENERATION
+# ============================================================================
+
+func _create_mesh() -> void:
     var surface_tool = SurfaceTool.new()
     surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
     
@@ -290,7 +335,7 @@ func _create_mesh():
     
     add_child(mesh_instance)
 
-func _calculate_metadata():
+func _calculate_metadata() -> void:
     # Calculate openness based on average height variance
     var avg_height = 0.0
     for h in heightmap:
@@ -319,7 +364,7 @@ func _calculate_metadata():
         biome = "grassland"
         landmark_type = ""
 
-func _generate_lake_if_valley():
+func _generate_lake_if_valley() -> void:
     # Only generate lakes in valleys with some randomness
     if landmark_type != "valley":
         return
@@ -343,7 +388,7 @@ func _generate_lake_if_valley():
     # Create water mesh
     _create_water_mesh()
 
-func _create_water_mesh():
+func _create_water_mesh() -> void:
     if not has_lake:
         return
     
@@ -448,7 +493,7 @@ func check_connectivity_to_neighbor(direction: Vector2i) -> bool:
     
     return float(walkable_count) / float(walkable_map.size()) >= MIN_WALKABLE_PERCENTAGE
 
-func blend_edges_with_neighbor(neighbor_chunk):
+func blend_edges_with_neighbor(neighbor_chunk) -> void:
     # Blend edge heights with neighbor to avoid seams
     if not neighbor_chunk:
         return
@@ -456,7 +501,7 @@ func blend_edges_with_neighbor(neighbor_chunk):
     # This would be implemented based on which edge to blend
     pass
 
-func _generate_narrative_markers():
+func _generate_narrative_markers() -> void:
     # Generate markers based on chunk metadata
     # Performance-optimized: Only generate 1-3 markers per chunk based on importance
     
@@ -625,7 +670,7 @@ func get_slope_gradient_at_world_pos(world_x: float, world_z: float) -> Vector3:
     return Vector3(dx, 0, dz)
 
 ## Place rocks on terrain for decoration
-func _place_rocks():
+func _place_rocks() -> void:
     var rng = RandomNumberGenerator.new()
     rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ ROCK_SEED_OFFSET
     
@@ -669,7 +714,7 @@ func _place_rocks():
         placed_objects.append(rock_instance)
 
 ## Place trees and buildings based on cluster system
-func _place_cluster_objects():
+func _place_cluster_objects() -> void:
     # Get clusters affecting this chunk
     var chunk_pos = Vector2i(chunk_x, chunk_z)
     active_clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, seed_value)
@@ -685,7 +730,7 @@ func _place_cluster_objects():
             _place_settlement_objects(cluster)
 
 ## Place trees for a forest cluster
-func _place_forest_objects(cluster: ClusterSystem.ClusterData):
+func _place_forest_objects(cluster: ClusterSystem.ClusterData) -> void:
     var rng = RandomNumberGenerator.new()
     rng.seed = cluster.seed_value ^ hash(Vector2i(chunk_x, chunk_z))
     
@@ -746,7 +791,7 @@ func _place_forest_objects(cluster: ClusterSystem.ClusterData):
         placed_objects.append(tree_instance)
 
 ## Place buildings for a settlement cluster
-func _place_settlement_objects(cluster: ClusterSystem.ClusterData):
+func _place_settlement_objects(cluster: ClusterSystem.ClusterData) -> void:
     var rng = RandomNumberGenerator.new()
     rng.seed = cluster.seed_value ^ hash(Vector2i(chunk_x, chunk_z))
     
@@ -810,7 +855,7 @@ func _place_settlement_objects(cluster: ClusterSystem.ClusterData):
         placed_objects.append(building_instance)
 
 ## Generate and visualize paths in this chunk
-func _generate_paths():
+func _generate_paths() -> void:
     # Get path segments for this chunk
     var chunk_pos = Vector2i(chunk_x, chunk_z)
     path_segments = PathSystem.get_path_segments_for_chunk(chunk_pos, seed_value)
@@ -822,7 +867,7 @@ func _generate_paths():
     _create_path_mesh()
 
 ## Create visual mesh for paths
-func _create_path_mesh():
+func _create_path_mesh() -> void:
     if path_segments.is_empty():
         return
     
@@ -857,7 +902,7 @@ func _create_path_mesh():
             _play_endpoint_sound(segment)
 
 ## Add a path segment to the surface tool
-func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment):
+func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment) -> void:
     var start = segment.start_pos
     var end = segment.end_pos
     var width = segment.width
@@ -898,7 +943,7 @@ func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment):
     surface_tool.add_vertex(Vector3(p3.x, h3, p3.y))
 
 ## Play sound at path endpoint (placeholder)
-func _play_endpoint_sound(segment):
+func _play_endpoint_sound(segment) -> void:
     # TODO: Add actual sound file
     # For now, just print to console
     print("Path endpoint reached at chunk ", chunk_x, ", ", chunk_z, " - segment ", segment.segment_id)

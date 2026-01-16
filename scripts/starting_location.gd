@@ -19,11 +19,11 @@ var central_marker: MeshInstance3D = null
 # World position of starting location (always at origin)
 var world_position: Vector3 = Vector3(0, 0, 0)
 
-func _ready():
+func _ready() -> void:
 	generate_starting_location()
 
 ## Generate the starting location
-func generate_starting_location():
+func generate_starting_location() -> void:
 	_create_central_marker()
 	_create_marker_stones()
 
@@ -142,7 +142,7 @@ func _create_marker_stones():
 		marker_stones.append(stone)
 
 ## Adjust starting location to terrain height
-func adjust_to_terrain(world_manager):
+func adjust_to_terrain(world_manager) -> void:
 	if not world_manager:
 		return
 	

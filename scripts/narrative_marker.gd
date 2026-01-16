@@ -18,7 +18,7 @@ func _init(id: String, chunk_pos: Vector2i, world_pos: Vector3, type: String):
     world_position = world_pos
     marker_type = type
 
-func activate():
+func activate() -> void:
     is_activated = true
 
 func get_data() -> Dictionary:

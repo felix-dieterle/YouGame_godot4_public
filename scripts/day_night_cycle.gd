@@ -67,7 +67,7 @@ var stars: Node3D
 # Save file path
 const SAVE_FILE_PATH: String = "user://day_night_save.cfg"
 
-func _ready():
+func _ready() -> void:
     # Add to DayNightCycle group so other systems can find this node
     add_to_group("DayNightCycle")
     
@@ -126,7 +126,7 @@ func _ready():
         # Normal day start
         _update_lighting()
 
-func _process(delta):
+func _process(delta) -> void:
     # Apply debug time multiplier and time scale
     var time_delta = delta
     if debug_mode:
@@ -219,7 +219,7 @@ func _process(delta):
         else:
             _update_lighting()
 
-func _update_lighting():
+func _update_lighting() -> void:
     if not directional_light:
         return
     
@@ -265,7 +265,7 @@ func _update_lighting():
     # Update stars visibility
     _update_stars_visibility()
 
-func _animate_sunrise(progress: float):
+func _animate_sunrise(progress: float) -> void:
     if not directional_light:
         return
     
@@ -295,7 +295,7 @@ func _animate_sunrise(progress: float):
     # Update stars (they should be fading out during sunrise)
     _update_stars_visibility()
 
-func _animate_sunset(progress: float):
+func _animate_sunset(progress: float) -> void:
     if not directional_light:
         return
     
@@ -325,7 +325,7 @@ func _animate_sunset(progress: float):
     # Update stars (they should be appearing during sunset)
     _update_stars_visibility()
 
-func _set_night_lighting():
+func _set_night_lighting() -> void:
     if not directional_light:
         return
     
@@ -352,31 +352,31 @@ func _set_night_lighting():
     if stars:
         stars.visible = true
 
-func _show_warning(message: String):
+func _show_warning(message: String) -> void:
     if ui_manager and ui_manager.has_method("show_message"):
         ui_manager.show_message(message, 5.0)
 
-func _show_day_message():
+func _show_day_message() -> void:
     if ui_manager and ui_manager.has_method("show_message"):
         ui_manager.show_message("Day %d" % day_count, 5.0)
 
-func _show_night_screen():
+func _show_night_screen() -> void:
     if ui_manager and ui_manager.has_method("show_night_overlay"):
         ui_manager.show_night_overlay(lockout_end_time)
 
-func _hide_night_screen():
+func _hide_night_screen() -> void:
     if ui_manager and ui_manager.has_method("hide_night_overlay"):
         ui_manager.hide_night_overlay()
 
-func _disable_player_input():
+func _disable_player_input() -> void:
     if player and player.has_method("set_input_enabled"):
         player.set_input_enabled(false)
 
-func _enable_player_input():
+func _enable_player_input() -> void:
     if player and player.has_method("set_input_enabled"):
         player.set_input_enabled(true)
 
-func _save_state():
+func _save_state() -> void:
     var config = ConfigFile.new()
     config.set_value("day_night", "is_locked_out", is_locked_out)
     config.set_value("day_night", "lockout_end_time", lockout_end_time)
@@ -387,7 +387,7 @@ func _save_state():
     if error != OK:
         push_warning("Failed to save day/night state: " + str(error))
 
-func _load_state():
+func _load_state() -> void:
     # Get day/night state from SaveGameManager (already loaded at startup)
     var loaded_from_manager = false
     if SaveGameManager.has_save_file():
@@ -424,7 +424,7 @@ func _load_state():
 
 
 # Create a moon that appears during night.
-func _create_moon():
+func _create_moon() -> void:
     # Don't create moon in headless mode (e.g., during tests or script validation)
     if DisplayServer.get_name() == "headless":
         return
@@ -467,7 +467,7 @@ func _calculate_current_sun_angle() -> float:
         return lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
 
 # Update moon position based on time of day.
-func _update_moon_position():
+func _update_moon_position() -> void:
     if not moon:
         return
     
@@ -494,7 +494,7 @@ func _update_moon_position():
     moon.visible = moon.position.y > 0
 
 # Create a visible sun that moves across the sky.
-func _create_sun():
+func _create_sun() -> void:
     # Don't create sun in headless mode (e.g., during tests or script validation)
     if DisplayServer.get_name() == "headless":
         return
@@ -644,12 +644,12 @@ func _save_game_state():
     SaveGameManager.save_game()
 
 # Increase time scale (speed up time)
-func increase_time_scale():
+func increase_time_scale() -> void:
     time_scale = min(time_scale * 2.0, 32.0)  # Double the speed, max 32x
     _notify_time_scale_changed()
 
 # Decrease time scale (slow down time)
-func decrease_time_scale():
+func decrease_time_scale() -> void:
     time_scale = max(time_scale / 2.0, 0.25)  # Half the speed, min 0.25x
     _notify_time_scale_changed()
 

@@ -31,7 +31,7 @@ var sky_material: PhysicalSkyMaterial
 # Player reference for positioning rain
 var player: Node3D
 
-func _ready():
+func _ready() -> void:
     # Find player
     player = get_tree().get_first_node_in_group("Player")
     if not player:
@@ -46,7 +46,7 @@ func _ready():
     # Set initial weather change time
     next_weather_change = randf_range(min_weather_duration, max_weather_duration)
 
-func _process(delta):
+func _process(delta) -> void:
     time_in_current_weather += delta
     
     # Check if it's time to change weather
@@ -67,7 +67,7 @@ func _process(delta):
     if rain_particles and player:
         rain_particles.global_position = player.global_position + Vector3(0, 10, 0)
 
-func _setup_environment():
+func _setup_environment() -> void:
     # Find existing WorldEnvironment in the scene tree
     world_environment = get_tree().get_first_node_in_group("WorldEnvironment")
     
@@ -95,7 +95,7 @@ func _setup_environment():
     fog_environment.fog_enabled = false
     fog_environment.volumetric_fog_enabled = false
 
-func _setup_rain_particles():
+func _setup_rain_particles() -> void:
     # Create rain particle system
     rain_particles = GPUParticles3D.new()
     rain_particles.emitting = false
@@ -129,7 +129,7 @@ func _setup_rain_particles():
     
     add_child(rain_particles)
 
-func _start_weather_transition():
+func _start_weather_transition() -> void:
     # Choose a new random weather state
     var weather_weights = {
         WeatherState.CLEAR: 40,
@@ -163,7 +163,7 @@ func _start_weather_transition():
     time_in_current_weather = 0.0
     next_weather_change = randf_range(min_weather_duration, max_weather_duration)
 
-func _apply_weather_transition():
+func _apply_weather_transition() -> void:
     # Get weather parameters for current and target
     var current_params = _get_weather_params(current_weather)
     var target_params = _get_weather_params(target_weather)

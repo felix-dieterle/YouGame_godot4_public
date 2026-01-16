@@ -26,7 +26,7 @@ var game_version: String = ""
 # Singleton instance (type is inferred from autoload)
 static var instance = null
 
-func _ready():
+func _ready() -> void:
     instance = self
     
     # Cache game version
@@ -51,7 +51,7 @@ func _ready():
     add_log("=== Debug Log System Started ===")
     add_log("Game Version: v" + game_version, "cyan")
 
-func _create_toggle_button():
+func _create_toggle_button() -> void:
     toggle_button = Button.new()
     toggle_button.text = "📋"  # Clipboard emoji for logs
     toggle_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
@@ -81,7 +81,7 @@ func _create_toggle_button():
     add_child(toggle_button)
     _update_button_positions()
 
-func _create_clear_button():
+func _create_clear_button() -> void:
     clear_button = Button.new()
     clear_button.text = "🗑"  # Trash can emoji
     clear_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
@@ -111,13 +111,13 @@ func _create_clear_button():
     add_child(clear_button)
     _update_button_positions()
 
-func _update_button_positions():
+func _update_button_positions() -> void:
     if toggle_button:
         toggle_button.position = Vector2(10, 10)
     if clear_button:
         clear_button.position = Vector2(10 + BUTTON_SIZE + 5, 10)
 
-func _create_log_panel():
+func _create_log_panel() -> void:
     # Create semi-transparent panel
     log_panel = Panel.new()
     log_panel.size = Vector2(PANEL_WIDTH, PANEL_HEIGHT)
@@ -152,12 +152,12 @@ func _create_log_panel():
     log_label.fit_content = false
     log_panel.add_child(log_label)
 
-func _on_toggle_pressed():
+func _on_toggle_pressed() -> void:
     is_visible = not is_visible
     log_panel.visible = is_visible
     add_log("Debug log panel " + ("shown" if is_visible else "hidden"))
 
-func _on_clear_pressed():
+func _on_clear_pressed() -> void:
     log_messages.clear()
     _update_log_display()
     add_log("=== Log Cleared ===")
@@ -170,7 +170,7 @@ static func add_log(message: String, color: String = "white"):
         # Fallback to print if overlay not ready yet
         print("[DEBUG] " + message)
 
-func _add_log_internal(message: String, color: String = "white"):
+func _add_log_internal(message: String, color: String = "white") -> void:
     var timestamp = Time.get_ticks_msec() / 1000.0
     var formatted_msg = "[color=%s][%.2fs] %s[/color]" % [color, timestamp, message]
     
@@ -185,11 +185,11 @@ func _add_log_internal(message: String, color: String = "white"):
     # Also print to console
     print("[DEBUG %.2fs] %s" % [timestamp, message])
 
-func _update_log_display():
+func _update_log_display() -> void:
     if log_label:
         log_label.text = "\n".join(log_messages)
 
-func _create_version_label():
+func _create_version_label() -> void:
     version_label = Label.new()
     version_label.text = "Version: v" + game_version
     version_label.add_theme_font_size_override("font_size", 14)

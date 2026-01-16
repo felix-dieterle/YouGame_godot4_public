@@ -17,7 +17,7 @@ var demo_active: bool = false
 var current_demo_quest: Dictionary = {}
 var check_timer: Timer
 
-func _ready():
+func _ready() -> void:
     # Find required nodes using current scene as root
     var root = get_tree().current_scene
     if not root:
@@ -42,7 +42,7 @@ func _ready():
     await get_tree().create_timer(2.0).timeout
     start_demo()
 
-func start_demo():
+func start_demo() -> void:
     if demo_active:
         return
     
@@ -64,7 +64,7 @@ func start_demo():
     # Start checking quest progress
     check_timer.start()
 
-func create_new_demo_quest():
+func create_new_demo_quest() -> void:
     print("\n--- Creating new demo quest ---")
     current_demo_quest = quest_hook_system.create_demo_quest()
     
@@ -77,7 +77,7 @@ func create_new_demo_quest():
     print("Title: %s" % current_demo_quest.title)
     print("Number of objectives: %d\n" % current_demo_quest.objectives.size())
 
-func _check_quest_progress():
+func _check_quest_progress() -> void:
     if current_demo_quest.is_empty():
         return
     
@@ -108,7 +108,7 @@ func _check_quest_progress():
                 else:
                     print("\nNext objective: %s" % current_demo_quest.objectives[current_demo_quest.current_marker_index].description)
 
-func complete_quest():
+func complete_quest() -> void:
     print("\n========================================")
     print("QUEST COMPLETED!")
     print("========================================")

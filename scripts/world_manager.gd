@@ -1,14 +1,39 @@
 extends Node3D
 class_name WorldManager
 
+## Manages dynamic chunk loading and unloading based on player position
+##
+## The WorldManager is responsible for maintaining a VIEW_DISTANCE radius of chunks
+## around the player at all times. It dynamically loads new chunks as the player moves
+## and unloads chunks that are too far away to optimize memory usage.
+##
+## Key responsibilities:
+## - Track player position and convert to chunk coordinates
+## - Load chunks within VIEW_DISTANCE
+## - Unload distant chunks
+## - Coordinate with cluster systems for cross-chunk features
+## - Manage initial world setup and starting location
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+
 # Preload dependencies
 const Chunk = preload("res://scripts/chunk.gd")
 const StartingLocation = preload("res://scripts/starting_location.gd")
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
 
 # Configuration
 const CHUNK_SIZE = 32
 const VIEW_DISTANCE = 3  # Number of chunks to load in each direction
 const WORLD_SEED = 12345
+
+# ============================================================================
+# STATE
+# ============================================================================
 
 # Active chunks
 var chunks: Dictionary = {}  # Key: Vector2i(x, z), Value: Chunk
@@ -30,7 +55,11 @@ var initial_loading_timer: Timer
 # Starting location
 var starting_location: StartingLocation = null
 
-func _ready():
+# ============================================================================
+# LIFECYCLE METHODS
+# ============================================================================
+
+func _ready() -> void:
     # Find player or create a simple camera for testing
     player = get_parent().get_node_or_null("Player")
     if not player:
@@ -62,27 +91,34 @@ func _ready():
     # Mark initial loading as complete after a short delay
     initial_loading_timer.start(0.5)
 
-func _on_initial_loading_complete():
+func _on_initial_loading_complete() -> void:
     initial_loading_done = true
     if ui_manager:
         ui_manager.on_initial_loading_complete()
 
-func _process(_delta):
+# ============================================================================
+# CHUNK MANAGEMENT
+# ============================================================================
+
+func _process(_delta) -> void:
     if player:
+        # Convert player world position to chunk coordinates
+        # Note: Chunk coordinates are integers, world position is continuous
         var player_pos = player.global_position
         var new_chunk_x = int(floor(player_pos.x / CHUNK_SIZE))
         var new_chunk_z = int(floor(player_pos.z / CHUNK_SIZE))
         var new_player_chunk = Vector2i(new_chunk_x, new_chunk_z)
         
+        # Only update chunks when player moves to a new chunk (performance optimization)
         if new_player_chunk != player_chunk:
             player_chunk = new_player_chunk
             _update_chunks()
 
-func _update_chunks():
+func _update_chunks() -> void:
     var chunks_to_load = []
     var chunks_to_keep = {}
     
-    # Determine which chunks should be loaded
+    # Determine which chunks should be loaded based on VIEW_DISTANCE
     # Note: Vector2i.x stores world x-coord, Vector2i.y stores world z-coord
     for x in range(player_chunk.x - VIEW_DISTANCE, player_chunk.x + VIEW_DISTANCE + 1):
         for z in range(player_chunk.y - VIEW_DISTANCE, player_chunk.y + VIEW_DISTANCE + 1):
@@ -90,7 +126,7 @@ func _update_chunks():
             chunks_to_load.append(chunk_pos)
             chunks_to_keep[chunk_pos] = true
     
-    # Unload chunks that are too far away
+    # Unload chunks that are too far away from player
     var chunks_to_remove = []
     for chunk_pos in chunks.keys():
         if not chunks_to_keep.has(chunk_pos):
@@ -104,7 +140,7 @@ func _update_chunks():
         if not chunks.has(chunk_pos):
             _load_chunk(chunk_pos)
 
-func _load_chunk(chunk_pos: Vector2i):
+func _load_chunk(chunk_pos: Vector2i) -> void:
     var chunk = Chunk.new(chunk_pos.x, chunk_pos.y, WORLD_SEED)
     chunk.position = Vector3(chunk_pos.x * CHUNK_SIZE, 0, chunk_pos.y * CHUNK_SIZE)
     add_child(chunk)
@@ -121,7 +157,7 @@ func _load_chunk(chunk_pos: Vector2i):
     if ui_manager and initial_loading_done:
         ui_manager.on_chunk_generated(chunk_pos)
 
-func _unload_chunk(chunk_pos: Vector2i):
+func _unload_chunk(chunk_pos: Vector2i) -> void:
     if chunks.has(chunk_pos):
         var chunk = chunks[chunk_pos]
         chunk.queue_free()

@@ -22,7 +22,7 @@ const NEARBY_CHUNK_RADIUS: int = 5  # Search radius in chunks for nearby markers
 # Update timer
 var update_timer: float = 0.0
 
-func _ready():
+func _ready() -> void:
     # Find references
     player = get_parent().get_node_or_null("Player")
     world_manager = get_tree().get_first_node_in_group("WorldManager")
@@ -37,7 +37,7 @@ func _ready():
     # Update button position when viewport changes
     get_viewport().size_changed.connect(_update_toggle_button_position)
 
-func _create_toggle_button():
+func _create_toggle_button() -> void:
     toggle_button = Button.new()
     toggle_button.text = "🐛"  # Bug emoji for debug
     toggle_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
@@ -84,11 +84,11 @@ func _create_toggle_button():
     add_child(toggle_button)
     _update_toggle_button_position()
 
-func _update_toggle_button_position():
+func _update_toggle_button_position() -> void:
     var viewport_size = get_viewport().size
     toggle_button.position = Vector2(viewport_size.x - BUTTON_SIZE - 20, 20)
 
-func _create_debug_panel():
+func _create_debug_panel() -> void:
     # Create semi-transparent panel
     debug_panel = Panel.new()
     debug_panel.size = Vector2(PANEL_WIDTH, PANEL_HEIGHT)
@@ -121,21 +121,21 @@ func _create_debug_panel():
     debug_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
     debug_panel.add_child(debug_label)
 
-func _on_toggle_pressed():
+func _on_toggle_pressed() -> void:
     is_visible = not is_visible
     debug_panel.visible = is_visible
     
     if is_visible:
         _update_debug_info()
 
-func _process(delta):
+func _process(delta) -> void:
     if is_visible:
         update_timer += delta
         if update_timer >= UPDATE_INTERVAL:
             update_timer = 0.0
             _update_debug_info()
 
-func _update_debug_info():
+func _update_debug_info() -> void:
     var debug_text = "=== DEBUG NARRATIVE INFO ===\n\n"
     
     # Player info
