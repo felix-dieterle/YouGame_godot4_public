@@ -189,15 +189,35 @@ func test_time_scale():
 	# Reset SaveGameManager to ensure clean state
 	# This is critical because SaveGameManager is an autoload and may have cached data
 	if SaveGameManager:
+		# Force SaveGameManager to think no file exists and reset to defaults
 		SaveGameManager._data_loaded = false
-		# Reset day_night data to defaults with time_scale = 2.0
-		SaveGameManager.save_data["day_night"] = {
-			"current_time": 0.0,
-			"is_locked_out": false,
-			"lockout_end_time": 0.0,
-			"time_scale": 2.0,  # Match the fresh start default
-			"day_count": 1,
-			"night_start_time": 0.0
+		# Reset entire save_data to fresh defaults with time_scale = 2.0
+		SaveGameManager.save_data = {
+			"player": {
+				"position": Vector3.ZERO,
+				"rotation_y": 0.0,
+				"is_first_person": false
+			},
+			"world": {
+				"seed": 12345,
+				"player_chunk": Vector2i.ZERO
+			},
+			"day_night": {
+				"current_time": 0.0,
+				"is_locked_out": false,
+				"lockout_end_time": 0.0,
+				"time_scale": 2.0,  # Fresh start default (FIXED from 1.0)
+				"day_count": 1,
+				"night_start_time": 0.0
+			},
+			"settings": {
+				"master_volume": 80.0,
+				"ruler_visible": true
+			},
+			"meta": {
+				"version": "1.0",
+				"timestamp": 0
+			}
 		}
 	
 	var test_scene = Node3D.new()
