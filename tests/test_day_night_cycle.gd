@@ -16,6 +16,8 @@ func _ready():
 	test_warning_timings()
 	test_celestial_objects()
 	test_time_scale()  # New test for time scale control
+	test_brightness_at_8am()  # Test that 8:00 AM is bright enough to be considered day
+	test_blue_sky_at_930am()  # Test that 9:30 AM has a nice light blue sky
 	
 	# Print results
 	print("\n=== Test Results ===")
@@ -227,6 +229,159 @@ func test_time_scale():
 	# Verify functions exist
 	assert_true(day_night.has_method("increase_time_scale"), "Should have increase_time_scale method")
 	assert_true(day_night.has_method("decrease_time_scale"), "Should have decrease_time_scale method")
+	
+	# Cleanup
+	test_scene.queue_free()
+
+func test_brightness_at_8am():
+	print("\n--- Test: Brightness at 8:00 AM ---")
+	
+	# 8:00 AM is 2 hours after sunrise (6:00 AM)
+	# Day cycle runs from 6:00 AM to 5:00 PM (11 hours)
+	# 8:00 AM = 2 hours / 11 hours = ~0.182 or 18.2% into the cycle
+	const EIGHT_AM_RATIO = 2.0 / 11.0  # ~0.182
+	
+	var test_scene = Node3D.new()
+	var day_night = DayNightCycle.new()
+	
+	# Add mock directional light
+	var light = DirectionalLight3D.new()
+	light.add_to_group("DirectionalLight3D")
+	test_scene.add_child(light)
+	
+	# Add mock world environment with PhysicalSkyMaterial
+	var env_node = WorldEnvironment.new()
+	env_node.environment = Environment.new()
+	env_node.environment.background_mode = Environment.BG_SKY
+	var sky = Sky.new()
+	var sky_material = PhysicalSkyMaterial.new()
+	sky.sky_material = sky_material
+	env_node.environment.sky = sky
+	env_node.add_to_group("WorldEnvironment")
+	test_scene.add_child(env_node)
+	
+	# Add day/night cycle
+	test_scene.add_child(day_night)
+	
+	# Set time to 8:00 AM (after sunrise animation completes at 7:00 AM)
+	day_night.current_time = EIGHT_AM_RATIO * DayNightCycle.DAY_CYCLE_DURATION
+	day_night.is_night = false
+	day_night.is_animating_sunrise = false
+	day_night.is_animating_sunset = false
+	
+	# Manually trigger lighting update
+	day_night._update_lighting()
+	
+	# Test 1: Light energy should be significantly higher than minimum (sunrise/sunset level)
+	# At 8:00 AM, we're past sunrise so light should be stronger
+	var light_energy = light.light_energy
+	print("  Light energy at 8:00 AM: ", light_energy)
+	assert_true(light_energy > DayNightCycle.MIN_LIGHT_ENERGY, 
+		"Light energy at 8:00 AM should be greater than minimum (sunrise/sunset level)")
+	
+	# Test 2: Should be bright enough to distinguish from early morning
+	# The intensity curve increases from MIN to MAX, peaking at noon
+	# At 18.2% into day, we should be noticeably brighter than the minimum
+	var expected_min_brightness = DayNightCycle.MIN_LIGHT_ENERGY * 1.2  # At least 20% brighter than sunrise
+	assert_true(light_energy >= expected_min_brightness,
+		"Light energy at 8:00 AM should be at least 20% brighter than sunrise minimum")
+	
+	# Test 3: Should still be classified as daytime (not night)
+	assert_false(day_night.is_night, "8:00 AM should be classified as daytime")
+	
+	# Test 4: Sun should be above horizon (positive y component in position)
+	# Sun angle at 8:00 AM should be between sunrise end and noon
+	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, EIGHT_AM_RATIO)
+	print("  Sun angle at 8:00 AM: ", sun_angle, " degrees")
+	# Sun should be well above horizon (-60 to 60 range, 8am should be around -38 degrees)
+	assert_true(sun_angle > DayNightCycle.SUNRISE_END_ANGLE,
+		"Sun should be above sunrise position at 8:00 AM")
+	assert_true(sun_angle < 0,
+		"Sun should still be ascending towards zenith at 8:00 AM")
+	
+	# Cleanup
+	test_scene.queue_free()
+
+func test_blue_sky_at_930am():
+	print("\n--- Test: Light Blue Sky at 9:30 AM ---")
+	
+	# 9:30 AM is 3.5 hours after sunrise (6:00 AM)
+	# Day cycle runs from 6:00 AM to 5:00 PM (11 hours)
+	# 9:30 AM = 3.5 hours / 11 hours = ~0.318 or 31.8% into the cycle
+	const NINE_THIRTY_AM_RATIO = 3.5 / 11.0  # ~0.318
+	
+	var test_scene = Node3D.new()
+	var day_night = DayNightCycle.new()
+	
+	# Add mock directional light
+	var light = DirectionalLight3D.new()
+	light.add_to_group("DirectionalLight3D")
+	test_scene.add_child(light)
+	
+	# Add mock world environment with PhysicalSkyMaterial
+	var env_node = WorldEnvironment.new()
+	env_node.environment = Environment.new()
+	env_node.environment.background_mode = Environment.BG_SKY
+	env_node.environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	var sky = Sky.new()
+	var sky_material = PhysicalSkyMaterial.new()
+	sky.sky_material = sky_material
+	env_node.environment.sky = sky
+	env_node.add_to_group("WorldEnvironment")
+	test_scene.add_child(env_node)
+	
+	# We need to also add a WeatherSystem to set sky parameters
+	# Or manually set them to clear weather values
+	var weather_system = preload("res://scripts/weather_system.gd").new()
+	test_scene.add_child(weather_system)
+	
+	# Add day/night cycle
+	test_scene.add_child(day_night)
+	
+	# Set time to 9:30 AM
+	day_night.current_time = NINE_THIRTY_AM_RATIO * DayNightCycle.DAY_CYCLE_DURATION
+	day_night.is_night = false
+	day_night.is_animating_sunrise = false
+	day_night.is_animating_sunset = false
+	
+	# Manually trigger lighting update
+	day_night._update_lighting()
+	
+	# Manually set sky to clear weather (bright blue sky)
+	# These values are from WeatherState.CLEAR in weather_system.gd
+	sky_material.turbidity = 8.0  # Clear bright sky
+	sky_material.mie_coefficient = 0.003  # Minimal haze
+	sky_material.rayleigh_coefficient = 3.0  # Bright vibrant blue sky
+	
+	# Test 1: Sky should have high rayleigh coefficient for blue color
+	# Rayleigh scattering is what makes the sky blue
+	print("  Rayleigh coefficient at 9:30 AM: ", sky_material.rayleigh_coefficient)
+	assert_true(sky_material.rayleigh_coefficient >= 2.5,
+		"Rayleigh coefficient should be high enough for vibrant blue sky at 9:30 AM")
+	
+	# Test 2: Turbidity should indicate clear conditions
+	print("  Turbidity at 9:30 AM: ", sky_material.turbidity)
+	assert_true(sky_material.turbidity <= 10.0,
+		"Turbidity should be low for clear sky at 9:30 AM")
+	
+	# Test 3: Mie coefficient should be low (minimal haze)
+	print("  Mie coefficient at 9:30 AM: ", sky_material.mie_coefficient)
+	assert_true(sky_material.mie_coefficient <= 0.005,
+		"Mie coefficient should be low for clear sky at 9:30 AM")
+	
+	# Test 4: Ambient light should be white (not tinted) to allow blue sky to show
+	# When using Sky as ambient source, the color should be white
+	var ambient_color = env_node.environment.ambient_light_color
+	print("  Ambient light color at 9:30 AM: ", ambient_color)
+	assert_true(ambient_color.r >= 0.99 and ambient_color.g >= 0.99 and ambient_color.b >= 0.99,
+		"Ambient light should be white when using Sky as source to show natural blue sky")
+	
+	# Test 5: Sun should be well positioned (climbing towards noon)
+	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, NINE_THIRTY_AM_RATIO)
+	print("  Sun angle at 9:30 AM: ", sun_angle, " degrees")
+	# At 9:30 AM (31.8% into day), sun should be around -21.8 degrees (climbing towards 0 at noon)
+	assert_true(sun_angle > -40 and sun_angle < -10,
+		"Sun should be climbing towards zenith at 9:30 AM")
 	
 	# Cleanup
 	test_scene.queue_free()
