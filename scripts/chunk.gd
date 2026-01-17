@@ -740,7 +740,7 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
     var sample_count = 0
     for i in range(0, RESOLUTION, 4):
         for j in range(0, RESOLUTION, 4):
-            avg_height += heightmap[j * RESOLUTION + i]
+            avg_height += heightmap[j * (RESOLUTION + 1) + i]
             sample_count += 1
     avg_height /= sample_count
     
