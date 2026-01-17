@@ -1,6 +1,9 @@
 extends CharacterBody3D
 class_name Player
 
+# Preload dependencies
+const CrystalSystem = preload("res://scripts/crystal_system.gd")
+
 # Movement settings
 @export var move_speed: float = 5.0
 @export var rotation_speed: float = 3.0
@@ -48,19 +51,21 @@ var robot_parts: Array[Node3D] = []
 # Input control
 var input_enabled: bool = true
 
-# Crystal inventory - tracks collected crystals by type
-var crystal_inventory: Dictionary = {
-	0: 0,  # MOUNTAIN_CRYSTAL
-	1: 0,  # EMERALD
-	2: 0,  # GARNET
-	3: 0,  # RUBY
-	4: 0,  # AMETHYST
-	5: 0   # SAPPHIRE
-}
+# Crystal inventory - tracks collected crystals by type (initialized in _ready)
+var crystal_inventory: Dictionary = {}
 
 func _ready() -> void:
     # Add to Player group so other systems can find this node
     add_to_group("Player")
+    
+    # Initialize crystal inventory with all crystal types
+    for crystal_type in CrystalSystem.CrystalType.values():
+        crystal_inventory[crystal_type] = 0
+    add_to_group("Player")
+    
+    # Initialize crystal inventory with all crystal types
+    for crystal_type in CrystalSystem.CrystalType.values():
+        crystal_inventory[crystal_type] = 0
     
     # Configure CharacterBody3D slope handling
     floor_max_angle = deg_to_rad(max_slope_angle)
@@ -520,9 +525,7 @@ func _collect_crystal(crystal_node: Node3D) -> void:
     tween.tween_property(crystal_node, "position", crystal_node.position + Vector3(0, 1.0, 0), 0.3)
     tween.finished.connect(func(): crystal_node.queue_free())
     
-    # Play a collection sound (optional - could add later)
-    # For now, just a simple audio cue
-    print("Collected crystal type: ", crystal_type)
+    # TODO: Add collection sound effect
 
 func _load_saved_state():
     # Get player state from SaveGameManager (already loaded at startup)

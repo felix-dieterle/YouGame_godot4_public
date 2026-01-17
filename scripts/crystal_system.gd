@@ -151,8 +151,14 @@ static func create_crystal_mesh(type: CrystalType, size_scale: float, seed_val: 
 	# Add side faces (bottom to top hexagon)
 	for i in range(segments):
 		var next_i = (i + 1) % segments
-		# Add color variation for crystal facets
-		var facet_color = color * rng.randf_range(0.9, 1.1)
+		# Add color variation for crystal facets (brightness variation only, keeping color in valid range)
+		var brightness = rng.randf_range(0.9, 1.0)
+		var facet_color = Color(
+			color.r * brightness,
+			color.g * brightness,
+			color.b * brightness,
+			color.a
+		)
 		
 		# Triangle 1
 		surface_tool.set_color(facet_color)
@@ -169,7 +175,14 @@ static func create_crystal_mesh(type: CrystalType, size_scale: float, seed_val: 
 	# Add top pyramid faces (from top hexagon to apex)
 	for i in range(segments):
 		var next_i = (i + 1) % segments
-		var facet_color = color * rng.randf_range(0.95, 1.15)
+		# Slight brightness variation for top facets
+		var brightness = rng.randf_range(0.95, 1.0)
+		var facet_color = Color(
+			color.r * brightness,
+			color.g * brightness,
+			color.b * brightness,
+			color.a
+		)
 		
 		surface_tool.set_color(facet_color)
 		surface_tool.add_vertex(top_verts[i])

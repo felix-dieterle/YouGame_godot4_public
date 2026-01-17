@@ -357,17 +357,8 @@ func _create_crystal_counter_panel() -> void:
     separator.add_theme_constant_override("separation", 5)
     vbox.add_child(separator)
     
-    # Create labels for each crystal type
-    var crystal_types = [
-        CrystalSystem.CrystalType.MOUNTAIN_CRYSTAL,
-        CrystalSystem.CrystalType.EMERALD,
-        CrystalSystem.CrystalType.GARNET,
-        CrystalSystem.CrystalType.RUBY,
-        CrystalSystem.CrystalType.AMETHYST,
-        CrystalSystem.CrystalType.SAPPHIRE
-    ]
-    
-    for crystal_type in crystal_types:
+    # Create labels for each crystal type (dynamically from enum)
+    for crystal_type in CrystalSystem.CrystalType.values():
         var hbox = HBoxContainer.new()
         hbox.add_theme_constant_override("separation", 5)
         
