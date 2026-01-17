@@ -30,6 +30,7 @@ tests=(
     "res://tests/test_scene_narrative_markers.tscn|Narrative Markers Tests"
     "res://tests/test_scene_clusters.tscn|Clusters Tests"
     "res://tests/test_scene_visual_example.tscn|Visual Example Tests"
+    "res://tests/test_scene_mobile_controls.tscn|Mobile Controls Tests"
 )
 
 echo "========================================="
