@@ -422,25 +422,15 @@ func test_countdown_on_reopen_during_lockout():
 	cleanup_save_files()
 	
 	# Step 1: Create a game state where lockout is active
-	var test_scene = Node3D.new()
+	var test_scene = create_test_scene()
 	var day_night = DayNightCycle.new()
 	
-	# Add mock directional light
-	var light = DirectionalLight3D.new()
-	light.add_to_group("DirectionalLight3D")
-	test_scene.add_child(light)
-	
-	# Add mock world environment
-	var env_node = WorldEnvironment.new()
-	env_node.environment = Environment.new()
-	env_node.add_to_group("WorldEnvironment")
-	test_scene.add_child(env_node)
-	
 	# Add mock UI manager
-	var ui_manager = Control.new()  # Use Control to match UIManager base class (extends Control)
-	ui_manager.name = "UIManager"
-	ui_manager.set_script(preload("res://scripts/ui_manager.gd"))
+	var ui_manager = create_mock_ui_manager()
 	test_scene.add_child(ui_manager)
+	
+	# Verify UIManager extends Control (validate our helper function assumption)
+	assert_true(ui_manager is Control, "UIManager should extend Control base class")
 	
 	# Add day/night cycle
 	test_scene.add_child(day_night)
@@ -462,24 +452,11 @@ func test_countdown_on_reopen_during_lockout():
 	await get_tree().process_frame  # Wait for cleanup
 	
 	# Create new scene (simulating game restart)
-	var test_scene2 = Node3D.new()
+	var test_scene2 = create_test_scene()
 	var day_night2 = DayNightCycle.new()
 	
-	# Add mock directional light
-	var light2 = DirectionalLight3D.new()
-	light2.add_to_group("DirectionalLight3D")
-	test_scene2.add_child(light2)
-	
-	# Add mock world environment
-	var env_node2 = WorldEnvironment.new()
-	env_node2.environment = Environment.new()
-	env_node2.add_to_group("WorldEnvironment")
-	test_scene2.add_child(env_node2)
-	
 	# Add mock UI manager with full initialization
-	var ui_manager2 = Control.new()
-	ui_manager2.name = "UIManager"
-	ui_manager2.set_script(preload("res://scripts/ui_manager.gd"))
+	var ui_manager2 = create_mock_ui_manager()
 	test_scene2.add_child(ui_manager2)
 	
 	# Add day/night cycle - this will load state in _ready()
@@ -528,8 +505,32 @@ func test_countdown_on_reopen_during_lockout():
 	cleanup_save_files()
 
 # Helper functions
+# Create a mock UI manager for testing
+func create_mock_ui_manager() -> Control:
+	var ui_manager = Control.new()  # Use Control to match UIManager base class (extends Control)
+	ui_manager.name = "UIManager"
+	ui_manager.set_script(preload("res://scripts/ui_manager.gd"))
+	return ui_manager
+
+# Create a basic test scene with required nodes
+func create_test_scene() -> Node3D:
+	var test_scene = Node3D.new()
+	
+	# Add mock directional light
+	var light = DirectionalLight3D.new()
+	light.add_to_group("DirectionalLight3D")
+	test_scene.add_child(light)
+	
+	# Add mock world environment
+	var env_node = WorldEnvironment.new()
+	env_node.environment = Environment.new()
+	env_node.add_to_group("WorldEnvironment")
+	test_scene.add_child(env_node)
+	
+	return test_scene
+
+# Clean up test save files to ensure fresh test state
 func cleanup_save_files():
-	"""Clean up test save files to ensure fresh test state"""
 	var dir = DirAccess.open("user://")
 	if dir:
 		dir.remove("day_night_save.cfg")
