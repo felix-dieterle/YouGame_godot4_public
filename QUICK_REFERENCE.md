@@ -25,8 +25,8 @@
 
 ### Display Section
 - **Toggle First Person View** - Switch camera perspective
-  - Third-person (default): Follow robot from behind
-  - First-person: See from robot's eyes
+  - First-person (default): See from robot's eyes
+  - Third-person: Follow robot from behind
 
 ### Audio Section
 - **Master Volume** - Adjust game audio (0-100%)

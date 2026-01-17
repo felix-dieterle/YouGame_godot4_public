@@ -23,7 +23,7 @@ const CrystalSystem = preload("res://scripts/crystal_system.gd")
 
 # Camera
 var camera: Camera3D
-var is_first_person: bool = false
+var is_first_person: bool = true
 var head_bob_time: float = 0.0
 
 # Camera rotation (for mouse/joystick look)
@@ -90,6 +90,13 @@ func _ready() -> void:
     
     # Load saved player state if available
     _load_saved_state()
+    
+    # Update camera to match initial is_first_person state (if no saved state loaded)
+    if not SaveGameManager.has_save_file():
+        _update_camera()
+        # Update robot parts visibility for initial first-person mode
+        for part in robot_parts:
+            part.visible = not is_first_person
 
 
 func _physics_process(delta) -> void:
