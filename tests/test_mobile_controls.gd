@@ -57,6 +57,8 @@ func test_look_joystick_creation():
 	mobile_controls.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	mobile_controls.grow_vertical = Control.GROW_DIRECTION_BOTH
 	mobile_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# CRITICAL: Match main.tscn z_index setting for MobileControls parent
+	mobile_controls.z_index = 10
 	
 	# Add mobile_controls to the tree so _ready gets called
 	add_child(mobile_controls)
@@ -151,11 +153,17 @@ func test_look_joystick_properties():
 	else:
 		print("  FAIL: look_joystick_base has zero alpha")
 	
-	# Check z_index to ensure joystick renders above UI elements (version label has z_index 50)
-	if look_base.z_index >= 60:
-		print("  PASS: look_joystick_base z_index is %d (above UI elements)" % look_base.z_index)
+	# Check z_index to ensure joystick renders above UI elements
+	# CRITICAL: With MobileControls parent z_index = 10 (from main.tscn),
+	# the effective z_index is parent (10) + child (60) = 70
+	# This must be above UIManager children like version_label (0 + 100 = 100)
+	# and below PauseMenu (100+)
+	# For proper visibility on mobile, joystick needs effective z_index > 100
+	var effective_z_index = mobile_controls.z_index + look_base.z_index
+	if effective_z_index > 100:
+		print("  PASS: look_joystick effective z_index is %d (above UI elements with z_index 100)" % effective_z_index)
 	else:
-		print("  FAIL: look_joystick_base z_index is %d (should be >= 60 to render above UI elements with z_index 50)" % look_base.z_index)
+		print("  FAIL: look_joystick effective z_index is %d (should be > 100 to render above UI elements like version_label at 100)" % effective_z_index)
 
 func test_joystick_positions():
 	print("\n--- Test: Look Joystick Position ---")
