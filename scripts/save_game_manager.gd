@@ -50,6 +50,69 @@ func _ready() -> void:
     if has_save_file():
         load_game()
 
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_WM_CLOSE_REQUEST:
+        # Save game when window is closed (e.g., alt+F4, clicking X button)
+        _auto_save_on_exit()
+    elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
+        # Android back button - save before potentially exiting
+        _auto_save_on_exit()
+    elif what == NOTIFICATION_APPLICATION_PAUSED:
+        # App is being backgrounded (mobile) - save game state
+        _auto_save_on_exit()
+
+func _auto_save_on_exit() -> void:
+    # Collect current game state and save it
+    var player = get_tree().get_first_node_in_group("Player")
+    var world_manager = get_tree().get_first_node_in_group("WorldManager")
+    var day_night_cycle = get_tree().get_first_node_in_group("DayNightCycle")
+    var ruler = get_tree().get_first_node_in_group("RulerOverlay")
+    
+    if player:
+        update_player_data(
+            player.global_position,
+            player.rotation.y,
+            player.is_first_person if player.has("is_first_person") else false
+        )
+    
+    if world_manager:
+        update_world_data(
+            world_manager.WORLD_SEED,
+            world_manager.player_chunk
+        )
+    
+    if day_night_cycle:
+        update_day_night_data(
+            day_night_cycle.current_time,
+            day_night_cycle.is_locked_out,
+            day_night_cycle.lockout_end_time,
+            day_night_cycle.time_scale,
+            day_night_cycle.day_count,
+            day_night_cycle.night_start_time
+        )
+    
+    # Save settings (volume and ruler visibility)
+    # Get master volume from audio bus (the source of truth)
+    var bus_index = AudioServer.get_bus_index("Master")
+    var db_volume = AudioServer.get_bus_volume_db(bus_index)
+    var master_volume = db_to_linear(db_volume) * 100.0
+    
+    # Get ruler visibility
+    var ruler_visible = true  # Default
+    if ruler and ruler.has_method("get_visible_state"):
+        ruler_visible = ruler.get_visible_state()
+    
+    update_settings_data(master_volume, ruler_visible)
+    
+    save_game()
+    
+    # Show save message
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("Game saved!", 1.0)
+    
+    print("SaveGameManager: Auto-save on exit completed")
+
 # Check if a save file exists
 func has_save_file() -> bool:
     return FileAccess.file_exists(SAVE_FILE_PATH)

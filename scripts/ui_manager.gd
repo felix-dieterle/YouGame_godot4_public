@@ -54,6 +54,9 @@ const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
 var game_version: String = ""
 
 func _ready() -> void:
+    # Add to UIManager group so other systems can find this node
+    add_to_group("UIManager")
+    
     # Ensure UI manager can function during pause
     process_mode = Node.PROCESS_MODE_ALWAYS
     
