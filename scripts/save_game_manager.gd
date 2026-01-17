@@ -54,6 +54,12 @@ func _notification(what: int) -> void:
     if what == NOTIFICATION_WM_CLOSE_REQUEST:
         # Save game when window is closed (e.g., alt+F4, clicking X button)
         _auto_save_on_exit()
+    elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
+        # Android back button - save before potentially exiting
+        _auto_save_on_exit()
+    elif what == NOTIFICATION_APPLICATION_PAUSED:
+        # App is being backgrounded (mobile) - save game state
+        _auto_save_on_exit()
 
 func _auto_save_on_exit() -> void:
     # Collect current game state and save it
