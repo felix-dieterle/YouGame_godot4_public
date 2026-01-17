@@ -31,6 +31,7 @@ tests=(
     "res://tests/test_scene_clusters.tscn|Clusters Tests"
     "res://tests/test_scene_visual_example.tscn|Visual Example Tests"
     "res://tests/test_scene_mobile_controls.tscn|Mobile Controls Tests"
+    "res://tests/test_scene_day_night_cycle.tscn|Day Night Cycle Tests"
 )
 
 echo "========================================="

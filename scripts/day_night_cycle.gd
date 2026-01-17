@@ -120,7 +120,10 @@ func _ready() -> void:
         else:
             # Still in lockout, show night screen
             is_night = true
-            _show_night_screen()
+            # Defer the call to ensure UI Manager is fully initialized
+            # Without call_deferred(), UIManager._ready() might not have finished creating
+            # UI elements (like countdown_timer), causing the countdown to not be displayed
+            call_deferred("_show_night_screen")
             _set_night_lighting()
     else:
         # Normal day start
