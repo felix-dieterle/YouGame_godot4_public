@@ -447,7 +447,7 @@ func test_countdown_on_reopen_during_lockout():
 	test_scene.add_child(env_node)
 	
 	# Add mock UI manager
-	var ui_manager = Control.new()  # Use Control, not Node, to match UIManager base class
+	var ui_manager = Control.new()  # Use Control to match UIManager base class (extends Control)
 	ui_manager.name = "UIManager"
 	ui_manager.set_script(preload("res://scripts/ui_manager.gd"))
 	test_scene.add_child(ui_manager)
