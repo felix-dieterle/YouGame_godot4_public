@@ -237,8 +237,9 @@ func test_brightness_at_8am():
 	print("\n--- Test: Brightness at 8:00 AM ---")
 	
 	# 8:00 AM is 2 hours after sunrise (6:00 AM)
-	# Day cycle runs from 6:00 AM to 5:00 PM (11 hours)
-	# 8:00 AM = 2 hours / 11 hours = ~0.182 or 18.2% into the cycle
+	# The in-game day simulation runs from 6:00 AM to 5:00 PM (11 hours of in-game time)
+	# This is mapped to DAY_CYCLE_DURATION (30 minutes of real time)
+	# 8:00 AM = 2 hours in-game / 11 hours in-game = ~0.182 or 18.2% into the cycle
 	const EIGHT_AM_RATIO = 2.0 / 11.0  # ~0.182
 	
 	var test_scene = Node3D.new()
@@ -293,7 +294,7 @@ func test_brightness_at_8am():
 	# Sun angle at 8:00 AM should be between sunrise end and noon
 	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, EIGHT_AM_RATIO)
 	print("  Sun angle at 8:00 AM: ", sun_angle, " degrees")
-	# Sun should be well above horizon (-60 to 60 range, 8am should be around -38 degrees)
+	# Sun should be above sunrise position (-60°) and still ascending towards zenith (0°)
 	assert_true(sun_angle > DayNightCycle.SUNRISE_END_ANGLE,
 		"Sun should be above sunrise position at 8:00 AM")
 	assert_true(sun_angle < 0,
@@ -306,9 +307,15 @@ func test_blue_sky_at_930am():
 	print("\n--- Test: Light Blue Sky at 9:30 AM ---")
 	
 	# 9:30 AM is 3.5 hours after sunrise (6:00 AM)
-	# Day cycle runs from 6:00 AM to 5:00 PM (11 hours)
-	# 9:30 AM = 3.5 hours / 11 hours = ~0.318 or 31.8% into the cycle
+	# The in-game day simulation runs from 6:00 AM to 5:00 PM (11 hours of in-game time)
+	# This is mapped to DAY_CYCLE_DURATION (30 minutes of real time)
+	# 9:30 AM = 3.5 hours in-game / 11 hours in-game = ~0.318 or 31.8% into the cycle
 	const NINE_THIRTY_AM_RATIO = 3.5 / 11.0  # ~0.318
+	
+	# Sky material parameters for clear weather (from WeatherState.CLEAR in weather_system.gd)
+	const CLEAR_SKY_TURBIDITY = 8.0  # Clear bright sky
+	const CLEAR_SKY_MIE_COEFFICIENT = 0.003  # Minimal haze
+	const CLEAR_SKY_RAYLEIGH_COEFFICIENT = 3.0  # Bright vibrant blue sky
 	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
@@ -342,11 +349,10 @@ func test_blue_sky_at_930am():
 	# Manually trigger lighting update
 	day_night._update_lighting()
 	
-	# Manually set sky to clear weather (bright blue sky)
-	# These values are from WeatherState.CLEAR in weather_system.gd
-	sky_material.turbidity = 8.0  # Clear bright sky
-	sky_material.mie_coefficient = 0.003  # Minimal haze
-	sky_material.rayleigh_coefficient = 3.0  # Bright vibrant blue sky
+	# Manually set sky to clear weather conditions for testing
+	sky_material.turbidity = CLEAR_SKY_TURBIDITY
+	sky_material.mie_coefficient = CLEAR_SKY_MIE_COEFFICIENT
+	sky_material.rayleigh_coefficient = CLEAR_SKY_RAYLEIGH_COEFFICIENT
 	
 	# Test 1: Sky should have high rayleigh coefficient for blue color
 	# Rayleigh scattering is what makes the sky blue
@@ -375,8 +381,7 @@ func test_blue_sky_at_930am():
 	# Test 5: Sun should be well positioned (climbing towards noon)
 	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, NINE_THIRTY_AM_RATIO)
 	print("  Sun angle at 9:30 AM: ", sun_angle, " degrees")
-	# At 9:30 AM (31.8% into day), sun should be between sunrise end (-60°) and noon (0°)
-	# Calculated angle: lerp(-60, 60, 0.318) ≈ -21.8 degrees
+	# At 9:30 AM, sun should be between sunrise end (-60°) and noon (0°)
 	# Verify it's in the mid-morning position (between sunrise and noon)
 	assert_true(sun_angle > DayNightCycle.SUNRISE_END_ANGLE,
 		"Sun should be above sunrise position at 9:30 AM")
