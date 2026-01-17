@@ -8,6 +8,7 @@ This directory contains automated tests for the YouGame Godot 4 project.
 - `test_chunk.gd` / `test_scene_chunk.tscn` - Tests for chunk generation (seed reproducibility, walkability, lake generation)
 - `test_narrative_markers.gd` / `test_scene_narrative_markers.tscn` - Tests for narrative system markers
 - `test_clusters.gd` / `test_scene_clusters.tscn` - Tests for cluster system
+- `test_mobile_controls.gd` / `test_scene_mobile_controls.tscn` - Tests for mobile controls, particularly view control joystick visibility
 
 ### Visual Tests (with Screenshot Capture)
 - `test_visual_example.gd` / `test_scene_visual_example.tscn` - Example test demonstrating screenshot capture
