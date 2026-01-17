@@ -738,9 +738,9 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
     # Get average chunk height to determine if rock is in a hidden/lower location
     var avg_height = 0.0
     var sample_count = 0
-    for i in range(0, RESOLUTION, 4):
-        for j in range(0, RESOLUTION, 4):
-            avg_height += heightmap[j * (RESOLUTION + 1) + i]
+    for z in range(0, RESOLUTION, 4):
+        for x in range(0, RESOLUTION, 4):
+            avg_height += heightmap[z * (RESOLUTION + 1) + x]
             sample_count += 1
     avg_height /= sample_count
     
