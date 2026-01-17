@@ -1,6 +1,10 @@
 extends Node
 
 # Test suite for mobile controls, specifically verifying view control joystick visibility
+# 
+# IMPORTANT: This test must configure MobileControls with the same anchors and layout
+# properties as used in main.tscn (PRESET_FULL_RECT with anchor_right=1.0, anchor_bottom=1.0)
+# to ensure proper positioning and visibility of joystick elements.
 
 const ScreenshotHelper = preload("res://tests/screenshot_helper.gd")
 
@@ -44,6 +48,15 @@ func test_look_joystick_creation():
 	if not mobile_controls:
 		print("  FAIL: MobileControls not initialized")
 		return
+	
+	# Configure MobileControls to match the main.tscn scene configuration
+	# This is critical for proper positioning and visibility
+	mobile_controls.set_anchors_preset(Control.PRESET_FULL_RECT)
+	mobile_controls.anchor_right = 1.0
+	mobile_controls.anchor_bottom = 1.0
+	mobile_controls.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	mobile_controls.grow_vertical = Control.GROW_DIRECTION_BOTH
+	mobile_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	# Add mobile_controls to the tree so _ready gets called
 	add_child(mobile_controls)
