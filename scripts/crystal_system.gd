@@ -272,7 +272,7 @@ static func _create_cubic_crystal(type: CrystalType, size_scale: float, rng: Ran
 	# Cube faces (6 faces, 2 triangles each)
 	var faces = [
 		[0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6],  # Four side faces
-		[3, 0, 4, 7], [4, 5, 6, 7], [3, 2, 1, 0]   # Two end faces (top and bottom)
+		[3, 0, 4, 7], [4, 5, 6, 7], [0, 1, 2, 3]   # Two end faces (top and bottom)
 	]
 	
 	for face in faces:
