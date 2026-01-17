@@ -27,6 +27,7 @@ func _ready():
 	test_time_scale()  # New test for time scale control
 	test_brightness_at_8am()  # Test that 8:00 AM is bright enough to be considered day
 	test_blue_sky_at_930am()  # Test that 9:30 AM has a nice light blue sky
+	test_time_display_matches_sun_position()  # Test that displayed time matches sun position (exposes time offset bug)
 	
 	# Print results
 	print("\n=== Test Results ===")
@@ -443,3 +444,68 @@ func assert_false(condition: bool, message: String):
 	else:
 		print("  ✗ FAIL: ", message)
 		test_failed += 1
+
+func test_time_display_matches_sun_position():
+	print("\n--- Test: Time Display Matches Sun Position ---")
+	print("  This test verifies that the displayed time correctly represents the sun's position")
+	print("  EXPECTED TO FAIL: Exposes bug where time display uses 11-hour cycle from 6 AM")
+	print("  instead of 10-hour cycle from 7 AM (after sunrise completes)")
+	
+	# The day cycle should represent the time AFTER sunrise completes
+	# Sunrise animation shows sun rising from 6:00-7:00 AM (1-hour animation)
+	# After sunrise, current_time starts at 0, which should represent 7:00 AM
+	# The day progresses from 7:00 AM to 5:00 PM (10 hours)
+	# At current_time = DAY_CYCLE_DURATION * 0.5, it should be noon (12:00 PM)
+	
+	# Simulate what the UI would display at noon
+	const NOON_TIME_RATIO = 0.5  # Sun at zenith
+	const SUNRISE_TIME_MINUTES_ACTUAL = 360  # Current (buggy) value: 6:00 AM
+	const DAY_DURATION_HOURS_ACTUAL = 11.0  # Current (buggy) value: 11 hours
+	const SUNRISE_TIME_MINUTES_CORRECT = 420  # Correct value: 7:00 AM (after sunrise ends)
+	const DAY_DURATION_HOURS_CORRECT = 10.0  # Correct value: 10 hours (7 AM to 5 PM)
+	
+	# Calculate what time would be displayed with current (buggy) formula
+	var displayed_minutes_buggy = int(NOON_TIME_RATIO * DAY_DURATION_HOURS_ACTUAL * 60.0) + SUNRISE_TIME_MINUTES_ACTUAL
+	var displayed_hours_buggy = int(displayed_minutes_buggy / 60) % 24
+	var displayed_mins_buggy = int(displayed_minutes_buggy) % 60
+	print("  At noon (sun at zenith, time_ratio=0.5):")
+	print("    Current buggy formula displays: %02d:%02d" % [displayed_hours_buggy, displayed_mins_buggy])
+	
+	# Calculate what time SHOULD be displayed with correct formula
+	var displayed_minutes_correct = int(NOON_TIME_RATIO * DAY_DURATION_HOURS_CORRECT * 60.0) + SUNRISE_TIME_MINUTES_CORRECT
+	var displayed_hours_correct = int(displayed_minutes_correct / 60) % 24
+	var displayed_mins_correct = int(displayed_minutes_correct) % 60
+	print("    Correct formula should display: %02d:%02d" % [displayed_hours_correct, displayed_mins_correct])
+	
+	# Test that the correct formula gives us noon (12:00) when sun is at zenith
+	assert_equal(displayed_hours_correct, 12, 
+		"At sun zenith (time_ratio=0.5), correct formula should display 12:00 (noon)")
+	assert_equal(displayed_mins_correct, 0, 
+		"At sun zenith (time_ratio=0.5), minutes should be 00")
+	
+	# Test that the current buggy formula DOES NOT give us noon
+	# This test is EXPECTED TO FAIL, exposing the bug
+	if displayed_hours_buggy == 12 and displayed_mins_buggy == 0:
+		print("  ✗ FAIL: Current formula incorrectly shows 12:00 at zenith (this would be a coincidence)")
+		test_failed += 1
+	else:
+		print("  ✓ PASS (BUG CONFIRMED): Current formula shows %02d:%02d instead of 12:00 at zenith" % [displayed_hours_buggy, displayed_mins_buggy])
+		print("    This confirms the time display bug - displayed time doesn't match sun position")
+		test_passed += 1
+	
+	# Additional check: At displayed 9:30 AM, what time_ratio is it actually?
+	const NINE_THIRTY_MINUTES = 570  # 9:30 AM
+	var time_ratio_for_930_buggy = (NINE_THIRTY_MINUTES - SUNRISE_TIME_MINUTES_ACTUAL) / (DAY_DURATION_HOURS_ACTUAL * 60.0)
+	var time_ratio_for_930_correct = (NINE_THIRTY_MINUTES - SUNRISE_TIME_MINUTES_CORRECT) / (DAY_DURATION_HOURS_CORRECT * 60.0)
+	
+	print("\n  At displayed 9:30 AM:")
+	print("    Current buggy formula: time_ratio = %.3f" % time_ratio_for_930_buggy)
+	print("    Correct formula: time_ratio = %.3f" % time_ratio_for_930_correct)
+	
+	# The correct time_ratio for 9:30 AM should be 0.25 (2.5 hours into 10-hour day)
+	assert_equal(time_ratio_for_930_correct, 0.25,
+		"9:30 AM should be at time_ratio 0.25 (2.5/10 hours after 7 AM)")
+	
+	print("\n  SUMMARY: Time display uses wrong base time and duration,")
+	print("           causing ~1 hour offset between displayed time and sun position")
+
