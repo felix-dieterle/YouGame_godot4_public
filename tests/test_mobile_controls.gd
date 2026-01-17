@@ -62,6 +62,17 @@ func test_look_joystick_creation():
 	add_child(mobile_controls)
 	await get_tree().process_frame
 	
+	# Check if the movement joystick variables are initialized
+	if mobile_controls.joystick_base != null:
+		print("  PASS: joystick_base (movement) is initialized")
+	else:
+		print("  FAIL: joystick_base (movement) is null")
+	
+	if mobile_controls.joystick_stick != null:
+		print("  PASS: joystick_stick (movement) is initialized")
+	else:
+		print("  FAIL: joystick_stick (movement) is null")
+	
 	# Check if the look joystick variables are initialized
 	if mobile_controls.look_joystick_base != null:
 		print("  PASS: look_joystick_base is initialized")
@@ -139,6 +150,12 @@ func test_look_joystick_properties():
 		print("  PASS: look_joystick_base modulate alpha: %.2f" % look_base.modulate.a)
 	else:
 		print("  FAIL: look_joystick_base has zero alpha")
+	
+	# Check z_index to ensure joystick renders above UI elements (version label has z_index 50)
+	if look_base.z_index >= 60:
+		print("  PASS: look_joystick_base z_index is %d (above UI elements)" % look_base.z_index)
+	else:
+		print("  FAIL: look_joystick_base z_index is %d (should be >= 60 to render above UI elements with z_index 50)" % look_base.z_index)
 
 func test_joystick_positions():
 	print("\n--- Test: Look Joystick Position ---")

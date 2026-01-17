@@ -245,17 +245,29 @@ func test_brightness_at_8am():
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
 	
-	# Add mock directional light
+	# Add mock directional light with main.tscn settings
 	var light = DirectionalLight3D.new()
+	light.light_energy = 1.5  # Match main.tscn DirectionalLight3D initial energy
 	light.add_to_group("DirectionalLight3D")
 	test_scene.add_child(light)
 	
-	# Add mock world environment with PhysicalSkyMaterial
+	# Add mock world environment with PhysicalSkyMaterial matching main.tscn
 	var env_node = WorldEnvironment.new()
 	env_node.environment = Environment.new()
 	env_node.environment.background_mode = Environment.BG_SKY
+	env_node.environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	env_node.environment.ambient_light_color = Color(1.0, 1.0, 1.0, 1.0)
+	env_node.environment.ambient_light_sky_contribution = 1.0
+	env_node.environment.ambient_light_energy = 1.0  # Match main.tscn (updated from 0.8)
+	env_node.environment.tonemap_mode = Environment.TONE_MAPPER_ACES_FITTED  # Match main.tscn
+	env_node.environment.tonemap_exposure = 1.2  # Match main.tscn (updated from 1.5)
+	
 	var sky = Sky.new()
 	var sky_material = PhysicalSkyMaterial.new()
+	# Match main.tscn PhysicalSkyMaterial settings
+	sky_material.rayleigh_coefficient = 3.0
+	sky_material.mie_coefficient = 0.003
+	sky_material.turbidity = 8.0
 	sky.sky_material = sky_material
 	env_node.environment.sky = sky
 	env_node.add_to_group("WorldEnvironment")
@@ -320,16 +332,23 @@ func test_blue_sky_at_930am():
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
 	
-	# Add mock directional light
+	# Add mock directional light with main.tscn settings
 	var light = DirectionalLight3D.new()
+	light.light_energy = 1.5  # Match main.tscn DirectionalLight3D initial energy
 	light.add_to_group("DirectionalLight3D")
 	test_scene.add_child(light)
 	
-	# Add mock world environment with PhysicalSkyMaterial
+	# Add mock world environment with PhysicalSkyMaterial matching main.tscn
 	var env_node = WorldEnvironment.new()
 	env_node.environment = Environment.new()
 	env_node.environment.background_mode = Environment.BG_SKY
 	env_node.environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	env_node.environment.ambient_light_color = Color(1.0, 1.0, 1.0, 1.0)
+	env_node.environment.ambient_light_sky_contribution = 1.0
+	env_node.environment.ambient_light_energy = 1.0  # Match main.tscn (updated from 0.8)
+	env_node.environment.tonemap_mode = Environment.TONE_MAPPER_ACES_FITTED  # Match main.tscn
+	env_node.environment.tonemap_exposure = 1.2  # Match main.tscn (updated from 1.5)
+	
 	var sky = Sky.new()
 	var sky_material = PhysicalSkyMaterial.new()
 	sky.sky_material = sky_material
@@ -349,7 +368,7 @@ func test_blue_sky_at_930am():
 	# Manually trigger lighting update
 	day_night._update_lighting()
 	
-	# Manually set sky to clear weather conditions for testing
+	# Manually set sky to clear weather conditions for testing (matching main.tscn)
 	sky_material.turbidity = CLEAR_SKY_TURBIDITY
 	sky_material.mie_coefficient = CLEAR_SKY_MIE_COEFFICIENT
 	sky_material.rayleigh_coefficient = CLEAR_SKY_RAYLEIGH_COEFFICIENT
