@@ -24,6 +24,7 @@ const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
 const ClusterSystem = preload("res://scripts/cluster_system.gd")
 const ProceduralModels = preload("res://scripts/procedural_models.gd")
 const PathSystem = preload("res://scripts/path_system.gd")
+const CrystalSystem = preload("res://scripts/crystal_system.gd")
 
 # ============================================================================
 # CONFIGURATION CONSTANTS
@@ -52,6 +53,12 @@ const ROCK_COUNT_ROCKY_MIN = 5
 const ROCK_COUNT_ROCKY_MAX = 10
 const ROCK_COUNT_GRASSLAND_MIN = 2
 const ROCK_COUNT_GRASSLAND_MAX = 5
+
+# Crystal placement constants
+const CRYSTAL_SEED_OFFSET = 54321  # Offset for crystal placement seed
+const CRYSTAL_SPAWN_CHANCE = 0.35  # 35% chance a rock will have crystals
+const CRYSTALS_PER_ROCK_MIN = 1
+const CRYSTALS_PER_ROCK_MAX = 3
 
 # ============================================================================
 # STATE VARIABLES
@@ -92,6 +99,9 @@ var water_mesh_instance: MeshInstance3D = null
 # Cluster objects
 var placed_objects: Array = []  # Array of MeshInstance3D for trees/buildings
 var active_clusters: Array = []  # Clusters affecting this chunk
+
+# Crystal data
+var placed_crystals: Array = []  # Array of crystal MeshInstance3D with metadata
 
 # Path data
 var path_segments: Array = []  # Array of PathSystem.PathSegment
@@ -712,6 +722,70 @@ func _place_rocks() -> void:
         
         add_child(rock_instance)
         placed_objects.append(rock_instance)
+        
+        # Spawn crystals on this rock with a chance
+        _place_crystals_on_rock(rock_instance, rng)
+
+## Place crystals on a rock
+func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGenerator) -> void:
+    # Check if this rock should have crystals
+    if rng.randf() > CRYSTAL_SPAWN_CHANCE:
+        return
+    
+    # Determine how many crystals to place
+    var crystal_count = rng.randi_range(CRYSTALS_PER_ROCK_MIN, CRYSTALS_PER_ROCK_MAX)
+    
+    # Get rock position and size
+    var rock_pos = rock_instance.position
+    var rock_scale = rock_instance.scale.x if rock_instance.scale else 1.0
+    
+    for i in range(crystal_count):
+        # Select random crystal type
+        var crystal_type = CrystalSystem.select_random_crystal_type(rng)
+        
+        # Random size variation
+        var size_scale = rng.randf_range(0.8, 1.5)
+        
+        # Position on rock surface (offset from center)
+        var angle = rng.randf_range(0, TAU)
+        var radius = rng.randf_range(0.3, 0.8) * rock_scale
+        var offset_x = cos(angle) * radius
+        var offset_z = sin(angle) * radius
+        var offset_y = rng.randf_range(0.1, 0.4) * rock_scale  # Slightly above rock base
+        
+        # Create crystal instance
+        var crystal_instance = MeshInstance3D.new()
+        crystal_instance.mesh = CrystalSystem.create_crystal_mesh(crystal_type, size_scale, rng.randi())
+        crystal_instance.material_override = CrystalSystem.create_crystal_material(crystal_type)
+        crystal_instance.position = rock_pos + Vector3(offset_x, offset_y, offset_z)
+        crystal_instance.rotation.y = rng.randf_range(0, TAU)
+        # Slight tilt for natural look
+        crystal_instance.rotation.x = rng.randf_range(-0.2, 0.2)
+        crystal_instance.rotation.z = rng.randf_range(-0.2, 0.2)
+        crystal_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+        
+        # Store crystal metadata for collection
+        crystal_instance.set_meta("crystal_type", crystal_type)
+        crystal_instance.set_meta("is_crystal", true)
+        crystal_instance.set_meta("parent_rock", rock_instance)
+        
+        # Add to interactable group for click/tap detection
+        crystal_instance.add_to_group("crystals")
+        
+        # Create collision area for interaction
+        var area = Area3D.new()
+        var collision_shape = CollisionShape3D.new()
+        var shape = SphereShape3D.new()
+        shape.radius = 0.3 * size_scale  # Slightly larger than visual for easier tapping
+        collision_shape.shape = shape
+        area.add_child(collision_shape)
+        crystal_instance.add_child(area)
+        
+        # Store reference to the Area3D for signal connection
+        crystal_instance.set_meta("interaction_area", area)
+        
+        add_child(crystal_instance)
+        placed_crystals.append(crystal_instance)
 
 ## Place trees and buildings based on cluster system
 func _place_cluster_objects() -> void:
