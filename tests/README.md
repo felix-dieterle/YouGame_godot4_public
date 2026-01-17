@@ -9,6 +9,7 @@ This directory contains automated tests for the YouGame Godot 4 project.
 - `test_narrative_markers.gd` / `test_scene_narrative_markers.tscn` - Tests for narrative system markers
 - `test_clusters.gd` / `test_scene_clusters.tscn` - Tests for cluster system
 - `test_mobile_controls.gd` / `test_scene_mobile_controls.tscn` - Tests for mobile controls, particularly view control joystick visibility
+  - **Important**: This test creates MobileControls programmatically and must configure it with proper anchors (PRESET_FULL_RECT) to match the main.tscn scene configuration. Without these anchors, the control has zero size and joystick elements won't be visible or positioned correctly.
 
 ### Visual Tests (with Screenshot Capture)
 - `test_visual_example.gd` / `test_scene_visual_example.tscn` - Example test demonstrating screenshot capture
@@ -82,3 +83,21 @@ See `test_visual_example.gd` for a complete example.
 
 For detailed information about the screenshot system, see:
 - [docs/TEST_SCREENSHOTS.md](../docs/TEST_SCREENSHOTS.md)
+
+## Troubleshooting
+
+### Mobile Controls Joystick Not Visible in Tests
+
+If you're creating a `MobileControls` instance programmatically in tests and the joystick elements are not visible or positioned correctly, ensure you configure the control with proper anchors before adding it to the scene tree:
+
+```gdscript
+mobile_controls.set_anchors_preset(Control.PRESET_FULL_RECT)
+mobile_controls.anchor_right = 1.0
+mobile_controls.anchor_bottom = 1.0
+mobile_controls.grow_horizontal = Control.GROW_DIRECTION_BOTH
+mobile_controls.grow_vertical = Control.GROW_DIRECTION_BOTH
+mobile_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+add_child(mobile_controls)
+```
+
+This configuration matches how MobileControls is set up in `main.tscn` and ensures the control fills the entire viewport, which is necessary for proper joystick positioning.

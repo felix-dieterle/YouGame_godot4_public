@@ -233,3 +233,17 @@ When testing on Android:
 8. Check touch responsiveness on different screen sizes
 9. Verify camera rotation limits (max pitch angle)
 10. Test that camera rotation resets when switching views
+
+### Automated Testing Note
+
+When creating automated tests for MobileControls, the control must be configured with proper anchors to match the main scene configuration:
+
+```gdscript
+mobile_controls.set_anchors_preset(Control.PRESET_FULL_RECT)
+mobile_controls.anchor_right = 1.0
+mobile_controls.anchor_bottom = 1.0
+mobile_controls.grow_horizontal = Control.GROW_DIRECTION_BOTH
+mobile_controls.grow_vertical = Control.GROW_DIRECTION_BOTH
+```
+
+Without these anchors, the MobileControls node has zero size and joystick elements won't be positioned correctly, causing tests to fail even though the actual game implementation works fine. See `tests/test_mobile_controls.gd` for a complete example.
