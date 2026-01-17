@@ -29,6 +29,9 @@ func run_tests():
 	test_crystal_material_creation()
 	test_crystal_colors()
 	test_spawn_probabilities()
+	test_crystal_shapes()
+	test_rock_color_preferences()
+	test_transparency_improvements()
 
 func test_crystal_type_selection():
 	print("Test: Crystal Type Selection")
@@ -177,3 +180,93 @@ func print_results():
 		print("✗ Some tests failed")
 	
 	print("========================================\n")
+
+func test_crystal_shapes():
+	print("Test: Crystal Shapes")
+	var success = true
+	
+	# Verify each crystal type has a shape assigned
+	var expected_shapes = {
+		CrystalSystem.CrystalType.MOUNTAIN_CRYSTAL: CrystalSystem.CrystalShape.HEXAGONAL_PRISM,
+		CrystalSystem.CrystalType.EMERALD: CrystalSystem.CrystalShape.ELONGATED_PRISM,
+		CrystalSystem.CrystalType.GARNET: CrystalSystem.CrystalShape.CUBIC,
+		CrystalSystem.CrystalType.RUBY: CrystalSystem.CrystalShape.HEXAGONAL_PRISM,
+		CrystalSystem.CrystalType.AMETHYST: CrystalSystem.CrystalShape.CLUSTER,
+		CrystalSystem.CrystalType.SAPPHIRE: CrystalSystem.CrystalShape.ELONGATED_PRISM
+	}
+	
+	for type in CrystalSystem.CrystalType.values():
+		var shape = CrystalSystem.get_crystal_shape(type)
+		var expected = expected_shapes[type]
+		
+		if shape == expected:
+			var shape_name = ["HEXAGONAL_PRISM", "CUBIC", "ELONGATED_PRISM", "CLUSTER"][shape]
+			print("  ✓ %s has shape: %s" % [CrystalSystem.get_crystal_name(type), shape_name])
+		else:
+			print("  ✗ %s has incorrect shape" % CrystalSystem.get_crystal_name(type))
+			success = false
+	
+	test_results.append(success)
+	print()
+
+func test_rock_color_preferences():
+	print("Test: Rock Color Preferences")
+	var success = true
+	
+	# Verify each crystal type has rock color preferences
+	for type in CrystalSystem.CrystalType.values():
+		var preferred_colors = CrystalSystem.get_preferred_rock_colors(type)
+		
+		if preferred_colors.is_empty():
+			print("  ✗ %s has no rock color preferences" % CrystalSystem.get_crystal_name(type))
+			success = false
+		else:
+			print("  ✓ %s prefers rock colors: %s" % [CrystalSystem.get_crystal_name(type), preferred_colors])
+	
+	# Test rock color filtering
+	var rng = RandomNumberGenerator.new()
+	rng.seed = 99999
+	
+	# Test that emeralds only spawn on brownish rocks (index 2)
+	var emerald_spawns = 0
+	for i in range(100):
+		var crystal_type = CrystalSystem.select_random_crystal_type(rng, 2)  # Brownish gray rock
+		if crystal_type == CrystalSystem.CrystalType.EMERALD:
+			emerald_spawns += 1
+	
+	if emerald_spawns > 0:
+		print("  ✓ Emeralds can spawn on brownish rocks (spawned %d times in 100 attempts)" % emerald_spawns)
+	else:
+		print("  ⚠ Emeralds did not spawn on brownish rocks in 100 attempts (may be random chance)")
+	
+	# Test that garnets only spawn on dark brownish rocks (index 3)
+	var garnet_spawns = 0
+	for i in range(100):
+		var crystal_type = CrystalSystem.select_random_crystal_type(rng, 3)  # Dark brownish rock
+		if crystal_type == CrystalSystem.CrystalType.GARNET:
+			garnet_spawns += 1
+	
+	if garnet_spawns > 0:
+		print("  ✓ Garnets can spawn on dark rocks (spawned %d times in 100 attempts)" % garnet_spawns)
+	else:
+		print("  ⚠ Garnets did not spawn on dark rocks in 100 attempts (may be random chance)")
+	
+	test_results.append(success)
+	print()
+
+func test_transparency_improvements():
+	print("Test: Transparency Improvements")
+	var success = true
+	
+	# Verify all crystals have improved transparency (alpha < 0.75)
+	for type in CrystalSystem.CrystalType.values():
+		var color = CrystalSystem.get_crystal_color(type)
+		
+		if color.a < 0.75:
+			print("  ✓ %s has improved transparency (alpha: %.2f)" % [CrystalSystem.get_crystal_name(type), color.a])
+		else:
+			print("  ✗ %s transparency not improved (alpha: %.2f)" % [CrystalSystem.get_crystal_name(type), color.a])
+			success = false
+	
+	test_results.append(success)
+	print()

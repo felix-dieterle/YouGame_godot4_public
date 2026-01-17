@@ -8,44 +8,68 @@ The Crystal Collection System adds interactive collectible crystals that spawn o
 
 ### Crystal Types
 
-Six different crystal types with unique colors and spawn rates:
+Six different crystal types with unique colors, shapes, and spawn rates:
 
 1. **Mountain Crystal** (Clear/White)
    - Most common
    - Spawn chance: 35%
    - Growth frequency: 40%
+   - Shape: Hexagonal prism
+   - Preferred rocks: Light gray, medium gray
+   - Transparency: High (60% alpha)
 
 2. **Emerald** (Green)
    - Uncommon
    - Spawn chance: 25%
    - Growth frequency: 25%
+   - Shape: Elongated prism (tall, thin)
+   - Preferred rocks: Brownish gray
+   - Transparency: Moderate (65% alpha)
 
 3. **Garnet** (Dark Red)
    - Uncommon
    - Spawn chance: 20%
    - Growth frequency: 20%
+   - Shape: Cubic (cube-like)
+   - Preferred rocks: Dark brownish
+   - Transparency: Moderate (70% alpha)
 
 4. **Amethyst** (Purple)
    - Uncommon
    - Spawn chance: 20%
    - Growth frequency: 18%
+   - Shape: Cluster (multiple small points)
+   - Preferred rocks: Light gray, brownish gray
+   - Transparency: Moderate (65% alpha)
 
 5. **Ruby** (Bright Red)
    - Rare
    - Spawn chance: 8%
    - Growth frequency: 5%
+   - Shape: Hexagonal prism
+   - Preferred rocks: Medium gray, dark brownish
+   - Transparency: Moderate (70% alpha)
 
 6. **Sapphire** (Deep Blue)
    - Rare
    - Spawn chance: 7%
    - Growth frequency: 7%
+   - Shape: Elongated prism (tall, thin)
+   - Preferred rocks: Medium gray, brownish gray
+   - Transparency: Moderate (70% alpha)
 
 ### Visual Design
 
-- **Shape**: Hexagonal prism crystals with pointed tops
+- **Shape Variety**: Four different crystal shapes based on type:
+  - Hexagonal prism (Mountain Crystal, Ruby)
+  - Cubic (Garnet)
+  - Elongated prism (Emerald, Sapphire)
+  - Cluster (Amethyst)
 - **Size Variation**: 0.8x to 1.5x base size
-- **Material**: Transparent with emission for a magical glow
-- **Placement**: 1-3 crystals per rock (35% chance a rock has crystals)
+- **Material**: Highly transparent with emission for a magical glow
+- **Transparency**: All crystals now more transparent (60-70% alpha vs. 85-95% previously)
+- **Placement**: 1-2 crystals per rock (20% chance a rock has crystals, increased in hidden areas)
+- **Hidden Locations**: Crystals spawn more frequently in valleys and lower terrain (up to 80% increase)
 
 ### Collection Mechanics
 
@@ -131,18 +155,35 @@ Collection process:
 
 ```gdscript
 const CRYSTAL_SEED_OFFSET = 54321
-const CRYSTAL_SPAWN_CHANCE = 0.35  # 35% of rocks have crystals
+const CRYSTAL_SPAWN_CHANCE = 0.20  # 20% of rocks have crystals (reduced from 35%)
 const CRYSTALS_PER_ROCK_MIN = 1
-const CRYSTALS_PER_ROCK_MAX = 3
+const CRYSTALS_PER_ROCK_MAX = 2  # Reduced from 3 for rarer crystals
+
+# Hidden location bonuses:
+# - Rocks in valleys (2+ units below avg): 1.8x spawn chance
+# - Rocks below average: 1.3x spawn chance
 ```
 
 ### CrystalSystem.gd
 
 Each crystal type has:
 - `name`: Display name
-- `color`: RGBA color with transparency
+- `color`: RGBA color with transparency (now more transparent)
 - `spawn_chance`: Weighted probability when selecting type
 - `growth_frequency`: How often this type appears (informational)
+- `shape`: Crystal shape (HEXAGONAL_PRISM, CUBIC, ELONGATED_PRISM, CLUSTER)
+- `preferred_rock_colors`: Array of rock color indices this crystal prefers
+
+#### Crystal Shapes
+
+```gdscript
+enum CrystalShape {
+    HEXAGONAL_PRISM,   # Classic hexagonal crystal
+    CUBIC,             # Cube-like crystal
+    ELONGATED_PRISM,   # Tall thin prism
+    CLUSTER            # Multiple small points
+}
+```
 
 ## Testing
 
@@ -283,12 +324,34 @@ Crystals use Area3D nodes for interaction:
 
 ### Mesh Generation
 
-Hexagonal prism algorithm:
+Four different crystal shape algorithms:
+
+**Hexagonal Prism** (Mountain Crystal, Ruby):
 1. Create bottom hexagon vertices
 2. Create top hexagon vertices (rotated, smaller)
 3. Generate side faces connecting bottom to top
 4. Create pyramid top from top hexagon to apex
 5. Apply vertex colors with slight variation per facet
+
+**Cubic** (Garnet):
+1. Create 8 vertices for irregular cube
+2. Top is slightly narrower than bottom for natural look
+3. Generate 6 faces (2 triangles each)
+4. Apply vertex colors with brightness variation
+
+**Elongated Prism** (Emerald, Sapphire):
+1. Similar to hexagonal prism but taller and thinner
+2. Base radius smaller (0.1 vs 0.15)
+3. Height longer (0.6-1.0 vs 0.4-0.7)
+4. Very narrow top (0.2x vs 0.3x base radius)
+5. Higher apex point (1.4x vs 1.3x height)
+
+**Cluster** (Amethyst):
+1. Create 3-5 small pyramid points
+2. Each point has 4 sides (simple pyramid)
+3. Points positioned with random offsets
+4. Varying heights for natural cluster appearance
+5. Shared base with individual pyramids
 
 ### Material Properties
 
@@ -300,6 +363,14 @@ StandardMaterial3D settings:
 - `vertex_color_use_as_albedo`: true
 
 ## Version History
+
+- **v1.1.0** (2026-01-17)
+  - **Crystal Shape Variety**: Added 4 different crystal shapes (hexagonal prism, cubic, elongated prism, cluster)
+  - **Improved Transparency**: All crystals now more transparent (60-70% alpha vs 85-95%)
+  - **Rock Color Matching**: Crystals now prefer specific rock colors (e.g., emeralds on brownish rocks)
+  - **Rarity Increase**: Reduced spawn chance from 35% to 20%, max crystals per rock from 3 to 2
+  - **Hidden Location Bonus**: Crystals spawn up to 80% more in valleys and lower terrain
+  - **Enhanced Tests**: Added tests for shapes, rock color preferences, and transparency
 
 - **v1.0.53** (2026-01-17)
   - Initial crystal collection system
