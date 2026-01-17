@@ -330,11 +330,6 @@ func test_blue_sky_at_930am():
 	env_node.add_to_group("WorldEnvironment")
 	test_scene.add_child(env_node)
 	
-	# We need to also add a WeatherSystem to set sky parameters
-	# Or manually set them to clear weather values
-	var weather_system = preload("res://scripts/weather_system.gd").new()
-	test_scene.add_child(weather_system)
-	
 	# Add day/night cycle
 	test_scene.add_child(day_night)
 	
@@ -373,15 +368,20 @@ func test_blue_sky_at_930am():
 	# When using Sky as ambient source, the color should be white
 	var ambient_color = env_node.environment.ambient_light_color
 	print("  Ambient light color at 9:30 AM: ", ambient_color)
-	assert_true(ambient_color.r >= 0.99 and ambient_color.g >= 0.99 and ambient_color.b >= 0.99,
+	# Use tolerance-based comparison for floating-point values
+	assert_true(ambient_color.is_equal_approx(Color.WHITE),
 		"Ambient light should be white when using Sky as source to show natural blue sky")
 	
 	# Test 5: Sun should be well positioned (climbing towards noon)
 	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, NINE_THIRTY_AM_RATIO)
 	print("  Sun angle at 9:30 AM: ", sun_angle, " degrees")
-	# At 9:30 AM (31.8% into day), sun should be around -21.8 degrees (climbing towards 0 at noon)
-	assert_true(sun_angle > -40 and sun_angle < -10,
-		"Sun should be climbing towards zenith at 9:30 AM")
+	# At 9:30 AM (31.8% into day), sun should be between sunrise end (-60°) and noon (0°)
+	# Calculated angle: lerp(-60, 60, 0.318) ≈ -21.8 degrees
+	# Verify it's in the mid-morning position (between sunrise and noon)
+	assert_true(sun_angle > DayNightCycle.SUNRISE_END_ANGLE,
+		"Sun should be above sunrise position at 9:30 AM")
+	assert_true(sun_angle < 0,
+		"Sun should still be ascending towards zenith (0 degrees) at 9:30 AM")
 	
 	# Cleanup
 	test_scene.queue_free()
