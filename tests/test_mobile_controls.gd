@@ -28,9 +28,8 @@ func test_mobile_controls_script_exists():
 	if mobile_controls_script:
 		print("  PASS: MobileControls script loaded successfully")
 		
-		# Create an instance to verify it extends Control
-		mobile_controls = Control.new()
-		mobile_controls.set_script(mobile_controls_script)
+		# Create an instance directly from the script
+		mobile_controls = mobile_controls_script.new()
 		
 		if mobile_controls is Control:
 			print("  PASS: MobileControls extends Control")
@@ -50,26 +49,16 @@ func test_look_joystick_creation():
 	add_child(mobile_controls)
 	await get_tree().process_frame
 	
-	# Check if the look joystick variables are accessible
-	if mobile_controls.has("look_joystick_base"):
-		print("  PASS: look_joystick_base variable exists")
-		
-		if mobile_controls.look_joystick_base != null:
-			print("  PASS: look_joystick_base is initialized")
-		else:
-			print("  FAIL: look_joystick_base is null")
+	# Check if the look joystick variables are initialized
+	if mobile_controls.look_joystick_base != null:
+		print("  PASS: look_joystick_base is initialized")
 	else:
-		print("  FAIL: look_joystick_base variable not found")
+		print("  FAIL: look_joystick_base is null")
 	
-	if mobile_controls.has("look_joystick_stick"):
-		print("  PASS: look_joystick_stick variable exists")
-		
-		if mobile_controls.look_joystick_stick != null:
-			print("  PASS: look_joystick_stick is initialized")
-		else:
-			print("  FAIL: look_joystick_stick is null")
+	if mobile_controls.look_joystick_stick != null:
+		print("  PASS: look_joystick_stick is initialized")
 	else:
-		print("  FAIL: look_joystick_stick variable not found")
+		print("  FAIL: look_joystick_stick is null")
 
 func test_look_joystick_visibility_visual():
 	print("\n--- Test: Look Joystick Visibility (Visual) ---")
@@ -78,8 +67,8 @@ func test_look_joystick_visibility_visual():
 		print("  FAIL: Look joystick not available for visual test")
 		return
 	
-	# Wait for rendering
-	await ScreenshotHelper.wait_for_render(5)
+	# Wait for rendering (reduced to 3 frames for simple visibility verification)
+	await ScreenshotHelper.wait_for_render(3)
 	
 	# Capture screenshot showing the look joystick
 	ScreenshotHelper.capture_screenshot("mobile_controls", "view_control_joystick")
@@ -148,10 +137,12 @@ func test_joystick_positions():
 	var look_base = mobile_controls.look_joystick_base
 	var viewport_size = get_viewport().size
 	
-	# The look joystick should be positioned in the bottom-right corner
-	# based on the code: viewport_size.x - look_joystick_margin_x, viewport_size.y - look_joystick_margin_y
+	# Read actual margin values from mobile_controls to make test robust
+	var look_margin_x = mobile_controls.look_joystick_margin_x if mobile_controls.has("look_joystick_margin_x") else 120.0
+	var look_margin_y = mobile_controls.look_joystick_margin_y if mobile_controls.has("look_joystick_margin_y") else 120.0
 	
 	print("  Viewport size: %.0fx%.0f" % [viewport_size.x, viewport_size.y])
+	print("  Look joystick margins: X=%.0f, Y=%.0f" % [look_margin_x, look_margin_y])
 	print("  Look joystick position: (%.0f, %.0f)" % [look_base.position.x, look_base.position.y])
 	print("  Look joystick global position: (%.0f, %.0f)" % [look_base.global_position.x, look_base.global_position.y])
 	
