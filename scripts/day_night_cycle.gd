@@ -188,6 +188,8 @@ func _process(delta) -> void:
             lockout_end_time = night_start_time + SLEEP_LOCKOUT_DURATION
             _save_state()
             _save_game_state()  # Save game state when bedtime starts
+            if ui_manager and ui_manager.has_method("show_message"):
+                ui_manager.show_message("Game auto-saved for the night", 3.0)
             _show_night_screen()
             _set_night_lighting()
             _disable_player_input()
@@ -358,7 +360,7 @@ func _show_warning(message: String) -> void:
 
 func _show_day_message() -> void:
     if ui_manager and ui_manager.has_method("show_message"):
-        ui_manager.show_message("Day %d" % day_count, 5.0)
+        ui_manager.show_message("Day %d - Game loaded!" % day_count, 5.0)
 
 func _show_night_screen() -> void:
     if ui_manager and ui_manager.has_method("show_night_overlay"):
