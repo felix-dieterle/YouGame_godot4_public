@@ -12,6 +12,8 @@ var time_plus_button: Button  # Speed up time
 var night_overlay: ColorRect
 var night_label: Label
 var countdown_timer: Timer
+var crystal_counter_panel: PanelContainer  # Container for crystal counters
+var crystal_labels: Dictionary = {}  # Maps CrystalType to Label
 
 # State
 var initial_loading_complete: bool = false
@@ -54,6 +56,9 @@ var game_version: String = ""
 func _ready() -> void:
     # Ensure UI manager can function during pause
     process_mode = Node.PROCESS_MODE_ALWAYS
+    
+    # Add to UIManager group so other systems can find it
+    add_to_group("UIManager")
     
     # Get game version
     game_version = ProjectSettings.get_setting("application/config/version", "1.0.0")
@@ -206,6 +211,9 @@ func _ready() -> void:
     countdown_timer.timeout.connect(_on_countdown_timer_timeout)
     add_child(countdown_timer)
     
+    # Create crystal counter panel (top-right)
+    _create_crystal_counter_panel()
+    
     # Create and show start menu if save file exists
     _create_start_menu()
     
@@ -294,6 +302,97 @@ func update_game_time(time_seconds: float, cycle_duration: float) -> void:
     var minutes = int(total_minutes) % 60
     
     time_label.text = "%02d:%02d" % [hours, minutes]
+
+## Create crystal counter panel
+func _create_crystal_counter_panel() -> void:
+    # Preload CrystalSystem for crystal names and colors
+    const CrystalSystem = preload("res://scripts/crystal_system.gd")
+    
+    # Create panel container
+    crystal_counter_panel = PanelContainer.new()
+    crystal_counter_panel.anchor_left = 1.0
+    crystal_counter_panel.anchor_top = 0.0
+    crystal_counter_panel.anchor_right = 1.0
+    crystal_counter_panel.anchor_bottom = 0.0
+    crystal_counter_panel.offset_left = -200
+    crystal_counter_panel.offset_top = 10
+    crystal_counter_panel.offset_right = -10
+    crystal_counter_panel.offset_bottom = 220
+    crystal_counter_panel.z_index = 60
+    
+    # Style the panel
+    var panel_style = StyleBoxFlat.new()
+    panel_style.bg_color = Color(0.1, 0.1, 0.15, 0.85)
+    panel_style.corner_radius_top_left = 8
+    panel_style.corner_radius_top_right = 8
+    panel_style.corner_radius_bottom_left = 8
+    panel_style.corner_radius_bottom_right = 8
+    panel_style.border_color = Color(0.4, 0.4, 0.5, 0.8)
+    panel_style.border_width_left = 2
+    panel_style.border_width_right = 2
+    panel_style.border_width_top = 2
+    panel_style.border_width_bottom = 2
+    crystal_counter_panel.add_theme_stylebox_override("panel", panel_style)
+    
+    # Create VBoxContainer for crystal labels
+    var vbox = VBoxContainer.new()
+    vbox.add_theme_constant_override("separation", 5)
+    vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+    vbox.offset_left = 10
+    vbox.offset_top = 10
+    vbox.offset_right = -10
+    vbox.offset_bottom = -10
+    crystal_counter_panel.add_child(vbox)
+    
+    # Title label
+    var title_label = Label.new()
+    title_label.text = "Crystals"
+    title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title_label.add_theme_font_size_override("font_size", 18)
+    title_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    vbox.add_child(title_label)
+    
+    # Add separator
+    var separator = HSeparator.new()
+    separator.add_theme_constant_override("separation", 5)
+    vbox.add_child(separator)
+    
+    # Create labels for each crystal type (dynamically from enum)
+    for crystal_type in CrystalSystem.CrystalType.values():
+        var hbox = HBoxContainer.new()
+        hbox.add_theme_constant_override("separation", 5)
+        
+        # Crystal icon (colored square)
+        var icon = ColorRect.new()
+        icon.custom_minimum_size = Vector2(16, 16)
+        icon.color = CrystalSystem.get_crystal_color(crystal_type)
+        hbox.add_child(icon)
+        
+        # Crystal name and count label
+        var label = Label.new()
+        var crystal_name = CrystalSystem.get_crystal_name(crystal_type)
+        label.text = crystal_name + ": 0"
+        label.add_theme_font_size_override("font_size", 14)
+        label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+        label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        hbox.add_child(label)
+        
+        # Store reference to label
+        crystal_labels[crystal_type] = label
+        
+        vbox.add_child(hbox)
+    
+    add_child(crystal_counter_panel)
+
+## Update crystal count display
+func update_crystal_count(inventory: Dictionary) -> void:
+    const CrystalSystem = preload("res://scripts/crystal_system.gd")
+    
+    for crystal_type in inventory:
+        if crystal_type in crystal_labels:
+            var count = inventory[crystal_type]
+            var crystal_name = CrystalSystem.get_crystal_name(crystal_type)
+            crystal_labels[crystal_type].text = crystal_name + ": " + str(count)
 
 func _create_start_menu():
     # Only show start menu if a save file exists

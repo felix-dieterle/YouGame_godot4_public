@@ -1,6 +1,9 @@
 extends CharacterBody3D
 class_name Player
 
+# Preload dependencies
+const CrystalSystem = preload("res://scripts/crystal_system.gd")
+
 # Movement settings
 @export var move_speed: float = 5.0
 @export var rotation_speed: float = 3.0
@@ -48,9 +51,21 @@ var robot_parts: Array[Node3D] = []
 # Input control
 var input_enabled: bool = true
 
+# Crystal inventory - tracks collected crystals by type (initialized in _ready)
+var crystal_inventory: Dictionary = {}
+
 func _ready() -> void:
     # Add to Player group so other systems can find this node
     add_to_group("Player")
+    
+    # Initialize crystal inventory with all crystal types
+    for crystal_type in CrystalSystem.CrystalType.values():
+        crystal_inventory[crystal_type] = 0
+    add_to_group("Player")
+    
+    # Initialize crystal inventory with all crystal types
+    for crystal_type in CrystalSystem.CrystalType.values():
+        crystal_inventory[crystal_type] = 0
     
     # Configure CharacterBody3D slope handling
     floor_max_angle = deg_to_rad(max_slope_angle)
@@ -229,6 +244,12 @@ func _input(event) -> void:
         elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
             camera_distance = min(20.0, camera_distance + 1.0)
             _update_camera()
+    
+    # Crystal collection on click/tap
+    if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+        _try_collect_crystal(event.position)
+    elif event is InputEventScreenTouch and event.pressed:
+        _try_collect_crystal(event.position)
 
 func _update_camera() -> void:
     if camera:
@@ -456,6 +477,55 @@ func _play_footstep_sound() -> void:
 
 func set_input_enabled(enabled: bool) -> void:
     input_enabled = enabled
+
+## Try to collect a crystal at the screen position
+func _try_collect_crystal(screen_pos: Vector2) -> void:
+    if not camera:
+        return
+    
+    # Raycast from camera through the clicked/tapped position
+    var from = camera.project_ray_origin(screen_pos)
+    var to = from + camera.project_ray_normal(screen_pos) * 1000.0
+    
+    var space_state = get_world_3d().direct_space_state
+    var query = PhysicsRayQueryParameters3D.create(from, to)
+    query.collide_with_areas = true
+    query.collide_with_bodies = false
+    
+    var result = space_state.intersect_ray(query)
+    
+    if result:
+        var collider = result.collider
+        # Check if we hit a crystal's interaction area
+        if collider is Area3D:
+            var crystal_node = collider.get_parent()
+            if crystal_node and crystal_node.has_meta("is_crystal") and crystal_node.get_meta("is_crystal"):
+                _collect_crystal(crystal_node)
+
+## Collect a crystal and add to inventory
+func _collect_crystal(crystal_node: Node3D) -> void:
+    if not crystal_node.has_meta("crystal_type"):
+        return
+    
+    var crystal_type = crystal_node.get_meta("crystal_type")
+    
+    # Add to inventory
+    if crystal_type in crystal_inventory:
+        crystal_inventory[crystal_type] += 1
+    
+    # Notify UI manager to update crystal counter
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_crystal_count"):
+        ui_manager.update_crystal_count(crystal_inventory)
+    
+    # Remove the crystal from the scene with a small animation
+    var tween = create_tween()
+    tween.set_parallel(true)
+    tween.tween_property(crystal_node, "scale", Vector3.ZERO, 0.3)
+    tween.tween_property(crystal_node, "position", crystal_node.position + Vector3(0, 1.0, 0), 0.3)
+    tween.finished.connect(func(): crystal_node.queue_free())
+    
+    # TODO: Add collection sound effect
 
 func _load_saved_state():
     # Get player state from SaveGameManager (already loaded at startup)
