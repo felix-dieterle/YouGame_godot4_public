@@ -56,9 +56,9 @@ const ROCK_COUNT_GRASSLAND_MAX = 5
 
 # Crystal placement constants
 const CRYSTAL_SEED_OFFSET = 54321  # Offset for crystal placement seed
-const CRYSTAL_SPAWN_CHANCE = 0.35  # 35% chance a rock will have crystals
+const CRYSTAL_SPAWN_CHANCE = 0.20  # 20% chance a rock will have crystals (reduced from 35%)
 const CRYSTALS_PER_ROCK_MIN = 1
-const CRYSTALS_PER_ROCK_MAX = 3
+const CRYSTALS_PER_ROCK_MAX = 2  # Reduced from 3 for rarer crystals
 
 # ============================================================================
 # STATE VARIABLES
@@ -710,8 +710,9 @@ func _place_rocks() -> void:
                 continue
         
         # Create rock instance
+        var rock_seed = rng.randi()
         var rock_instance = MeshInstance3D.new()
-        rock_instance.mesh = ProceduralModels.create_rock_mesh(rng.randi())
+        rock_instance.mesh = ProceduralModels.create_rock_mesh(rock_seed)
         rock_instance.material_override = ProceduralModels.create_rock_material()
         rock_instance.position = Vector3(local_x, height, local_z)
         rock_instance.rotation.y = rng.randf_range(0, TAU)  # Random rotation
@@ -720,17 +721,42 @@ func _place_rocks() -> void:
         rock_instance.rotation.z = rng.randf_range(-0.1, 0.1)
         rock_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
         
+        # Store rock color index for crystal compatibility
+        var rock_rng = RandomNumberGenerator.new()
+        rock_rng.seed = rock_seed
+        var rock_color_index = rock_rng.randi() % ProceduralModels.ROCK_COLORS.size()
+        rock_instance.set_meta("rock_color_index", rock_color_index)
+        
         add_child(rock_instance)
         placed_objects.append(rock_instance)
         
-        # Spawn crystals on this rock with a chance
-        _place_crystals_on_rock(rock_instance, rng)
+        # Spawn crystals on this rock with a chance (higher chance in hidden spots)
+        _place_crystals_on_rock(rock_instance, rng, height)
 
 ## Place crystals on a rock
-func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGenerator) -> void:
+func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGenerator, rock_height: float) -> void:
+    # Get average chunk height to determine if rock is in a hidden/lower location
+    var avg_height = 0.0
+    var sample_count = 0
+    for i in range(0, RESOLUTION, 4):
+        for j in range(0, RESOLUTION, 4):
+            avg_height += heightmap[j * RESOLUTION + i]
+            sample_count += 1
+    avg_height /= sample_count
+    
+    # Increase spawn chance for rocks in lower/hidden locations
+    var spawn_chance = CRYSTAL_SPAWN_CHANCE
+    if rock_height < avg_height - 2.0:  # Rock is in a valley or lower area
+        spawn_chance *= 1.8  # 80% increase in spawn chance for hidden spots
+    elif rock_height < avg_height:  # Slightly below average
+        spawn_chance *= 1.3  # 30% increase
+    
     # Check if this rock should have crystals
-    if rng.randf() > CRYSTAL_SPAWN_CHANCE:
+    if rng.randf() > spawn_chance:
         return
+    
+    # Get rock color index for crystal type filtering
+    var rock_color_index = rock_instance.get_meta("rock_color_index", 0)
     
     # Determine how many crystals to place
     var crystal_count = rng.randi_range(CRYSTALS_PER_ROCK_MIN, CRYSTALS_PER_ROCK_MAX)
@@ -740,8 +766,8 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
     var rock_scale = rock_instance.scale.x if rock_instance.scale else 1.0
     
     for i in range(crystal_count):
-        # Select random crystal type
-        var crystal_type = CrystalSystem.select_random_crystal_type(rng)
+        # Select random crystal type based on rock color
+        var crystal_type = CrystalSystem.select_random_crystal_type(rng, rock_color_index)
         
         # Random size variation
         var size_scale = rng.randf_range(0.8, 1.5)
