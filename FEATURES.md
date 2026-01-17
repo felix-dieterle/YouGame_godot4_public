@@ -414,3 +414,51 @@ starting_loc.adjust_to_terrain(world_manager)
 - Bridge generation for water crossings
 
 See [PATH_SYSTEM.md](PATH_SYSTEM.md) for complete documentation.
+
+## Crystal Collection System
+
+An interactive collectible system where crystals spawn on rocks throughout the world:
+
+### Crystal Types
+- **Mountain Crystal** (Clear/White) - Common (35% spawn chance)
+- **Emerald** (Green) - Uncommon (25% spawn chance)
+- **Garnet** (Dark Red) - Uncommon (20% spawn chance)
+- **Amethyst** (Purple) - Uncommon (20% spawn chance)
+- **Ruby** (Bright Red) - Rare (8% spawn chance)
+- **Sapphire** (Deep Blue) - Rare (7% spawn chance)
+
+### Features
+- **Procedural Crystal Generation**: Hexagonal prism shapes with pointed tops
+- **Size Variation**: Crystals spawn in slightly different sizes (0.8x to 1.5x)
+- **Visual Effects**: Transparent materials with emission for magical glow
+- **Spawn System**: 35% of rocks spawn 1-3 crystals on their surface
+- **Collection Mechanics**: 
+  - Desktop: Click crystals with mouse
+  - Mobile: Tap crystals on screen
+  - Smooth collection animation (crystal floats up and disappears)
+- **Inventory Tracking**: Each crystal type counted separately
+- **UI Counter**: Top-right display showing collected crystals by type with colored icons
+
+### Technical Details
+- **Collision Detection**: Area3D with sphere collision for easy mobile tapping
+- **Performance**: Low-poly meshes (~50 vertices) with minimal overhead
+- **Integration**: Works seamlessly with chunk-based terrain generation
+- **Seed-Based**: Crystal placement is reproducible based on world seed
+
+### Configuration
+```gdscript
+# In chunk.gd
+const CRYSTAL_SPAWN_CHANCE = 0.35  # 35% of rocks have crystals
+const CRYSTALS_PER_ROCK_MIN = 1
+const CRYSTALS_PER_ROCK_MAX = 3
+```
+
+### Future Enhancements
+- [ ] Crystal crafting system
+- [ ] Crystal-powered abilities
+- [ ] Save/load crystal inventory
+- [ ] Sound effects and particle effects
+- [ ] Trading system
+- [ ] Achievements for rare crystal collection
+
+See [CRYSTAL_SYSTEM.md](docs/systems/CRYSTAL_SYSTEM.md) for complete documentation.

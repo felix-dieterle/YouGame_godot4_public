@@ -1,13 +1,14 @@
 # Scripts Architecture
 
-## Quick Reference - All Scripts (21 files)
+## Quick Reference - All Scripts (22 files)
 
-### Core Systems (5 files)
+### Core Systems (6 files)
 - **world_manager.gd** - Chunk loading/unloading manager (WorldManager class)
 - **chunk.gd** - Procedural terrain generation (Chunk class)
 - **cluster_system.gd** - Cross-chunk object placement (ClusterSystem class)
 - **path_system.gd** - Path network generation (PathSystem class)
 - **starting_location.gd** - Player spawn point manager (StartingLocation class)
+- **crystal_system.gd** - Crystal collection system (CrystalSystem class)
 
 ### Player & Controls (2 files)
 - **player.gd** - Player character controller with dual camera (Player class)
@@ -450,6 +451,13 @@ print("Walkability: %.2f%%" % (percentage * 100))
 - Generates low-poly models at runtime
 - Returns MeshInstance3D ready to add to scene
 
+### crystal_system.gd
+- Static utility class for crystal collection system
+- Defines 6 crystal types with unique colors and spawn rates
+- Generates hexagonal crystal meshes procedurally
+- Creates transparent materials with emission glow
+- Used by chunk.gd for crystal spawning on rocks
+
 ## Documentation References
 
 For detailed information, see:
@@ -460,7 +468,7 @@ For detailed information, see:
 
 ---
 
-**Last Updated:** 2026-01-15  
-**Total Scripts:** 21  
+**Last Updated:** 2026-01-17  
+**Total Scripts:** 22  
 **Godot Version:** 4.3  
 **Target Platform:** Android (arm64-v8a)
