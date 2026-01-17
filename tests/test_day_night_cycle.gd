@@ -508,10 +508,8 @@ func test_time_progression_to_930am():
 	var expected_ratio = 0.25
 	var ratio_tolerance = 0.01  # Allow 1% tolerance
 	
-	if abs(time_ratio - expected_ratio) <= ratio_tolerance:
-		assert_pass("Time progressed to ~9:30 AM (ratio: %.3f, expected: %.3f)" % [time_ratio, expected_ratio])
-	else:
-		assert_fail("Time did not reach 9:30 AM correctly (ratio: %.3f, expected: %.3f)" % [time_ratio, expected_ratio])
+	assert_true(abs(time_ratio - expected_ratio) <= ratio_tolerance,
+		"Time progressed to ~9:30 AM (ratio: %.3f, expected: %.3f)" % [time_ratio, expected_ratio])
 	
 	print("  Phase 3: Verifying daylight brightness at 9:30 AM")
 	
@@ -524,10 +522,8 @@ func test_time_progression_to_930am():
 	var expected_light_energy = 1.4
 	var light_tolerance = 0.2
 	
-	if abs(light_energy - expected_light_energy) <= light_tolerance:
-		assert_pass("Light energy at 9:30 AM is bright (%.2f, expected ~%.2f)" % [light_energy, expected_light_energy])
-	else:
-		assert_fail("Light energy at 9:30 AM incorrect (%.2f, expected ~%.2f)" % [light_energy, expected_light_energy])
+	assert_true(abs(light_energy - expected_light_energy) <= light_tolerance,
+		"Light energy at 9:30 AM is bright (%.2f, expected ~%.2f)" % [light_energy, expected_light_energy])
 	
 	# Verify it's brighter than minimum (sunrise level)
 	assert_true(light_energy > DayNightCycle.MIN_LIGHT_ENERGY,
