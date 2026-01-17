@@ -397,8 +397,8 @@ func _load_state() -> void:
         is_locked_out = day_night_data["is_locked_out"]
         lockout_end_time = day_night_data["lockout_end_time"]
         current_time = day_night_data["current_time"]
-        # Load time_scale if available (with default of 1.0 for old saves)
-        time_scale = day_night_data.get("time_scale", 1.0)
+        # Load time_scale if available (with default of 2.0 for old saves to match fresh start)
+        time_scale = day_night_data.get("time_scale", 2.0)
         # Load day count and night start time (defaults for old saves)
         day_count = day_night_data.get("day_count", 1)
         night_start_time = day_night_data.get("night_start_time", 0.0)
@@ -414,7 +414,7 @@ func _load_state() -> void:
             is_locked_out = config.get_value("day_night", "is_locked_out", false)
             lockout_end_time = config.get_value("day_night", "lockout_end_time", 0.0)
             current_time = config.get_value("day_night", "current_time", 0.0)
-            time_scale = config.get_value("day_night", "time_scale", 1.0)
+            time_scale = config.get_value("day_night", "time_scale", 2.0)  # Default 2.0 for old saves
             day_count = config.get_value("day_night", "day_count", 1)
             night_start_time = config.get_value("day_night", "night_start_time", 0.0)
         else:

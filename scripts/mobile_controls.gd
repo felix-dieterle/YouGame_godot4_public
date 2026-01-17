@@ -59,8 +59,10 @@ func _ready() -> void:
     joystick_base = Control.new()
     joystick_base.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
     joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
-    # Set z_index to ensure joystick renders above UI elements (version label has z_index 50)
-    joystick_base.z_index = 60
+    # Set z_index to ensure joystick renders above UI elements
+    # With parent MobileControls z_index=10, need child z_index >= 91 for effective > 100
+    # (UIManager elements like version_label have effective z_index of 100)
+    joystick_base.z_index = 95
     add_child(joystick_base)
     DebugLogOverlay.add_log("Joystick base created", "green")
     
@@ -212,8 +214,10 @@ func _create_look_joystick() -> void:
     look_joystick_base = Control.new()
     look_joystick_base.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
     look_joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
-    # Set z_index to ensure joystick renders above UI elements (version label has z_index 50)
-    look_joystick_base.z_index = 60
+    # Set z_index to ensure joystick renders above UI elements
+    # With parent MobileControls z_index=10, need child z_index >= 91 for effective > 100
+    # (UIManager elements like version_label have effective z_index of 100)
+    look_joystick_base.z_index = 95
     add_child(look_joystick_base)
     
     # Base circle
