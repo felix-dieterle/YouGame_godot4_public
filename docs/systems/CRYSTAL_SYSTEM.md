@@ -352,8 +352,6 @@ Four different crystal shape algorithms:
 3. Points positioned with random offsets
 4. Varying heights for natural cluster appearance
 5. Shared base with individual pyramids
-4. Create pyramid top from top hexagon to apex
-5. Apply vertex colors with slight variation per facet
 
 ### Material Properties
 
