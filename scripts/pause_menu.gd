@@ -338,7 +338,7 @@ func _on_quit_pressed() -> void:
     if ui_manager and ui_manager.has_method("show_message"):
         ui_manager.show_message("Game saved!", 1.0)
     # Small delay to show the message before quitting
-    await get_tree().create_timer(0.5).timeout
+    await get_tree().create_timer(0.3).timeout
     get_tree().quit()
 
 func _save_game_state() -> void:
