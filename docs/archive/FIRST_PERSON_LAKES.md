@@ -10,8 +10,8 @@ Players can now switch between third-person and first-person views on the fly.
 
 #### How to Use
 - Press the **V** key to toggle between camera views
-- **Third-Person View** (default): Camera positioned behind and above the player
-- **First-Person View**: Camera positioned at eye level, robot body hidden
+- **First-Person View** (default): Camera positioned at eye level, robot body hidden
+- **Third-Person View**: Camera positioned behind and above the player
 
 #### Technical Details
 - First-person camera height: 1.6 units (configurable via `@export var first_person_height`)
