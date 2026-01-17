@@ -85,10 +85,7 @@ func test_save_load_state():
 	print("\n--- Test: Save/Load State ---")
 	
 	# Clean up any existing save files first to ensure fresh start
-	var dir = DirAccess.open("user://")
-	if dir:
-		dir.remove("day_night_save.cfg")
-		dir.remove("game_save.cfg")
+	cleanup_save_files()
 	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
@@ -117,9 +114,8 @@ func test_save_load_state():
 	# Cleanup
 	test_scene.queue_free()
 	
-	# Clean up save file
-	if dir:
-		dir.remove("day_night_save.cfg")
+	# Clean up save files
+	cleanup_save_files()
 
 func test_warning_timings():
 	print("\n--- Test: Warning Timings ---")
@@ -180,10 +176,7 @@ func test_time_scale():
 	print("\n--- Test: Time Scale Control ---")
 	
 	# Clean up any existing save files first to ensure fresh start
-	var dir = DirAccess.open("user://")
-	if dir:
-		dir.remove("day_night_save.cfg")
-		dir.remove("game_save.cfg")
+	cleanup_save_files()
 	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
@@ -426,10 +419,7 @@ func test_countdown_on_reopen_during_lockout():
 	# 5. Bug: Countdown may not be displayed
 	
 	# Clean up any existing save files first to ensure fresh start
-	var dir = DirAccess.open("user://")
-	if dir:
-		dir.remove("day_night_save.cfg")
-		dir.remove("game_save.cfg")
+	cleanup_save_files()
 	
 	# Step 1: Create a game state where lockout is active
 	var test_scene = Node3D.new()
@@ -534,11 +524,17 @@ func test_countdown_on_reopen_during_lockout():
 	# Cleanup
 	test_scene2.queue_free()
 	
-	# Clean up save file
-	if dir:
-		dir.remove("day_night_save.cfg")
+	# Clean up save files
+	cleanup_save_files()
 
 # Helper functions
+func cleanup_save_files():
+	"""Clean up test save files to ensure fresh test state"""
+	var dir = DirAccess.open("user://")
+	if dir:
+		dir.remove("day_night_save.cfg")
+		dir.remove("game_save.cfg")
+
 func assert_equal(actual, expected, message: String):
 	if actual == expected:
 		print("  ✓ PASS: ", message)
