@@ -245,11 +245,14 @@ func test_time_scale():
 func test_brightness_at_8am():
 	print("\n--- Test: Brightness at 8:00 AM ---")
 	
-	# 8:00 AM is 2 hours after sunrise (6:00 AM)
-	# The in-game day simulation runs from 6:00 AM to 5:00 PM (11 hours of in-game time)
+	# 8:00 AM is 1 hour after sunrise completes (7:00 AM)
+	# The in-game day simulation should run from 7:00 AM to 5:00 PM (10 hours of in-game time)
+	# after the sunrise animation completes
 	# This is mapped to DAY_CYCLE_DURATION (30 minutes of real time)
-	# 8:00 AM = 2 hours in-game / 11 hours in-game = ~0.182 or 18.2% into the cycle
-	const EIGHT_AM_RATIO = 2.0 / 11.0  # ~0.182
+	# 8:00 AM = 1 hour in-game / 10 hours in-game = 0.1 or 10% into the cycle
+	# Note: Current implementation has a bug - it treats the cycle as 6:00 AM to 5:00 PM (11 hours)
+	# which causes a 1-hour offset in the displayed time vs sun position
+	const EIGHT_AM_RATIO = 1.0 / 10.0  # 0.1 (CORRECTED from 2.0 / 11.0)
 	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
@@ -327,11 +330,14 @@ func test_brightness_at_8am():
 func test_blue_sky_at_930am():
 	print("\n--- Test: Light Blue Sky at 9:30 AM ---")
 	
-	# 9:30 AM is 3.5 hours after sunrise (6:00 AM)
-	# The in-game day simulation runs from 6:00 AM to 5:00 PM (11 hours of in-game time)
+	# 9:30 AM is 2.5 hours after sunrise completes (7:00 AM)
+	# The in-game day simulation should run from 7:00 AM to 5:00 PM (10 hours of in-game time)
+	# after the sunrise animation completes
 	# This is mapped to DAY_CYCLE_DURATION (30 minutes of real time)
-	# 9:30 AM = 3.5 hours in-game / 11 hours in-game = ~0.318 or 31.8% into the cycle
-	const NINE_THIRTY_AM_RATIO = 3.5 / 11.0  # ~0.318
+	# 9:30 AM = 2.5 hours in-game / 10 hours in-game = 0.25 or 25% into the cycle
+	# Note: Current implementation has a bug - it treats the cycle as 6:00 AM to 5:00 PM (11 hours)
+	# which causes a 1-hour offset in the displayed time vs sun position
+	const NINE_THIRTY_AM_RATIO = 2.5 / 10.0  # 0.25 (CORRECTED from 3.5 / 11.0)
 	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
