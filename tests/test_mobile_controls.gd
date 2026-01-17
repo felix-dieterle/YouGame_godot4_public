@@ -137,9 +137,9 @@ func test_joystick_positions():
 	var look_base = mobile_controls.look_joystick_base
 	var viewport_size = get_viewport().size
 	
-	# Read actual margin values from mobile_controls to make test robust
-	var look_margin_x = mobile_controls.look_joystick_margin_x if mobile_controls.has("look_joystick_margin_x") else 120.0
-	var look_margin_y = mobile_controls.look_joystick_margin_y if mobile_controls.has("look_joystick_margin_y") else 120.0
+	# Read actual margin values from mobile_controls
+	var look_margin_x = mobile_controls.look_joystick_margin_x
+	var look_margin_y = mobile_controls.look_joystick_margin_y
 	
 	print("  Viewport size: %.0fx%.0f" % [viewport_size.x, viewport_size.y])
 	print("  Look joystick margins: X=%.0f, Y=%.0f" % [look_margin_x, look_margin_y])
@@ -160,13 +160,16 @@ func test_joystick_positions():
 	else:
 		print("  FAIL: Look joystick should be on the bottom of screen")
 	
-	# Verify it's within viewport bounds
-	if look_base.global_position.x >= 0 and look_base.global_position.x < viewport_size.x:
-		print("  PASS: Look joystick X position is within viewport")
-	else:
-		print("  FAIL: Look joystick X position is outside viewport")
+	# Verify it's within viewport bounds (accounting for joystick size)
+	var joystick_right_edge = look_base.global_position.x + look_base.size.x
+	var joystick_bottom_edge = look_base.global_position.y + look_base.size.y
 	
-	if look_base.global_position.y >= 0 and look_base.global_position.y < viewport_size.y:
-		print("  PASS: Look joystick Y position is within viewport")
+	if look_base.global_position.x >= 0 and joystick_right_edge <= viewport_size.x:
+		print("  PASS: Look joystick X position is fully within viewport")
 	else:
-		print("  FAIL: Look joystick Y position is outside viewport")
+		print("  FAIL: Look joystick extends outside viewport horizontally (pos: %.0f, right edge: %.0f, viewport: %.0f)" % [look_base.global_position.x, joystick_right_edge, viewport_size.x])
+	
+	if look_base.global_position.y >= 0 and joystick_bottom_edge <= viewport_size.y:
+		print("  PASS: Look joystick Y position is fully within viewport")
+	else:
+		print("  FAIL: Look joystick extends outside viewport vertically (pos: %.0f, bottom edge: %.0f, viewport: %.0f)" % [look_base.global_position.y, joystick_bottom_edge, viewport_size.y])
