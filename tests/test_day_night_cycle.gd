@@ -447,7 +447,7 @@ func test_countdown_on_reopen_during_lockout():
 	test_scene.add_child(env_node)
 	
 	# Add mock UI manager
-	var ui_manager = Node.new()
+	var ui_manager = Control.new()  # Use Control, not Node, to match UIManager base class
 	ui_manager.name = "UIManager"
 	ui_manager.set_script(preload("res://scripts/ui_manager.gd"))
 	test_scene.add_child(ui_manager)
@@ -504,21 +504,29 @@ func test_countdown_on_reopen_during_lockout():
 	assert_equal(day_night2.lockout_end_time, lockout_time, "Lockout end time should be preserved")
 	
 	# Step 5: Verify that night overlay is shown
-	assert_true(ui_manager2.night_overlay.visible if ui_manager2.has("night_overlay") else false,
-		"Night overlay should be visible when reopening game during lockout")
+	var night_overlay = ui_manager2.get("night_overlay")
+	if night_overlay:
+		assert_true(night_overlay.visible, "Night overlay should be visible when reopening game during lockout")
+	else:
+		print("  FAIL: night_overlay not found in UI manager")
+		test_failed += 1
 	
 	# Step 6: Verify that countdown timer is running
-	if ui_manager2.has("countdown_timer"):
-		var timer = ui_manager2.countdown_timer
+	var timer = ui_manager2.get("countdown_timer")
+	if timer:
 		assert_false(timer.is_stopped(), "Countdown timer should be running when night overlay is shown")
 		assert_equal(timer.wait_time, 1.0, "Countdown timer should update every second")
 		
 		# Verify the countdown text is showing
-		if ui_manager2.has("night_label"):
-			var label_text = ui_manager2.night_label.text
+		var night_label = ui_manager2.get("night_label")
+		if night_label:
+			var label_text = night_label.text
 			assert_true(label_text.contains("Sleeping") or label_text.contains("cannot play"),
 				"Night label should show sleeping message with countdown")
 			print("  Night label text: ", label_text)
+		else:
+			print("  FAIL: night_label not found in UI manager")
+			test_failed += 1
 	else:
 		print("  FAIL: countdown_timer not found in UI manager")
 		test_failed += 1
