@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b4r3y2n8wm2kv"]
+
+[ext_resource type="Script" path="res://tests/test_crystal_system.gd" id="1_crystal_test"]
+
+[node name="TestCrystalSystem" type="Node"]
+script = ExtResource("1_crystal_test")
