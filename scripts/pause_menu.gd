@@ -22,6 +22,7 @@ const PANEL_WIDTH: float = 400.0
 const PANEL_HEIGHT: float = 500.0
 const SETTINGS_PANEL_WIDTH: float = 400.0
 const SETTINGS_PANEL_HEIGHT: float = 450.0
+const QUIT_MESSAGE_DELAY: float = 0.3  # Delay in seconds before quitting to show save message
 
 func _ready() -> void:
     # Add to PauseMenu group so other systems can find this node
@@ -338,7 +339,7 @@ func _on_quit_pressed() -> void:
     if ui_manager and ui_manager.has_method("show_message"):
         ui_manager.show_message("Game saved!", 1.0)
     # Small delay to show the message before quitting
-    await get_tree().create_timer(0.3).timeout
+    await get_tree().create_timer(QUIT_MESSAGE_DELAY).timeout
     get_tree().quit()
 
 func _save_game_state() -> void:
