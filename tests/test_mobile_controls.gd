@@ -156,8 +156,8 @@ func test_look_joystick_properties():
 	# Check z_index to ensure joystick renders above UI elements
 	# CRITICAL: With MobileControls parent z_index = 10 (from main.tscn),
 	# the effective z_index is parent (10) + child (60) = 70
-	# This must be above UIManager children like version_label (0 + 100 = 100)
-	# and below PauseMenu (100+)
+	# This must be above UIManager children like version_label which has z_index=100
+	# (UIManager parent has z_index=0, so version_label effective = 0 + 100 = 100)
 	# For proper visibility on mobile, joystick needs effective z_index > 100
 	var effective_z_index = mobile_controls.z_index + look_base.z_index
 	if effective_z_index > 100:

@@ -246,13 +246,14 @@ func test_time_scale():
 func test_brightness_at_8am():
 	print("\n--- Test: Brightness at 8:00 AM ---")
 	
+	# IMPORTANT: The day cycle represents time AFTER sunrise animation completes
+	# Sunrise animation: 6:00-7:00 AM (60 seconds real time)
+	# Day cycle: 7:00 AM to 5:00 PM (10 hours in-game, 30 minutes real time)
+	# Current implementation has a bug - uses 11-hour cycle from 6 AM instead
+	# This test uses the CORRECT mapping to expose the time display bug
+	
 	# 8:00 AM is 1 hour after sunrise completes (7:00 AM)
-	# The in-game day simulation should run from 7:00 AM to 5:00 PM (10 hours of in-game time)
-	# after the sunrise animation completes
-	# This is mapped to DAY_CYCLE_DURATION (30 minutes of real time)
-	# 8:00 AM = 1 hour in-game / 10 hours in-game = 0.1 or 10% into the cycle
-	# Note: Current implementation has a bug - it treats the cycle as 6:00 AM to 5:00 PM (11 hours)
-	# which causes a 1-hour offset in the displayed time vs sun position
+	# 8:00 AM = 1 hour / 10 hours = 0.1 or 10% into the cycle
 	const EIGHT_AM_RATIO = 1.0 / 10.0  # 0.1 (CORRECTED from 2.0 / 11.0)
 	
 	var test_scene = Node3D.new()
@@ -331,13 +332,9 @@ func test_brightness_at_8am():
 func test_blue_sky_at_930am():
 	print("\n--- Test: Light Blue Sky at 9:30 AM ---")
 	
+	# See test_brightness_at_8am() for explanation of time mapping
 	# 9:30 AM is 2.5 hours after sunrise completes (7:00 AM)
-	# The in-game day simulation should run from 7:00 AM to 5:00 PM (10 hours of in-game time)
-	# after the sunrise animation completes
-	# This is mapped to DAY_CYCLE_DURATION (30 minutes of real time)
-	# 9:30 AM = 2.5 hours in-game / 10 hours in-game = 0.25 or 25% into the cycle
-	# Note: Current implementation has a bug - it treats the cycle as 6:00 AM to 5:00 PM (11 hours)
-	# which causes a 1-hour offset in the displayed time vs sun position
+	# 9:30 AM = 2.5 hours / 10 hours = 0.25 or 25% into the cycle
 	const NINE_THIRTY_AM_RATIO = 2.5 / 10.0  # 0.25 (CORRECTED from 3.5 / 11.0)
 	
 	var test_scene = Node3D.new()
@@ -463,6 +460,7 @@ func test_time_display_matches_sun_position():
 	const DAY_DURATION_HOURS_ACTUAL = 11.0  # Current (buggy) value: 11 hours
 	const SUNRISE_TIME_MINUTES_CORRECT = 420  # Correct value: 7:00 AM (after sunrise ends)
 	const DAY_DURATION_HOURS_CORRECT = 10.0  # Correct value: 10 hours (7 AM to 5 PM)
+	const EXPECTED_NINE_THIRTY_RATIO = 0.25  # 2.5 hours / 10 hours = 0.25
 	
 	# Calculate what time would be displayed with current (buggy) formula
 	var displayed_minutes_buggy = int(NOON_TIME_RATIO * DAY_DURATION_HOURS_ACTUAL * 60.0) + SUNRISE_TIME_MINUTES_ACTUAL
@@ -503,7 +501,7 @@ func test_time_display_matches_sun_position():
 	print("    Correct formula: time_ratio = %.3f" % time_ratio_for_930_correct)
 	
 	# The correct time_ratio for 9:30 AM should be 0.25 (2.5 hours into 10-hour day)
-	assert_equal(time_ratio_for_930_correct, 0.25,
+	assert_equal(time_ratio_for_930_correct, EXPECTED_NINE_THIRTY_RATIO,
 		"9:30 AM should be at time_ratio 0.25 (2.5/10 hours after 7 AM)")
 	
 	print("\n  SUMMARY: Time display uses wrong base time and duration,")
