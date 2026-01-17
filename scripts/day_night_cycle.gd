@@ -120,7 +120,8 @@ func _ready() -> void:
         else:
             # Still in lockout, show night screen
             is_night = true
-            _show_night_screen()
+            # Defer the call to ensure UI Manager is fully initialized
+            call_deferred("_show_night_screen")
             _set_night_lighting()
     else:
         # Normal day start

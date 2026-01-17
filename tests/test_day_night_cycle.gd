@@ -27,6 +27,7 @@ func _ready():
 	test_time_scale()  # New test for time scale control
 	test_brightness_at_8am()  # Test that 8:00 AM is bright enough to be considered day
 	test_blue_sky_at_930am()  # Test that 9:30 AM has a nice light blue sky
+	test_countdown_on_reopen_during_lockout()  # Test countdown shows when reopening game during sleep lockout
 	
 	# Print results
 	print("\n=== Test Results ===")
@@ -412,6 +413,122 @@ func test_blue_sky_at_930am():
 	
 	# Cleanup
 	test_scene.queue_free()
+
+func test_countdown_on_reopen_during_lockout():
+	print("\n--- Test: Countdown Display On Reopen During Lockout ---")
+	
+	# This test simulates the bug: countdown not shown when reopening game during sleep lockout
+	# Steps to reproduce:
+	# 1. Player plays until sunset (night begins, lockout starts)
+	# 2. Player closes game (state is saved)
+	# 3. Player reopens game during the 4-hour lockout period
+	# 4. Expected: Night overlay shown with countdown timer
+	# 5. Bug: Countdown may not be displayed
+	
+	# Clean up any existing save files first to ensure fresh start
+	var dir = DirAccess.open("user://")
+	if dir:
+		dir.remove("day_night_save.cfg")
+		dir.remove("game_save.cfg")
+	
+	# Step 1: Create a game state where lockout is active
+	var test_scene = Node3D.new()
+	var day_night = DayNightCycle.new()
+	
+	# Add mock directional light
+	var light = DirectionalLight3D.new()
+	light.add_to_group("DirectionalLight3D")
+	test_scene.add_child(light)
+	
+	# Add mock world environment
+	var env_node = WorldEnvironment.new()
+	env_node.environment = Environment.new()
+	env_node.add_to_group("WorldEnvironment")
+	test_scene.add_child(env_node)
+	
+	# Add mock UI manager
+	var ui_manager = Node.new()
+	ui_manager.name = "UIManager"
+	ui_manager.set_script(preload("res://scripts/ui_manager.gd"))
+	test_scene.add_child(ui_manager)
+	
+	# Add day/night cycle
+	test_scene.add_child(day_night)
+	
+	# Step 2: Set lockout state (simulate being in the middle of a 4-hour sleep)
+	# Set lockout to expire 2 hours from now
+	var current_time = Time.get_unix_time_from_system()
+	var lockout_time = current_time + 2.0 * 60.0 * 60.0  # 2 hours from now
+	
+	day_night.is_locked_out = true
+	day_night.is_night = true
+	day_night.lockout_end_time = lockout_time
+	day_night.current_time = 1800.0  # End of day cycle
+	day_night._save_state()
+	
+	# Step 3: Simulate reopening the game
+	# Free the old scene and create a new one (simulates restart)
+	test_scene.queue_free()
+	await get_tree().process_frame  # Wait for cleanup
+	
+	# Create new scene (simulating game restart)
+	var test_scene2 = Node3D.new()
+	var day_night2 = DayNightCycle.new()
+	
+	# Add mock directional light
+	var light2 = DirectionalLight3D.new()
+	light2.add_to_group("DirectionalLight3D")
+	test_scene2.add_child(light2)
+	
+	# Add mock world environment
+	var env_node2 = WorldEnvironment.new()
+	env_node2.environment = Environment.new()
+	env_node2.add_to_group("WorldEnvironment")
+	test_scene2.add_child(env_node2)
+	
+	# Add mock UI manager with full initialization
+	var ui_manager2 = Control.new()
+	ui_manager2.name = "UIManager"
+	ui_manager2.set_script(preload("res://scripts/ui_manager.gd"))
+	test_scene2.add_child(ui_manager2)
+	
+	# Add day/night cycle - this will load state in _ready()
+	test_scene2.add_child(day_night2)
+	
+	# Wait for _ready() to complete
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Step 4: Verify that lockout state was loaded
+	assert_true(day_night2.is_locked_out, "Should be in lockout state after loading")
+	assert_equal(day_night2.lockout_end_time, lockout_time, "Lockout end time should be preserved")
+	
+	# Step 5: Verify that night overlay is shown
+	assert_true(ui_manager2.night_overlay.visible if ui_manager2.has("night_overlay") else false,
+		"Night overlay should be visible when reopening game during lockout")
+	
+	# Step 6: Verify that countdown timer is running
+	if ui_manager2.has("countdown_timer"):
+		var timer = ui_manager2.countdown_timer
+		assert_false(timer.is_stopped(), "Countdown timer should be running when night overlay is shown")
+		assert_equal(timer.wait_time, 1.0, "Countdown timer should update every second")
+		
+		# Verify the countdown text is showing
+		if ui_manager2.has("night_label"):
+			var label_text = ui_manager2.night_label.text
+			assert_true(label_text.contains("Sleeping") or label_text.contains("cannot play"),
+				"Night label should show sleeping message with countdown")
+			print("  Night label text: ", label_text)
+	else:
+		print("  FAIL: countdown_timer not found in UI manager")
+		test_failed += 1
+	
+	# Cleanup
+	test_scene2.queue_free()
+	
+	# Clean up save file
+	if dir:
+		dir.remove("day_night_save.cfg")
 
 # Helper functions
 func assert_equal(actual, expected, message: String):
