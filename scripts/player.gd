@@ -556,12 +556,12 @@ func _load_saved_state():
         
         # Restore inventory if available
         if player_data.has("inventory") and player_data["inventory"] is Dictionary:
-            # Need to convert JSON keys (strings) to integers for crystal types
+            # Convert JSON keys (strings) to integers for crystal types
+            # JSON always serializes dictionary keys as strings
             var loaded_inventory = player_data["inventory"]
             crystal_inventory = {}
             for key in loaded_inventory:
-                # Convert string key to int if needed
-                var int_key = int(key) if key is String else key
+                var int_key = int(key)
                 crystal_inventory[int_key] = loaded_inventory[key]
             
             # Update UI with loaded inventory
