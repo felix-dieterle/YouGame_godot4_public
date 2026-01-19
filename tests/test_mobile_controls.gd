@@ -209,10 +209,15 @@ func test_joystick_positions():
 	print("  Look joystick global position: (%.0f, %.0f)" % [look_base.global_position.x, look_base.global_position.y])
 	
 	# With Android-like viewport, position tests are meaningful
-	assert_true(viewport_size.x == ANDROID_VIEWPORT_WIDTH, 
-		"Viewport width should be %d for Android testing" % ANDROID_VIEWPORT_WIDTH)
-	assert_true(viewport_size.y == ANDROID_VIEWPORT_HEIGHT,
-		"Viewport height should be %d for Android testing" % ANDROID_VIEWPORT_HEIGHT)
+	if viewport_size.x == ANDROID_VIEWPORT_WIDTH:
+		assert_pass("Viewport width is %d for Android testing" % ANDROID_VIEWPORT_WIDTH)
+	else:
+		assert_fail("Viewport width should be %d but is %.0f" % [ANDROID_VIEWPORT_WIDTH, viewport_size.x])
+	
+	if viewport_size.y == ANDROID_VIEWPORT_HEIGHT:
+		assert_pass("Viewport height is %d for Android testing" % ANDROID_VIEWPORT_HEIGHT)
+	else:
+		assert_fail("Viewport height should be %d but is %.0f" % [ANDROID_VIEWPORT_HEIGHT, viewport_size.y])
 	
 	# Check if position is in the right area (bottom-right quadrant)
 	var is_right_side = look_base.position.x > viewport_size.x / 2
