@@ -197,7 +197,7 @@ func test_joystick_positions():
 		return
 	
 	var look_base = mobile_controls.look_joystick_base
-	var viewport_size = get_viewport().size
+	var viewport_size = get_viewport_rect().size
 	
 	# Read actual margin values from mobile_controls
 	var look_margin_x = mobile_controls.look_joystick_margin_x

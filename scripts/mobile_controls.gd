@@ -126,7 +126,7 @@ func _ready() -> void:
 
 func _update_joystick_position() -> void:
     # Position joystick in bottom-left corner with margin
-    var viewport_size = get_viewport().size
+    var viewport_size = get_viewport_rect().size
     # Account for joystick size so margin is from edge to edge, not edge to top-left corner
     # Position is top-left, so subtract the full diameter (JOYSTICK_RADIUS * 2) and add back margin
     joystick_base.position = Vector2(joystick_margin_x, viewport_size.y - joystick_margin_y - JOYSTICK_RADIUS * 2)
@@ -563,7 +563,7 @@ func _update_button_position() -> void:
     
     # Position button in top-left corner, next to debug buttons
     # Place it to the right of the debug overlay buttons (which are at the very left)
-    var viewport_size = get_viewport().size
+    var viewport_size = get_viewport_rect().size
     var button_x = 100.0  # Position to the right of debug buttons (which take ~90px)
     var button_y = 10.0   # Small margin from top
     menu_button.position = Vector2(button_x, button_y)
@@ -616,7 +616,7 @@ func _update_settings_panel_position() -> void:
         return
     
     # Position panel below the menu button in the top-left area
-    var viewport_size = get_viewport().size
+    var viewport_size = get_viewport_rect().size
     
     # Position panel below the menu button with a small gap
     var panel_x = 10.0  # Small margin from left edge
@@ -629,7 +629,7 @@ func _update_settings_panel_position() -> void:
 
 func _log_control_info() -> void:
     # Log comprehensive information about the MobileControls control itself
-    var viewport_size = get_viewport().size
+    var viewport_size = get_viewport_rect().size
     
     DebugLogOverlay.add_log("=== MobileControls Control Info ===", "cyan")
     DebugLogOverlay.add_log("Control position: (%.0f, %.0f)" % [position.x, position.y], "cyan")
