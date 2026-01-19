@@ -262,7 +262,7 @@ func test_brightness_at_8am():
 	env_node.environment.ambient_light_color = Color(1.0, 1.0, 1.0, 1.0)
 	env_node.environment.ambient_light_sky_contribution = 1.0
 	env_node.environment.ambient_light_energy = MAIN_AMBIENT_LIGHT_ENERGY
-	env_node.environment.tonemap_mode = Environment.TONE_MAPPER_ACES_FITTED
+	env_node.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env_node.environment.tonemap_exposure = MAIN_TONEMAP_EXPOSURE
 	
 	var sky = Sky.new()
@@ -344,7 +344,7 @@ func test_blue_sky_at_930am():
 	env_node.environment.ambient_light_color = Color(1.0, 1.0, 1.0, 1.0)
 	env_node.environment.ambient_light_sky_contribution = 1.0
 	env_node.environment.ambient_light_energy = MAIN_AMBIENT_LIGHT_ENERGY
-	env_node.environment.tonemap_mode = Environment.TONE_MAPPER_ACES_FITTED
+	env_node.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env_node.environment.tonemap_exposure = MAIN_TONEMAP_EXPOSURE
 	
 	var sky = Sky.new()
