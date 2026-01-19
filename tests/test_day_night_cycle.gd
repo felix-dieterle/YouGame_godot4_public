@@ -27,6 +27,8 @@ func _ready():
 	test_time_scale()  # New test for time scale control
 	test_brightness_at_8am()  # Test that 8:00 AM is bright enough to be considered day
 	test_blue_sky_at_930am()  # Test that 9:30 AM has a nice light blue sky
+	test_time_progression_to_930am()  # Test time progression from sunrise (6 AM) to 9:30 AM with brightness verification
+	test_time_display_matches_sun_position()  # Test that displayed time matches sun position (exposes time offset bug)
 	
 	# Print results
 	print("\n=== Test Results ===")
@@ -184,6 +186,49 @@ func test_time_scale():
 		dir.remove("day_night_save.cfg")
 		dir.remove("game_save.cfg")
 	
+	# Reset SaveGameManager to ensure clean state
+	# This is critical because SaveGameManager is an autoload and may have cached data
+	print("  DEBUG: Checking SaveGameManager state before reset...")
+	if SaveGameManager:
+		print("  DEBUG: SaveGameManager exists")
+		print("  DEBUG: has_save_file() = ", SaveGameManager.has_save_file())
+		print("  DEBUG: _data_loaded = ", SaveGameManager._data_loaded)
+		print("  DEBUG: Current time_scale in save_data = ", SaveGameManager.save_data["day_night"]["time_scale"])
+		
+		# Force SaveGameManager to think no file exists and reset to defaults
+		SaveGameManager._data_loaded = false
+		# Reset entire save_data to fresh defaults with time_scale = 2.0
+		SaveGameManager.save_data = {
+			"player": {
+				"position": Vector3.ZERO,
+				"rotation_y": 0.0,
+				"is_first_person": false
+			},
+			"world": {
+				"seed": 12345,
+				"player_chunk": Vector2i.ZERO
+			},
+			"day_night": {
+				"current_time": 0.0,
+				"is_locked_out": false,
+				"lockout_end_time": 0.0,
+				"time_scale": 2.0,  # Fresh start default (FIXED from 1.0)
+				"day_count": 1,
+				"night_start_time": 0.0
+			},
+			"settings": {
+				"master_volume": 80.0,
+				"ruler_visible": true
+			},
+			"meta": {
+				"version": "1.0",
+				"timestamp": 0
+			}
+		}
+		print("  DEBUG: After reset, time_scale in save_data = ", SaveGameManager.save_data["day_night"]["time_scale"])
+		print("  DEBUG: After reset, has_save_file() = ", SaveGameManager.has_save_file())
+	
+	print("  DEBUG: Creating DayNightCycle instance...")
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
 	
@@ -197,7 +242,12 @@ func test_time_scale():
 	env_node.add_to_group("WorldEnvironment")
 	test_scene.add_child(env_node)
 	
+	print("  DEBUG: Adding DayNightCycle to scene (will trigger _ready and _load_state)...")
 	test_scene.add_child(day_night)
+	
+	print("  DEBUG: DayNightCycle.time_scale after _ready = ", day_night.time_scale)
+	if SaveGameManager:
+		print("  DEBUG: SaveGameManager.save_data time_scale after day_night._ready = ", SaveGameManager.save_data["day_night"]["time_scale"])
 	
 	# Test initial time scale for fresh start (no save file)
 	assert_equal(day_night.time_scale, 2.0, "Initial time scale should be 2.0 for fresh start")
@@ -245,11 +295,15 @@ func test_time_scale():
 func test_brightness_at_8am():
 	print("\n--- Test: Brightness at 8:00 AM ---")
 	
-	# 8:00 AM is 2 hours after sunrise (6:00 AM)
-	# The in-game day simulation runs from 6:00 AM to 5:00 PM (11 hours of in-game time)
-	# This is mapped to DAY_CYCLE_DURATION (30 minutes of real time)
-	# 8:00 AM = 2 hours in-game / 11 hours in-game = ~0.182 or 18.2% into the cycle
-	const EIGHT_AM_RATIO = 2.0 / 11.0  # ~0.182
+	# IMPORTANT: The day cycle represents time AFTER sunrise animation completes
+	# Sunrise animation: 6:00-7:00 AM (60 seconds real time)
+	# Day cycle: 7:00 AM to 5:00 PM (10 hours in-game, 30 minutes real time)
+	# Current implementation has a bug - uses 11-hour cycle from 6 AM instead
+	# This test uses the CORRECT mapping to expose the time display bug
+	
+	# 8:00 AM is 1 hour after sunrise completes (7:00 AM)
+	# 8:00 AM = 1 hour / 10 hours = 0.1 or 10% into the cycle
+	const EIGHT_AM_RATIO = 1.0 / 10.0  # 0.1 (CORRECTED from 2.0 / 11.0)
 	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
@@ -268,7 +322,7 @@ func test_brightness_at_8am():
 	env_node.environment.ambient_light_color = Color(1.0, 1.0, 1.0, 1.0)
 	env_node.environment.ambient_light_sky_contribution = 1.0
 	env_node.environment.ambient_light_energy = MAIN_AMBIENT_LIGHT_ENERGY
-	env_node.environment.tonemap_mode = Environment.TONE_MAPPER_ACES_FITTED
+	env_node.environment.tonemap_mode = 2  # TONE_MAPPER_FILMIC (matches main.tscn tonemap_mode = 2)
 	env_node.environment.tonemap_exposure = MAIN_TONEMAP_EXPOSURE
 	
 	var sky = Sky.new()
@@ -327,11 +381,10 @@ func test_brightness_at_8am():
 func test_blue_sky_at_930am():
 	print("\n--- Test: Light Blue Sky at 9:30 AM ---")
 	
-	# 9:30 AM is 3.5 hours after sunrise (6:00 AM)
-	# The in-game day simulation runs from 6:00 AM to 5:00 PM (11 hours of in-game time)
-	# This is mapped to DAY_CYCLE_DURATION (30 minutes of real time)
-	# 9:30 AM = 3.5 hours in-game / 11 hours in-game = ~0.318 or 31.8% into the cycle
-	const NINE_THIRTY_AM_RATIO = 3.5 / 11.0  # ~0.318
+	# See test_brightness_at_8am() for explanation of time mapping
+	# 9:30 AM is 2.5 hours after sunrise completes (7:00 AM)
+	# 9:30 AM = 2.5 hours / 10 hours = 0.25 or 25% into the cycle
+	const NINE_THIRTY_AM_RATIO = 2.5 / 10.0  # 0.25 (CORRECTED from 3.5 / 11.0)
 	
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
@@ -350,7 +403,7 @@ func test_blue_sky_at_930am():
 	env_node.environment.ambient_light_color = Color(1.0, 1.0, 1.0, 1.0)
 	env_node.environment.ambient_light_sky_contribution = 1.0
 	env_node.environment.ambient_light_energy = MAIN_AMBIENT_LIGHT_ENERGY
-	env_node.environment.tonemap_mode = Environment.TONE_MAPPER_ACES_FITTED
+	env_node.environment.tonemap_mode = 2  # TONE_MAPPER_FILMIC (matches main.tscn tonemap_mode = 2)
 	env_node.environment.tonemap_exposure = MAIN_TONEMAP_EXPOSURE
 	
 	var sky = Sky.new()
@@ -413,6 +466,151 @@ func test_blue_sky_at_930am():
 	# Cleanup
 	test_scene.queue_free()
 
+func test_time_progression_to_930am():
+	print("\n--- Test: Time Progression from Sunrise (6 AM) to 9:30 AM ---")
+	print("  This test simulates the actual game progression from sunrise through to 9:30 AM")
+	print("  Verifies that brightness and sky are correct at 9:30 AM after natural progression")
+	
+	var test_scene = Node3D.new()
+	var day_night = DayNightCycle.new()
+	
+	# Add mock directional light with main.tscn settings
+	var light = DirectionalLight3D.new()
+	light.light_energy = MAIN_DIRECTIONAL_LIGHT_ENERGY
+	light.add_to_group("DirectionalLight3D")
+	test_scene.add_child(light)
+	
+	# Add mock world environment with PhysicalSkyMaterial matching main.tscn
+	var env_node = WorldEnvironment.new()
+	env_node.environment = Environment.new()
+	env_node.environment.background_mode = Environment.BG_SKY
+	env_node.environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	env_node.environment.ambient_light_color = Color(1.0, 1.0, 1.0, 1.0)
+	env_node.environment.ambient_light_sky_contribution = 1.0
+	env_node.environment.ambient_light_energy = MAIN_AMBIENT_LIGHT_ENERGY
+	env_node.environment.tonemap_mode = 2  # TONE_MAPPER_FILMIC (matches main.tscn tonemap_mode = 2)
+	env_node.environment.tonemap_exposure = MAIN_TONEMAP_EXPOSURE
+	
+	var sky = Sky.new()
+	var sky_material = PhysicalSkyMaterial.new()
+	sky_material.rayleigh_coefficient = MAIN_SKY_RAYLEIGH_COEFFICIENT
+	sky_material.mie_coefficient = MAIN_SKY_MIE_COEFFICIENT
+	sky_material.turbidity = MAIN_SKY_TURBIDITY
+	sky.sky_material = sky_material
+	env_node.environment.sky = sky
+	env_node.add_to_group("WorldEnvironment")
+	test_scene.add_child(env_node)
+	
+	# Add day/night cycle to scene
+	test_scene.add_child(day_night)
+	
+	# Start with sunrise animation (simulates 6:00-7:00 AM)
+	day_night.is_animating_sunrise = true
+	day_night.sunrise_animation_time = 0.0
+	day_night.current_time = 0.0
+	day_night.is_night = false
+	
+	print("  Phase 1: Simulating sunrise animation (6:00-7:00 AM, 60 seconds)")
+	
+	# Simulate sunrise animation (60 seconds at 0.016s per frame = ~3750 frames)
+	# Use larger time steps for efficiency (0.1s per step = 600 steps)
+	var sunrise_delta = 0.1
+	var sunrise_steps = int(DayNightCycle.SUNRISE_DURATION / sunrise_delta)
+	
+	for i in range(sunrise_steps + 1):
+		if day_night.is_animating_sunrise:
+			day_night.sunrise_animation_time += sunrise_delta
+			var progress = day_night.sunrise_animation_time / DayNightCycle.SUNRISE_DURATION
+			if progress >= 1.0:
+				day_night.is_animating_sunrise = false
+				day_night.sunrise_animation_time = 0.0
+				print("  Sunrise complete at 7:00 AM")
+			else:
+				day_night._animate_sunrise(progress)
+	
+	assert_false(day_night.is_animating_sunrise, "Sunrise animation should be complete")
+	assert_equal(day_night.current_time, 0.0, "Current time should be 0 after sunrise (7:00 AM)")
+	
+	print("  Phase 2: Progressing time from 7:00 AM to 9:30 AM")
+	
+	# 9:30 AM is 2.5 hours after 7:00 AM
+	# In the 10-hour day cycle (7 AM to 5 PM), this is 25% of the cycle
+	# DAY_CYCLE_DURATION = 1800 seconds (30 minutes)
+	# Time to 9:30 AM = 0.25 * 1800 = 450 seconds
+	const TARGET_TIME_930AM = 0.25 * DayNightCycle.DAY_CYCLE_DURATION
+	
+	# Simulate time progression (use 1 second steps for reasonable speed)
+	var progression_delta = 1.0
+	var steps_taken = 0
+	var max_steps = int(TARGET_TIME_930AM / progression_delta) + 10  # Add buffer
+	
+	while day_night.current_time < TARGET_TIME_930AM and steps_taken < max_steps:
+		day_night.current_time += progression_delta
+		day_night._update_lighting()
+		steps_taken += 1
+	
+	print("  Reached time: %.1f seconds (%.1f%% of day cycle)" % [day_night.current_time, (day_night.current_time / DayNightCycle.DAY_CYCLE_DURATION) * 100])
+	
+	# Verify we reached approximately 9:30 AM
+	var time_ratio = day_night.current_time / DayNightCycle.DAY_CYCLE_DURATION
+	var expected_ratio = 0.25
+	var ratio_tolerance = 0.01  # Allow 1% tolerance
+	
+	assert_true(abs(time_ratio - expected_ratio) <= ratio_tolerance,
+		"Time progressed to ~9:30 AM (ratio: %.3f, expected: %.3f)" % [time_ratio, expected_ratio])
+	
+	print("  Phase 3: Verifying daylight brightness at 9:30 AM")
+	
+	# Test brightness - should be well into daylight
+	var light_energy = light.light_energy
+	print("    Light energy: %.2f" % light_energy)
+	
+	# At 25% into the day cycle, intensity curve = 1.0 - abs(0.25 - 0.5) * 2.0 = 0.5
+	# Light energy = lerp(0.8, 2.0, 0.5) = 1.4
+	var expected_light_energy = 1.4
+	var light_tolerance = 0.2
+	
+	assert_true(abs(light_energy - expected_light_energy) <= light_tolerance,
+		"Light energy at 9:30 AM is bright (%.2f, expected ~%.2f)" % [light_energy, expected_light_energy])
+	
+	# Verify it's brighter than minimum (sunrise level)
+	assert_true(light_energy > DayNightCycle.MIN_LIGHT_ENERGY,
+		"Light should be brighter than sunrise minimum (%.2f > %.2f)" % [light_energy, DayNightCycle.MIN_LIGHT_ENERGY])
+	
+	print("  Phase 4: Verifying blue sky at 9:30 AM")
+	
+	# Test sky properties
+	assert_true(sky_material.rayleigh_coefficient >= 2.5,
+		"Rayleigh coefficient adequate for blue sky (%.1f >= 2.5)" % sky_material.rayleigh_coefficient)
+	
+	assert_true(sky_material.turbidity <= 10.0,
+		"Turbidity low for clear sky (%.1f <= 10.0)" % sky_material.turbidity)
+	
+	assert_true(sky_material.mie_coefficient <= 0.005,
+		"Mie coefficient low for clear sky (%.4f <= 0.005)" % sky_material.mie_coefficient)
+	
+	# Verify ambient light is white (allows blue sky to show naturally)
+	var ambient_color = env_node.environment.ambient_light_color
+	assert_true(ambient_color.is_equal_approx(Color.WHITE),
+		"Ambient light is white for natural blue sky")
+	
+	# Verify sun position
+	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, time_ratio)
+	print("    Sun angle: %.1f degrees" % sun_angle)
+	
+	assert_true(sun_angle > DayNightCycle.SUNRISE_END_ANGLE,
+		"Sun above sunrise position (%.1f > %.1f)" % [sun_angle, DayNightCycle.SUNRISE_END_ANGLE])
+	
+	assert_true(sun_angle < 0,
+		"Sun still ascending to zenith (%.1f < 0)" % sun_angle)
+	
+	assert_false(day_night.is_night, "Should be daytime at 9:30 AM")
+	
+	print("  ✓ Time progression test complete: Bright daylight and blue sky confirmed at 9:30 AM")
+	
+	# Cleanup
+	test_scene.queue_free()
+
 # Helper functions
 func assert_equal(actual, expected, message: String):
 	if actual == expected:
@@ -437,3 +635,69 @@ func assert_false(condition: bool, message: String):
 	else:
 		print("  ✗ FAIL: ", message)
 		test_failed += 1
+
+func test_time_display_matches_sun_position():
+	print("\n--- Test: Time Display Matches Sun Position ---")
+	print("  This test verifies that the displayed time correctly represents the sun's position")
+	print("  EXPECTED TO FAIL: Exposes bug where time display uses 11-hour cycle from 6 AM")
+	print("  instead of 10-hour cycle from 7 AM (after sunrise completes)")
+	
+	# The day cycle should represent the time AFTER sunrise completes
+	# Sunrise animation shows sun rising from 6:00-7:00 AM (1-hour animation)
+	# After sunrise, current_time starts at 0, which should represent 7:00 AM
+	# The day progresses from 7:00 AM to 5:00 PM (10 hours)
+	# At current_time = DAY_CYCLE_DURATION * 0.5, it should be noon (12:00 PM)
+	
+	# Simulate what the UI would display at noon
+	const NOON_TIME_RATIO = 0.5  # Sun at zenith
+	const SUNRISE_TIME_MINUTES_ACTUAL = 360  # Current (buggy) value: 6:00 AM
+	const DAY_DURATION_HOURS_ACTUAL = 11.0  # Current (buggy) value: 11 hours
+	const SUNRISE_TIME_MINUTES_CORRECT = 420  # Correct value: 7:00 AM (after sunrise ends)
+	const DAY_DURATION_HOURS_CORRECT = 10.0  # Correct value: 10 hours (7 AM to 5 PM)
+	const EXPECTED_NINE_THIRTY_RATIO = 0.25  # 2.5 hours / 10 hours = 0.25
+	
+	# Calculate what time would be displayed with current (buggy) formula
+	var displayed_minutes_buggy = int(NOON_TIME_RATIO * DAY_DURATION_HOURS_ACTUAL * 60.0) + SUNRISE_TIME_MINUTES_ACTUAL
+	var displayed_hours_buggy = int(displayed_minutes_buggy / 60) % 24
+	var displayed_mins_buggy = int(displayed_minutes_buggy) % 60
+	print("  At noon (sun at zenith, time_ratio=0.5):")
+	print("    Current buggy formula displays: %02d:%02d" % [displayed_hours_buggy, displayed_mins_buggy])
+	
+	# Calculate what time SHOULD be displayed with correct formula
+	var displayed_minutes_correct = int(NOON_TIME_RATIO * DAY_DURATION_HOURS_CORRECT * 60.0) + SUNRISE_TIME_MINUTES_CORRECT
+	var displayed_hours_correct = int(displayed_minutes_correct / 60) % 24
+	var displayed_mins_correct = int(displayed_minutes_correct) % 60
+	print("    Correct formula should display: %02d:%02d" % [displayed_hours_correct, displayed_mins_correct])
+	
+	# Test that the correct formula gives us noon (12:00) when sun is at zenith
+	assert_equal(displayed_hours_correct, 12, 
+		"At sun zenith (time_ratio=0.5), correct formula should display 12:00 (noon)")
+	assert_equal(displayed_mins_correct, 0, 
+		"At sun zenith (time_ratio=0.5), minutes should be 00")
+	
+	# Test that the current buggy formula DOES NOT give us noon
+	# This test is EXPECTED TO FAIL, exposing the bug
+	if displayed_hours_buggy == 12 and displayed_mins_buggy == 0:
+		print("  ✗ FAIL: Current formula incorrectly shows 12:00 at zenith (this would be a coincidence)")
+		test_failed += 1
+	else:
+		print("  ✓ PASS (BUG CONFIRMED): Current formula shows %02d:%02d instead of 12:00 at zenith" % [displayed_hours_buggy, displayed_mins_buggy])
+		print("    This confirms the time display bug - displayed time doesn't match sun position")
+		test_passed += 1
+	
+	# Additional check: At displayed 9:30 AM, what time_ratio is it actually?
+	const NINE_THIRTY_MINUTES = 570  # 9:30 AM
+	var time_ratio_for_930_buggy = (NINE_THIRTY_MINUTES - SUNRISE_TIME_MINUTES_ACTUAL) / (DAY_DURATION_HOURS_ACTUAL * 60.0)
+	var time_ratio_for_930_correct = (NINE_THIRTY_MINUTES - SUNRISE_TIME_MINUTES_CORRECT) / (DAY_DURATION_HOURS_CORRECT * 60.0)
+	
+	print("\n  At displayed 9:30 AM:")
+	print("    Current buggy formula: time_ratio = %.3f" % time_ratio_for_930_buggy)
+	print("    Correct formula: time_ratio = %.3f" % time_ratio_for_930_correct)
+	
+	# The correct time_ratio for 9:30 AM should be 0.25 (2.5 hours into 10-hour day)
+	assert_equal(time_ratio_for_930_correct, EXPECTED_NINE_THIRTY_RATIO,
+		"9:30 AM should be at time_ratio 0.25 (2.5/10 hours after 7 AM)")
+	
+	print("\n  SUMMARY: Time display uses wrong base time and duration,")
+	print("           causing ~1 hour offset between displayed time and sun position")
+

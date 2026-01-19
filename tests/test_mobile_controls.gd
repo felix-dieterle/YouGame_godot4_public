@@ -10,6 +10,8 @@ const ScreenshotHelper = preload("res://tests/screenshot_helper.gd")
 
 var mobile_controls: Control
 var screenshot_count = 0
+var test_passed: int = 0
+var test_failed: int = 0
 
 func _ready():
 	print("=== Starting Mobile Controls Tests ===")
@@ -21,8 +23,18 @@ func _ready():
 	test_look_joystick_properties()
 	test_joystick_positions()
 	
+	# Print results
+	print("\n=== Test Results ===")
+	print("Passed: ", test_passed)
+	print("Failed: ", test_failed)
+	
 	print("=== All Mobile Controls Tests Completed ===")
-	get_tree().quit()
+	if test_failed == 0:
+		print("All tests PASSED!")
+		get_tree().quit(0)
+	else:
+		print("Some tests FAILED!")
+		get_tree().quit(1)
 
 func test_mobile_controls_script_exists():
 	print("\n--- Test: MobileControls Script Exists ---")
@@ -30,23 +42,23 @@ func test_mobile_controls_script_exists():
 	# Verify the mobile controls script can be loaded
 	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
 	if mobile_controls_script:
-		print("  PASS: MobileControls script loaded successfully")
+		assert_pass("MobileControls script loaded successfully")
 		
 		# Create an instance directly from the script
 		mobile_controls = mobile_controls_script.new()
 		
 		if mobile_controls is Control:
-			print("  PASS: MobileControls extends Control")
+			assert_pass("MobileControls extends Control")
 		else:
-			print("  FAIL: MobileControls should extend Control")
+			assert_fail("MobileControls should extend Control")
 	else:
-		print("  FAIL: Could not load MobileControls script")
+		assert_fail("Could not load MobileControls script")
 
 func test_look_joystick_creation():
 	print("\n--- Test: Look Joystick Creation ---")
 	
 	if not mobile_controls:
-		print("  FAIL: MobileControls not initialized")
+		assert_fail("MobileControls not initialized")
 		return
 	
 	# Configure MobileControls to match the main.tscn scene configuration
@@ -57,6 +69,8 @@ func test_look_joystick_creation():
 	mobile_controls.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	mobile_controls.grow_vertical = Control.GROW_DIRECTION_BOTH
 	mobile_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# CRITICAL: Match main.tscn z_index setting for MobileControls parent
+	mobile_controls.z_index = 10
 	
 	# Add mobile_controls to the tree so _ready gets called
 	add_child(mobile_controls)
@@ -64,31 +78,31 @@ func test_look_joystick_creation():
 	
 	# Check if the movement joystick variables are initialized
 	if mobile_controls.joystick_base != null:
-		print("  PASS: joystick_base (movement) is initialized")
+		assert_pass("joystick_base (movement) is initialized")
 	else:
-		print("  FAIL: joystick_base (movement) is null")
+		assert_fail("joystick_base (movement) is null")
 	
 	if mobile_controls.joystick_stick != null:
-		print("  PASS: joystick_stick (movement) is initialized")
+		assert_pass("joystick_stick (movement) is initialized")
 	else:
-		print("  FAIL: joystick_stick (movement) is null")
+		assert_fail("joystick_stick (movement) is null")
 	
 	# Check if the look joystick variables are initialized
 	if mobile_controls.look_joystick_base != null:
-		print("  PASS: look_joystick_base is initialized")
+		assert_pass("look_joystick_base is initialized")
 	else:
-		print("  FAIL: look_joystick_base is null")
+		assert_fail("look_joystick_base is null")
 	
 	if mobile_controls.look_joystick_stick != null:
-		print("  PASS: look_joystick_stick is initialized")
+		assert_pass("look_joystick_stick is initialized")
 	else:
-		print("  FAIL: look_joystick_stick is null")
+		assert_fail("look_joystick_stick is null")
 
 func test_look_joystick_visibility_visual():
 	print("\n--- Test: Look Joystick Visibility (Visual) ---")
 	
 	if not mobile_controls or not mobile_controls.look_joystick_base:
-		print("  FAIL: Look joystick not available for visual test")
+		assert_fail("Look joystick not available for visual test")
 		return
 	
 	# Wait for rendering (reduced to 3 frames for simple visibility verification)
@@ -98,14 +112,14 @@ func test_look_joystick_visibility_visual():
 	ScreenshotHelper.capture_screenshot("mobile_controls", "view_control_joystick")
 	screenshot_count += 1
 	
-	print("  PASS: Captured screenshot of view control joystick for visual verification")
+	assert_pass("Captured screenshot of view control joystick for visual verification")
 	print("  Note: Screenshot saved to verify joystick is visible on screen")
 
 func test_look_joystick_properties():
 	print("\n--- Test: Look Joystick Properties ---")
 	
 	if not mobile_controls or not mobile_controls.look_joystick_base:
-		print("  FAIL: Look joystick not available")
+		assert_fail("Look joystick not available")
 		return
 	
 	var look_base = mobile_controls.look_joystick_base
@@ -113,55 +127,61 @@ func test_look_joystick_properties():
 	
 	# Check visibility
 	if look_base.visible:
-		print("  PASS: look_joystick_base is visible")
+		assert_pass("look_joystick_base is visible")
 	else:
-		print("  FAIL: look_joystick_base is not visible")
+		assert_fail("look_joystick_base is not visible")
 	
 	if look_stick.visible:
-		print("  PASS: look_joystick_stick is visible")
+		assert_pass("look_joystick_stick is visible")
 	else:
-		print("  FAIL: look_joystick_stick is not visible")
+		assert_fail("look_joystick_stick is not visible")
 	
 	# Check if in scene tree (which affects is_visible_in_tree)
 	if look_base.is_inside_tree():
-		print("  PASS: look_joystick_base is in scene tree")
+		assert_pass("look_joystick_base is in scene tree")
 		
 		if look_base.is_visible_in_tree():
-			print("  PASS: look_joystick_base is visible in tree")
+			assert_pass("look_joystick_base is visible in tree")
 		else:
-			print("  FAIL: look_joystick_base is not visible in tree")
+			assert_fail("look_joystick_base is not visible in tree")
 	else:
-		print("  FAIL: look_joystick_base is not in scene tree")
+		assert_fail("look_joystick_base is not in scene tree")
 	
 	# Check size
 	if look_base.size.x > 0 and look_base.size.y > 0:
-		print("  PASS: look_joystick_base has non-zero size: %.0fx%.0f" % [look_base.size.x, look_base.size.y])
+		assert_pass("look_joystick_base has non-zero size: %.0fx%.0f" % [look_base.size.x, look_base.size.y])
 	else:
-		print("  FAIL: look_joystick_base has zero size")
+		assert_fail("look_joystick_base has zero size")
 	
 	# Check that it has children (the visual panels)
 	if look_base.get_child_count() > 0:
-		print("  PASS: look_joystick_base has %d children (visual elements)" % look_base.get_child_count())
+		assert_pass("look_joystick_base has %d children (visual elements)" % look_base.get_child_count())
 	else:
-		print("  FAIL: look_joystick_base has no children")
+		assert_fail("look_joystick_base has no children")
 	
 	# Check modulate (alpha channel)
 	if look_base.modulate.a > 0:
-		print("  PASS: look_joystick_base modulate alpha: %.2f" % look_base.modulate.a)
+		assert_pass("look_joystick_base modulate alpha: %.2f" % look_base.modulate.a)
 	else:
-		print("  FAIL: look_joystick_base has zero alpha")
+		assert_fail("look_joystick_base has zero alpha")
 	
-	# Check z_index to ensure joystick renders above UI elements (version label has z_index 50)
-	if look_base.z_index >= 60:
-		print("  PASS: look_joystick_base z_index is %d (above UI elements)" % look_base.z_index)
+	# Check z_index to ensure joystick renders above UI elements
+	# CRITICAL: With MobileControls parent z_index = 10 (from main.tscn),
+	# the effective z_index is parent (10) + child (60) = 70
+	# This must be above UIManager children like version_label which has z_index=100
+	# (UIManager parent has z_index=0, so version_label effective = 0 + 100 = 100)
+	# For proper visibility on mobile, joystick needs effective z_index > 100
+	var effective_z_index = mobile_controls.z_index + look_base.z_index
+	if effective_z_index > 100:
+		assert_pass("look_joystick effective z_index is %d (above UI elements with z_index 100)" % effective_z_index)
 	else:
-		print("  FAIL: look_joystick_base z_index is %d (should be >= 60 to render above UI elements with z_index 50)" % look_base.z_index)
+		assert_fail("look_joystick effective z_index is %d (should be > 100 to render above UI elements like version_label at 100)" % effective_z_index)
 
 func test_joystick_positions():
 	print("\n--- Test: Look Joystick Position ---")
 	
 	if not mobile_controls or not mobile_controls.look_joystick_base:
-		print("  FAIL: Look joystick not available")
+		assert_fail("Look joystick not available")
 		return
 	
 	var look_base = mobile_controls.look_joystick_base
@@ -176,30 +196,47 @@ func test_joystick_positions():
 	print("  Look joystick position: (%.0f, %.0f)" % [look_base.position.x, look_base.position.y])
 	print("  Look joystick global position: (%.0f, %.0f)" % [look_base.global_position.x, look_base.global_position.y])
 	
+	# Check if viewport is large enough for meaningful position tests
+	# In headless test environments, viewport is often very small (64x64)
+	var min_required_size = look_margin_x * 2  # Need space for margins on both sides
+	if viewport_size.x < min_required_size or viewport_size.y < min_required_size:
+		print("  NOTE: Viewport too small for position tests (%.0fx%.0f < %.0f required)" % [viewport_size.x, viewport_size.y, min_required_size])
+		print("  Skipping position assertions (expected in headless test environment)")
+		return
+	
 	# Check if position is in the right area (bottom-right quadrant)
 	var is_right_side = look_base.position.x > viewport_size.x / 2
 	var is_bottom = look_base.position.y > viewport_size.y / 2
 	
 	if is_right_side:
-		print("  PASS: Look joystick is on the right side of screen")
+		assert_pass("Look joystick is on the right side of screen")
 	else:
-		print("  FAIL: Look joystick should be on the right side of screen")
+		assert_fail("Look joystick should be on the right side of screen")
 	
 	if is_bottom:
-		print("  PASS: Look joystick is on the bottom of screen")
+		assert_pass("Look joystick is on the bottom of screen")
 	else:
-		print("  FAIL: Look joystick should be on the bottom of screen")
+		assert_fail("Look joystick should be on the bottom of screen")
 	
 	# Verify it's within viewport bounds (accounting for joystick size)
 	var joystick_right_edge = look_base.global_position.x + look_base.size.x
 	var joystick_bottom_edge = look_base.global_position.y + look_base.size.y
 	
 	if look_base.global_position.x >= 0 and joystick_right_edge <= viewport_size.x:
-		print("  PASS: Look joystick X position is fully within viewport")
+		assert_pass("Look joystick X position is fully within viewport")
 	else:
-		print("  FAIL: Look joystick extends outside viewport horizontally (pos: %.0f, right edge: %.0f, viewport: %.0f)" % [look_base.global_position.x, joystick_right_edge, viewport_size.x])
+		assert_fail("Look joystick extends outside viewport horizontally (pos: %.0f, right edge: %.0f, viewport: %.0f)" % [look_base.global_position.x, joystick_right_edge, viewport_size.x])
 	
 	if look_base.global_position.y >= 0 and joystick_bottom_edge <= viewport_size.y:
-		print("  PASS: Look joystick Y position is fully within viewport")
+		assert_pass("Look joystick Y position is fully within viewport")
 	else:
-		print("  FAIL: Look joystick extends outside viewport vertically (pos: %.0f, bottom edge: %.0f, viewport: %.0f)" % [look_base.global_position.y, joystick_bottom_edge, viewport_size.y])
+		assert_fail("Look joystick extends outside viewport vertically (pos: %.0f, bottom edge: %.0f, viewport: %.0f)" % [look_base.global_position.y, joystick_bottom_edge, viewport_size.y])
+
+# Helper functions for tracking test results
+func assert_pass(message: String):
+	print("  ✓ PASS: ", message)
+	test_passed += 1
+
+func assert_fail(message: String):
+	print("  ✗ FAIL: ", message)
+	test_failed += 1
