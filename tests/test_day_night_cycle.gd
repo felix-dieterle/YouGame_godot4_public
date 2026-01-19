@@ -29,6 +29,7 @@ func _ready():
 	test_blue_sky_at_930am()  # Test that 9:30 AM has a nice light blue sky
 	test_time_progression_to_930am()  # Test time progression from sunrise (6 AM) to 9:30 AM with brightness verification
 	test_time_display_matches_sun_position()  # Test that displayed time matches sun position (exposes time offset bug)
+	test_sun_offset_no_discontinuity()  # Test that sun offset doesn't cause sun position discontinuities
 	
 	# Print results
 	print("\n=== Test Results ===")
@@ -678,4 +679,138 @@ func test_time_display_matches_sun_position():
 		"9:30 AM should be at time_ratio 0.25 (2.5/10 hours after 7 AM)")
 	
 	print("\n  ✓ Time display now correctly shows 7:00 AM at sunrise and 12:00 at noon")
+
+func test_sun_offset_no_discontinuity():
+	print("\n--- Test: Sun Offset Does Not Cause Sun Position Discontinuities ---")
+	print("  This test verifies that changing sun_time_offset_hours only affects displayed time")
+	print("  and does NOT cause the actual sun position to jump or wrap around")
+	
+	var test_scene = Node3D.new()
+	var day_night = DayNightCycle.new()
+	
+	# Add mock directional light
+	var light = DirectionalLight3D.new()
+	light.add_to_group("DirectionalLight3D")
+	test_scene.add_child(light)
+	
+	# Add mock world environment
+	var env_node = WorldEnvironment.new()
+	env_node.environment = Environment.new()
+	env_node.add_to_group("WorldEnvironment")
+	test_scene.add_child(env_node)
+	
+	# Add day/night cycle
+	test_scene.add_child(day_night)
+	
+	# Set time to middle of day (noon)
+	day_night.current_time = 0.5 * DayNightCycle.DAY_CYCLE_DURATION
+	day_night.is_night = false
+	day_night.is_animating_sunrise = false
+	day_night.is_animating_sunset = false
+	
+	# Test 1: Sun position at noon with no offset
+	day_night.sun_time_offset_hours = 0.0
+	day_night._update_lighting()
+	var sun_angle_no_offset = light.rotation_degrees.x
+	var light_energy_no_offset = light.light_energy
+	
+	print("  At noon with no offset:")
+	print("    Sun angle: %.2f degrees" % sun_angle_no_offset)
+	print("    Light energy: %.2f" % light_energy_no_offset)
+	
+	# At noon (time_ratio=0.5), sun should be at zenith (0 degrees)
+	# Sun angle lerp from -60 to 60, at 0.5 ratio = 0 degrees
+	# Applied as negative: rotation_degrees.x = -0 = 0
+	assert_equal(sun_angle_no_offset, 0.0, 
+		"Sun should be at zenith (0 degrees) at noon with no offset")
+	
+	# Test 2: Apply a large positive offset (5 hours)
+	# This should ONLY change displayed time, NOT sun position
+	day_night.sun_time_offset_hours = 5.0
+	day_night._update_lighting()
+	var sun_angle_with_offset = light.rotation_degrees.x
+	var light_energy_with_offset = light.light_energy
+	
+	print("\n  At noon with +5 hour offset:")
+	print("    Sun angle: %.2f degrees" % sun_angle_with_offset)
+	print("    Light energy: %.2f" % light_energy_with_offset)
+	
+	# Sun position should be EXACTLY the same
+	assert_equal(sun_angle_with_offset, sun_angle_no_offset,
+		"Sun angle should not change when offset is applied")
+	assert_equal(light_energy_with_offset, light_energy_no_offset,
+		"Light energy should not change when offset is applied")
+	
+	# Test 3: Apply a large negative offset (-3 hours)
+	day_night.sun_time_offset_hours = -3.0
+	day_night._update_lighting()
+	var sun_angle_negative_offset = light.rotation_degrees.x
+	var light_energy_negative_offset = light.light_energy
+	
+	print("\n  At noon with -3 hour offset:")
+	print("    Sun angle: %.2f degrees" % sun_angle_negative_offset)
+	print("    Light energy: %.2f" % light_energy_negative_offset)
+	
+	# Sun position should STILL be exactly the same
+	assert_equal(sun_angle_negative_offset, sun_angle_no_offset,
+		"Sun angle should not change with negative offset")
+	assert_equal(light_energy_negative_offset, light_energy_no_offset,
+		"Light energy should not change with negative offset")
+	
+	# Test 4: Test at different times of day to ensure no wrapping
+	# Set time to early morning (10% into day)
+	day_night.current_time = 0.1 * DayNightCycle.DAY_CYCLE_DURATION
+	day_night.sun_time_offset_hours = 0.0
+	day_night._update_lighting()
+	var morning_sun_no_offset = light.rotation_degrees.x
+	
+	# Apply offset that would wrap if applied to sun position
+	day_night.sun_time_offset_hours = 12.0  # Huge offset
+	day_night._update_lighting()
+	var morning_sun_with_offset = light.rotation_degrees.x
+	
+	print("\n  At early morning (10% into day):")
+	print("    Sun angle without offset: %.2f degrees" % morning_sun_no_offset)
+	print("    Sun angle with +12h offset: %.2f degrees" % morning_sun_with_offset)
+	
+	assert_equal(morning_sun_with_offset, morning_sun_no_offset,
+		"Sun angle should not wrap around even with large offset")
+	
+	# Test 5: Verify smooth progression over time with offset applied
+	# Reset to start of day
+	day_night.current_time = 0.0
+	day_night.sun_time_offset_hours = 5.0  # Keep offset
+	
+	var previous_sun_angle: float = 0.0
+	var first_iteration = true
+	var has_discontinuity = false
+	# Sun moves from -60° to +60° over full day (120° total)
+	# Per 1% of day = 1.2°, using 2.0° threshold for safety margin
+	var max_expected_change = 2.0
+	
+	# Step through day in small increments
+	for i in range(101):
+		var time_ratio = i / 100.0
+		day_night.current_time = time_ratio * DayNightCycle.DAY_CYCLE_DURATION
+		day_night._update_lighting()
+		var current_sun_angle = light.rotation_degrees.x
+		
+		if not first_iteration:
+			var change = abs(current_sun_angle - previous_sun_angle)
+			# Check for large jumps (discontinuities)
+			if change > max_expected_change:
+				has_discontinuity = true
+				print("  WARNING: Discontinuity at %.1f%% - sun jumped %.2f degrees" % [time_ratio * 100, change])
+		
+		previous_sun_angle = current_sun_angle
+		first_iteration = false
+	
+	assert_false(has_discontinuity, 
+		"Sun position should progress smoothly without discontinuities even with offset")
+	
+	print("\n  ✓ Sun offset only affects displayed time, not actual sun position")
+	print("  ✓ No discontinuities in sun position throughout the day")
+	
+	# Cleanup
+	test_scene.queue_free()
 

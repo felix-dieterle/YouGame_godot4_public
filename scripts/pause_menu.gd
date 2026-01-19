@@ -314,9 +314,10 @@ func _create_settings_panel() -> void:
     settings_vbox.add_child(sun_offset_hbox)
     
     var sun_offset_label = Label.new()
-    sun_offset_label.text = "Sun Offset:"
+    sun_offset_label.text = "Sun Offset (Display):"
     sun_offset_label.custom_minimum_size = Vector2(150, 0)
     sun_offset_label.add_theme_font_size_override("font_size", 16)
+    sun_offset_label.tooltip_text = "Adjusts the displayed time without affecting sun position or lighting"
     sun_offset_hbox.add_child(sun_offset_label)
     
     sun_offset_slider = HSlider.new()
@@ -326,6 +327,7 @@ func _create_settings_panel() -> void:
     sun_offset_slider.value = 0.0
     sun_offset_slider.custom_minimum_size = Vector2(100, 50)  # Increased height from 0 to 50 for better touch targets on Android
     sun_offset_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    sun_offset_slider.tooltip_text = "Adjusts displayed time only - does not change actual sun position"
     sun_offset_slider.value_changed.connect(_on_sun_offset_changed)
     sun_offset_hbox.add_child(sun_offset_slider)
     
