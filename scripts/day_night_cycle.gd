@@ -8,7 +8,7 @@ const SUNSET_DURATION: float = 60.0  # 1 minute sunset animation
 const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
 const WARNING_TIME_2MIN: float = 2.0 * 60.0  # 2 minutes before sunset
 const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
-const DAY_DURATION_HOURS: float = 10.0  # Day is 10 game hours (7 AM to 5 PM)
+const DAY_DURATION_HOURS: float = 10.0  # Day cycle represents 10 game hours (7 AM to 5 PM)
 
 # Sun angle constants
 const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
@@ -223,7 +223,14 @@ func _process(delta) -> void:
         else:
             _update_lighting()
 
-# Apply sun time offset to a time ratio
+# Apply sun time offset to a time ratio.
+# 
+# Takes a normalized time ratio (0.0 to 1.0) representing position in the day cycle
+# and applies the sun_time_offset_hours offset to shift the sun's position.
+# The offset is converted from hours to a ratio based on DAY_DURATION_HOURS.
+# 
+# @param time_ratio: Normalized time (0.0 = sunrise, 0.5 = noon, 1.0 = sunset)
+# @return: Offset time ratio with proper wrapping to stay in 0.0-1.0 range
 func _apply_sun_time_offset(time_ratio: float) -> float:
     # Apply sun time offset (convert hours to time ratio)
     # Offset is in hours, day is DAY_DURATION_HOURS, so divide to get ratio
