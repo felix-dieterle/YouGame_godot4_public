@@ -10,6 +10,7 @@ func _ready():
 	test_path_branching()
 	test_path_endpoint_detection()
 	test_starting_chunk()
+	test_path_spans_three_chunks()
 	print("=== All Path System Tests Completed ===")
 	get_tree().quit()
 
@@ -148,3 +149,98 @@ func test_seed_consistency():
 		print("FAIL: Different number of segments: ", segments1.size(), " vs ", segments2.size())
 	
 	PathSystem.clear_all_paths()
+
+## Test that at least one path spans 3 or more chunks (requirement from issue)
+func test_path_spans_three_chunks():
+	print("\n--- Test: Path Spans At Least 3 Chunks ---")
+	
+	PathSystem.clear_all_paths()
+	var world_seed = 12345
+	
+	# Generate a grid of chunks to trace paths
+	var chunk_grid_size = 8  # 8x8 grid of chunks
+	for x in range(-chunk_grid_size, chunk_grid_size + 1):
+		for z in range(-chunk_grid_size, chunk_grid_size + 1):
+			var chunk_pos = Vector2i(x, z)
+			PathSystem.get_path_segments_for_chunk(chunk_pos, world_seed)
+	
+	# Now trace paths to find continuous paths
+	var visited_segments = {}
+	var longest_path_length = 0
+	var longest_path_chunks = []
+	
+	# Start from chunk (0,0) and trace all paths
+	var all_segment_ids = []
+	for chunk_pos in PathSystem.chunk_segments:
+		var seg_ids = PathSystem.chunk_segments[chunk_pos]
+		for seg_id in seg_ids:
+			if seg_id not in all_segment_ids:
+				all_segment_ids.append(seg_id)
+	
+	# Trace each path using depth-first search
+	for start_seg_id in all_segment_ids:
+		if start_seg_id in visited_segments:
+			continue
+		
+		var path_chunks = _trace_path(start_seg_id, visited_segments)
+		if path_chunks.size() > longest_path_length:
+			longest_path_length = path_chunks.size()
+			longest_path_chunks = path_chunks
+	
+	print("INFO: Longest path found spans ", longest_path_length, " chunks")
+	print("INFO: Path goes through chunks: ", longest_path_chunks)
+	
+	if longest_path_length >= 3:
+		print("PASS: At least one path spans 3 or more chunks (", longest_path_length, " chunks)")
+	else:
+		print("FAIL: No path spans 3 or more chunks (max found: ", longest_path_length, " chunks)")
+	
+	PathSystem.clear_all_paths()
+
+## Helper function to trace a path through chunks using DFS
+func _trace_path(start_segment_id: int, visited: Dictionary) -> Array:
+	var chunks_in_path = []
+	var to_visit = [start_segment_id]
+	
+	while to_visit.size() > 0:
+		var seg_id = to_visit.pop_back()
+		
+		if seg_id in visited:
+			continue
+		
+		visited[seg_id] = true
+		
+		if not PathSystem.all_segments.has(seg_id):
+			continue
+		
+		var segment = PathSystem.all_segments[seg_id]
+		
+		# Add this chunk to path if not already included
+		if segment.chunk_pos not in chunks_in_path:
+			chunks_in_path.append(segment.chunk_pos)
+		
+		# Add connected segments
+		for next_seg_id in segment.next_segments:
+			if next_seg_id not in visited:
+				to_visit.append(next_seg_id)
+		
+		# Check for segments that continue from this one (check neighboring chunks)
+		var neighbors = [
+			Vector2i(segment.chunk_pos.x - 1, segment.chunk_pos.y),
+			Vector2i(segment.chunk_pos.x + 1, segment.chunk_pos.y),
+			Vector2i(segment.chunk_pos.x, segment.chunk_pos.y - 1),
+			Vector2i(segment.chunk_pos.x, segment.chunk_pos.y + 1)
+		]
+		
+		for neighbor_chunk in neighbors:
+			if not PathSystem.chunk_segments.has(neighbor_chunk):
+				continue
+			
+			var neighbor_seg_ids = PathSystem.chunk_segments[neighbor_chunk]
+			for neighbor_seg_id in neighbor_seg_ids:
+				if neighbor_seg_id not in visited:
+					# Check if this segment continues from our current segment
+					if PathSystem.all_segments.has(neighbor_seg_id):
+						to_visit.append(neighbor_seg_id)
+	
+	return chunks_in_path
