@@ -91,10 +91,10 @@ func test_time_progression():
 	# Add day/night cycle
 	test_scene.add_child(day_night)
 	
-	# Test initial state - should start 3 hours into the day (sun at 10:00 AM position)
+	# Test initial state - should start INITIAL_TIME_OFFSET_HOURS into the day
 	# Display will show 7:00 AM due to sun_time_offset_hours = -3.0
-	var expected_initial_time = DayNightCycle.DAY_CYCLE_DURATION * (3.0 / DayNightCycle.DAY_DURATION_HOURS)
-	assert_equal(day_night.current_time, expected_initial_time, "Initial time should be 3 hours into day cycle (540 seconds)")
+	var expected_initial_time = DayNightCycle.DAY_CYCLE_DURATION * (DayNightCycle.INITIAL_TIME_OFFSET_HOURS / DayNightCycle.DAY_DURATION_HOURS)
+	assert_equal(day_night.current_time, expected_initial_time, "Initial time should be INITIAL_TIME_OFFSET_HOURS into day cycle")
 	assert_equal(day_night.is_night, false, "Should start as day")
 	assert_equal(day_night.is_locked_out, false, "Should not be locked out initially")
 	
