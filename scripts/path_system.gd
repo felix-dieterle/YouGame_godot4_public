@@ -137,8 +137,12 @@ static func _continue_paths_from_neighbors(chunk_pos: Vector2i, world_seed: int,
 				var entry_pos = _get_corresponding_entry_position(exit_pos, neighbor_pos, chunk_pos)
 				var direction = (neighbor_segment.end_pos - neighbor_segment.start_pos).normalized()
 				
-				# Add some randomness to direction
-				var angle_variation = rng.randf_range(-PI/6, PI/6) * PATH_ROUGHNESS
+				# Add some randomness to direction - less for main paths to keep them straighter
+				var angle_variation_factor = PATH_ROUGHNESS
+				if neighbor_segment.path_type == PathType.MAIN_PATH:
+					angle_variation_factor *= 0.5  # Main paths stay straighter (50% less variation)
+				
+				var angle_variation = rng.randf_range(-PI/6, PI/6) * angle_variation_factor
 				direction = direction.rotated(angle_variation)
 				
 				var length = rng.randf_range(MIN_SEGMENT_LENGTH, MAX_SEGMENT_LENGTH)
@@ -325,8 +329,12 @@ static func _check_endpoint(segment: PathSegment, chunk_pos: Vector2i, world_see
 		segment.is_endpoint = true
 		return
 	
-	# Random chance to end
-	if rng.randf() < ENDPOINT_PROBABILITY:
+	# Random chance to end - main paths are less likely to end randomly
+	var endpoint_chance = ENDPOINT_PROBABILITY
+	if segment.path_type == PathType.MAIN_PATH:
+		endpoint_chance *= 0.3  # Main paths only 30% as likely to randomly end
+	
+	if rng.randf() < endpoint_chance:
 		segment.is_endpoint = true
 
 ## Get world position of segment end
