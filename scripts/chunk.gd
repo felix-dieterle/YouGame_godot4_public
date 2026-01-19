@@ -1244,10 +1244,13 @@ func _place_lighthouses_if_coastal() -> void:
     
     # Check if chunk position is on a regular grid for lighthouse placement
     # Place lighthouses every LIGHTHOUSE_SPACING units (approximately)
-    var spacing_chunks = int(LIGHTHOUSE_SPACING / CHUNK_SIZE)
+    var spacing_chunks = max(1, int(LIGHTHOUSE_SPACING / CHUNK_SIZE))  # Ensure at least 1
     
-    # Only place lighthouse if this chunk is on the grid
-    if (chunk_x % spacing_chunks) != 0 or (chunk_z % spacing_chunks) != 0:
+    # Only place lighthouse if this chunk is on the grid (either x or z coordinate matches)
+    var on_x_grid = (chunk_x % spacing_chunks) == 0
+    var on_z_grid = (chunk_z % spacing_chunks) == 0
+    
+    if not (on_x_grid or on_z_grid):
         return
     
     # Check if any neighboring chunks are ocean (coastal detection)
