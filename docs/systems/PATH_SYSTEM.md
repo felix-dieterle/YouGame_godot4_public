@@ -12,7 +12,7 @@
 
 The path system generates procedural paths that:
 
-- **Start from origin**: Main paths begin at the starting location (chunk 0,0)
+- **No path at starting point**: The starting location (chunk 0,0) intentionally has no paths, giving players an unmarked starting area
 - **Continue across chunks**: Paths seamlessly extend to neighboring chunks with improved continuity
 - **Random branching**: Paths can branch with configurable probability (15% default)
 - **Target destinations**: Branches attempt to lead toward forests and settlements
@@ -160,12 +160,9 @@ starting_loc.adjust_to_terrain(world_manager)
 
 ## Path Generation Algorithm
 
-### Main Path Generation (Chunk 0,0)
+### Starting Chunk (0,0)
 
-1. Start from starting location at world origin (0, 0)
-2. Generate random direction
-3. Create segment with random length (14-20 units for visibility)
-4. Continue in neighboring chunks
+The starting chunk (0,0) intentionally has no path segments. Players begin in an unmarked area without visible paths.
 
 ### Path Continuation
 
@@ -474,6 +471,18 @@ These changes make paths clearly visible against the terrain while maintaining a
 - `scripts/path_system.gd` - Improved endpoint and continuation logic
 - `scripts/chunk.gd` - Added terrain-based colors, bush placement function
 - `tests/test_path_system.gd` - Added 3-chunk spanning test
+- `docs/systems/PATH_SYSTEM.md` - Updated documentation
+
+### January 2026 - Remove Path from Starting Location
+
+**Request**: "können wir den Steg am Anfangspunkt entfernen" (can we remove the walkway at the starting point)
+
+**Solution**: Modified path generation to skip creating any path segments in chunk (0,0), allowing players to start in an unmarked area without visible paths.
+
+**Files Changed**:
+- `scripts/path_system.gd` - Removed path generation for chunk (0,0)
+- `tests/test_path_system.gd` - Updated tests to expect no paths at starting chunk
+- `tests/verify_path_visibility.gd` - Updated verification to expect no paths at starting chunk
 - `docs/systems/PATH_SYSTEM.md` - Updated documentation
 
 ## License / Lizenz
