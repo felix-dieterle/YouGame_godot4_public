@@ -9,7 +9,7 @@ const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
 const WARNING_TIME_2MIN: float = 2.0 * 60.0  # 2 minutes before sunset
 const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 const DAY_DURATION_HOURS: float = 10.0  # Day cycle represents 10 game hours (7 AM to 5 PM)
-const INITIAL_TIME_OFFSET_HOURS: float = 3.0  # Hours to advance sun at game start (sun at 10 AM, display shows 7 AM)
+const INITIAL_TIME_OFFSET_HOURS: float = 3.0  # Hours to advance sun position at game start (creates 10 AM lighting while displaying 7 AM due to sun_time_offset_hours)
 
 # Sun angle constants
 const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
