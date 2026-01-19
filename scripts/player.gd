@@ -61,11 +61,6 @@ func _ready() -> void:
     # Initialize crystal inventory with all crystal types
     for crystal_type in CrystalSystem.CrystalType.values():
         crystal_inventory[crystal_type] = 0
-    add_to_group("Player")
-    
-    # Initialize crystal inventory with all crystal types
-    for crystal_type in CrystalSystem.CrystalType.values():
-        crystal_inventory[crystal_type] = 0
     
     # Configure CharacterBody3D slope handling
     floor_max_angle = deg_to_rad(max_slope_angle)
@@ -554,5 +549,20 @@ func _load_saved_state():
             for part in robot_parts:
                 part.visible = not is_first_person
         
+        # Restore inventory if available
+        if "inventory" in player_data and player_data["inventory"] is Dictionary:
+            # Convert JSON keys (strings) to integers for crystal types
+            # JSON always serializes dictionary keys as strings
+            var loaded_inventory = player_data["inventory"]
+            # Update existing inventory values while preserving initialized structure
+            for key in loaded_inventory:
+                var int_key = int(key)
+                if int_key in crystal_inventory:
+                    crystal_inventory[int_key] = loaded_inventory[key]
+            
+            # Update UI with loaded inventory
+            var ui_manager = get_tree().get_first_node_in_group("UIManager")
+            if ui_manager and ui_manager.has_method("update_crystal_count"):
+                ui_manager.update_crystal_count(crystal_inventory)
+        
         print("Player: Loaded saved position: ", global_position)
-

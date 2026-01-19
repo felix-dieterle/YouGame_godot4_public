@@ -11,7 +11,8 @@ var save_data: Dictionary = {
     "player": {
         "position": Vector3.ZERO,
         "rotation_y": 0.0,
-        "is_first_person": false
+        "is_first_person": false,
+        "inventory": {}  # Crystal inventory
     },
     "world": {
         "seed": 12345,
@@ -69,10 +70,12 @@ func _auto_save_on_exit() -> void:
     var ruler = get_tree().get_first_node_in_group("RulerOverlay")
     
     if player:
+        var inventory = player.crystal_inventory if "crystal_inventory" in player else {}
         update_player_data(
             player.global_position,
             player.rotation.y,
-            player.is_first_person if player.has("is_first_person") else false
+            player.is_first_person if "is_first_person" in player else false,
+            inventory
         )
     
     if world_manager:
@@ -128,6 +131,10 @@ func save_game() -> bool:
     config.set_value("player", "position_z", save_data["player"]["position"].z)
     config.set_value("player", "rotation_y", save_data["player"]["rotation_y"])
     config.set_value("player", "is_first_person", save_data["player"]["is_first_person"])
+    
+    # Save inventory (convert dictionary to JSON string for easier storage)
+    var inventory_json = JSON.stringify(save_data["player"]["inventory"])
+    config.set_value("player", "inventory", inventory_json)
     
     # Save world data
     config.set_value("world", "seed", save_data["world"]["seed"])
@@ -188,6 +195,15 @@ func load_game() -> bool:
     save_data["player"]["rotation_y"] = config.get_value("player", "rotation_y", 0.0)
     save_data["player"]["is_first_person"] = config.get_value("player", "is_first_person", false)
     
+    # Load inventory (parse from JSON string)
+    var inventory_json = config.get_value("player", "inventory", "{}")
+    var json = JSON.new()
+    var parse_result = json.parse(inventory_json)
+    if parse_result == OK:
+        save_data["player"]["inventory"] = json.data
+    else:
+        save_data["player"]["inventory"] = {}  # Default to empty inventory if parsing fails
+    
     # Load world data
     save_data["world"]["seed"] = config.get_value("world", "seed", 12345)
     var chunk_x = config.get_value("world", "player_chunk_x", 0)
@@ -216,10 +232,11 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool) -> void:
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
     save_data["player"]["is_first_person"] = is_first_person
+    save_data["player"]["inventory"] = inventory
 
 # Update world data for saving
 func update_world_data(seed: int, player_chunk: Vector2i) -> void:
