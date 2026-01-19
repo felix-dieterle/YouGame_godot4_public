@@ -60,6 +60,9 @@ const CRYSTAL_SPAWN_CHANCE = 0.20  # 20% chance a rock will have crystals (reduc
 const CRYSTALS_PER_ROCK_MIN = 1
 const CRYSTALS_PER_ROCK_MAX = 2  # Reduced from 3 for rarer crystals
 
+# Path bush placement constants
+const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differentiation
+
 # ============================================================================
 # STATE VARIABLES
 # ============================================================================
@@ -965,6 +968,9 @@ func _generate_paths() -> void:
     
     # Create path mesh
     _create_path_mesh()
+    
+    # Place bushes along path edges
+    _place_path_bushes()
 
 ## Create visual mesh for paths
 func _create_path_mesh() -> void:
@@ -1023,13 +1029,36 @@ func _add_path_segment_to_surface(surface_tool: SurfaceTool, segment) -> void:
     var h3 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p3.x, chunk_z * CHUNK_SIZE + p3.y) + PATH_ELEVATION_OFFSET
     var h4 = get_height_at_world_pos(chunk_x * CHUNK_SIZE + p4.x, chunk_z * CHUNK_SIZE + p4.y) + PATH_ELEVATION_OFFSET
     
-    # Path color based on type - subtle texture variation for ground paths
+    # Calculate average height for terrain property variation
+    var avg_height = (h1 + h2 + h3 + h4) / 4.0
+    
+    # Path color based on type and terrain properties
     var path_color = BRANCH_PATH_COLOR
+    
+    # Base color selection by path type
     if segment.path_type == PathSystem.PathType.MAIN_PATH:
         path_color = MAIN_PATH_COLOR
+    elif segment.path_type == PathSystem.PathType.FOREST_PATH:
+        # Forest paths are darker, more earthy
+        path_color = Color(0.45, 0.42, 0.35)
+    elif segment.path_type == PathSystem.PathType.VILLAGE_PATH:
+        # Village paths are lighter, more worn
+        path_color = Color(0.60, 0.55, 0.45)
     
+    # Modify color based on biome/terrain height for variety
+    if biome == "mountain":
+        # Mountain paths are rocky, lighter gray-brown
+        path_color = path_color.lerp(Color(0.55, 0.52, 0.48), 0.4)
+    elif biome == "rocky_hills":
+        # Rocky paths have more gray tones
+        path_color = path_color.lerp(Color(0.50, 0.48, 0.44), 0.3)
+    elif biome == "grassland":
+        # Grassland paths are more brown/earthy
+        path_color = path_color.lerp(Color(0.48, 0.44, 0.36), 0.2)
+    
+    # Endpoint paths are slightly brighter (well-traveled)
     if segment.is_endpoint:
-        path_color = ENDPOINT_PATH_COLOR
+        path_color = path_color.lerp(ENDPOINT_PATH_COLOR, 0.5)
     
     # Create two triangles for the path segment
     surface_tool.set_color(path_color)
@@ -1053,5 +1082,75 @@ func _play_endpoint_sound(segment) -> void:
     # audio_player.stream = load("res://assets/sounds/path_endpoint.ogg")
     # audio_player.position = Vector3(segment.end_pos.x, get_height_at_world_pos(...), segment.end_pos.y)
     # add_child(audio_player)
-    # audio_player.play()
+
+## Place bushes along path edges for natural decoration
+func _place_path_bushes() -> void:
+    if path_segments.is_empty():
+        return
+    
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ BUSH_SEED_OFFSET
+    
+    # Bush placement constants
+    const BUSH_SPACING = 3.0  # Average distance between bushes
+    const BUSH_OFFSET_FROM_EDGE = 1.2  # Distance from path edge
+    const BUSH_PLACEMENT_CHANCE = 0.6  # 60% chance to place bush at each position
+    const BUSH_SIZE_VARIATION = 0.3  # ±30% size variation
+    
+    for segment in path_segments:
+        var start = segment.start_pos
+        var end = segment.end_pos
+        var width = segment.width
+        
+        # Calculate segment length
+        var segment_length = start.distance_to(end)
+        var direction = (end - start).normalized()
+        var perpendicular = Vector2(-direction.y, direction.x)
+        
+        # Calculate number of bush positions along segment
+        var num_positions = int(segment_length / BUSH_SPACING)
+        
+        for i in range(num_positions):
+            # Position along the segment
+            var t = float(i) / float(max(num_positions - 1, 1))
+            var pos_along_path = start.lerp(end, t)
+            
+            # Try to place bushes on both sides of the path
+            for side in [-1, 1]:
+                if rng.randf() > BUSH_PLACEMENT_CHANCE:
+                    continue
+                
+                # Position perpendicular to path edge
+                var offset_distance = (width / 2.0) + BUSH_OFFSET_FROM_EDGE + rng.randf_range(-0.3, 0.3)
+                var bush_pos_2d = pos_along_path + perpendicular * side * offset_distance
+                
+                # Check if position is within chunk bounds
+                if bush_pos_2d.x < 0 or bush_pos_2d.x >= CHUNK_SIZE or bush_pos_2d.y < 0 or bush_pos_2d.y >= CHUNK_SIZE:
+                    continue
+                
+                # Get terrain height
+                var world_x = chunk_x * CHUNK_SIZE + bush_pos_2d.x
+                var world_z = chunk_z * CHUNK_SIZE + bush_pos_2d.y
+                var height = get_height_at_world_pos(world_x, world_z)
+                
+                # Skip if in lake
+                if has_lake:
+                    var dist_to_lake = Vector2(bush_pos_2d.x, bush_pos_2d.y).distance_to(lake_center)
+                    if dist_to_lake < lake_radius:
+                        continue
+                
+                # Create bush instance (using small bush tree type)
+                var bush_instance = MeshInstance3D.new()
+                bush_instance.mesh = ProceduralModels.create_tree_mesh(rng.randi(), ProceduralModels.TreeType.SMALL_BUSH)
+                bush_instance.material_override = ProceduralModels.create_tree_material()
+                bush_instance.position = Vector3(bush_pos_2d.x, height, bush_pos_2d.y)
+                bush_instance.rotation.y = rng.randf_range(0, TAU)  # Random rotation
+                
+                # Size variation for natural look
+                var size_scale = 1.0 + rng.randf_range(-BUSH_SIZE_VARIATION, BUSH_SIZE_VARIATION)
+                bush_instance.scale = Vector3(size_scale, size_scale, size_scale)
+                bush_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+                
+                add_child(bush_instance)
+                placed_objects.append(bush_instance)
 
