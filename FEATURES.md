@@ -462,3 +462,41 @@ const CRYSTALS_PER_ROCK_MAX = 3
 - [ ] Achievements for rare crystal collection
 
 See [CRYSTAL_SYSTEM.md](docs/systems/CRYSTAL_SYSTEM.md) for complete documentation.
+
+## Ocean and Lighthouse System
+
+A new ocean biome and coastal lighthouse system has been added to create large bodies of water spanning multiple chunks with navigational lighthouses.
+
+### Ocean Features
+- **Ocean Biome**: Large bodies of water in low-elevation areas (elevation ≤ -8.0)
+- **Multi-Chunk Coverage**: Oceans span multiple adjacent chunks creating seas
+- **Visual Appearance**: Deep blue semi-transparent water with sandy seabed
+- **Water Mesh**: Full-chunk water plane at ocean level
+
+### Lighthouse Features
+- **Coastal Placement**: Automatically placed on chunks adjacent to ocean
+- **Regular Spacing**: Lighthouses appear every ~80 world units along coastline
+- **Distinctive Design**: 8-unit tall tower with red and white stripes
+- **Beacon Light**: Warm yellow light with 30-unit visibility range
+- **Navigation Aid**: Helps players locate coastlines and navigate around water
+
+### Visual Details
+- **Tower**: 4-section cylinder with alternating white/red stripes
+- **Structure**: Platform, beacon housing, and red conical roof
+- **Lighting**: OmniLight3D at top for realistic beacon effect
+- **Ocean Water**: Smooth specular surface with transparency
+
+### Technical Implementation
+- **Biome Detection**: Based on average chunk elevation during metadata calculation
+- **Coastal Detection**: Checks neighboring chunks for ocean presence
+- **Grid Placement**: Lighthouses placed on regular grid to ensure spacing
+- **Performance**: Minimal overhead with simple water meshes and sparse lighthouse placement
+
+### Configuration
+```gdscript
+# In chunk.gd
+const OCEAN_LEVEL = -8.0              # Elevation threshold for ocean
+const LIGHTHOUSE_SPACING = 80.0        # Distance between lighthouses
+```
+
+See [OCEAN_LIGHTHOUSE_SYSTEM.md](docs/systems/OCEAN_LIGHTHOUSE_SYSTEM.md) for complete documentation.
