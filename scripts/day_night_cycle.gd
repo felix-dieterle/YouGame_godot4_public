@@ -37,7 +37,7 @@ const SUNSET_COLOR_INTENSITY: float = 1.5  # Intensity of warm colors
 
 # Time scaling and offset
 var time_scale: float = 2.0  # Multiplier for time progression (2.0 = default, faster initial progression)
-var sun_time_offset_hours: float = 0.0  # Offset in hours to manually adjust sun position (for testing/preferences)
+var sun_time_offset_hours: float = -3.0  # Offset in hours to adjust displayed time (negative = earlier, positive = later)
 
 # Time tracking
 var current_time: float = 0.0  # Current time in the day cycle (0 to DAY_CYCLE_DURATION)
