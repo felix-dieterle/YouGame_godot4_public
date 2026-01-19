@@ -245,7 +245,7 @@ func _create_settings_panel() -> void:
     master_slider.min_value = 0.0
     master_slider.max_value = 100.0
     master_slider.value = 80.0
-    master_slider.custom_minimum_size = Vector2(150, 0)
+    master_slider.custom_minimum_size = Vector2(150, 50)  # Increased height from 0 to 50 for better touch targets on Android
     master_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     master_slider.value_changed.connect(_on_master_volume_changed)
     master_hbox.add_child(master_slider)
@@ -324,7 +324,7 @@ func _create_settings_panel() -> void:
     sun_offset_slider.max_value = 5.0
     sun_offset_slider.step = 0.5
     sun_offset_slider.value = 0.0
-    sun_offset_slider.custom_minimum_size = Vector2(100, 0)
+    sun_offset_slider.custom_minimum_size = Vector2(100, 50)  # Increased height from 0 to 50 for better touch targets on Android
     sun_offset_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     sun_offset_slider.value_changed.connect(_on_sun_offset_changed)
     sun_offset_hbox.add_child(sun_offset_slider)
@@ -352,7 +352,7 @@ func _create_settings_panel() -> void:
     view_distance_slider.max_value = 5.0
     view_distance_slider.step = 1.0
     view_distance_slider.value = 3.0
-    view_distance_slider.custom_minimum_size = Vector2(100, 0)
+    view_distance_slider.custom_minimum_size = Vector2(100, 50)  # Increased height from 0 to 50 for better touch targets on Android
     view_distance_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     view_distance_slider.value_changed.connect(_on_view_distance_changed)
     view_distance_hbox.add_child(view_distance_slider)
