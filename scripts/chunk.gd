@@ -109,7 +109,8 @@ const LAKE_MESH_SEGMENTS = 16
 
 # Mesh
 var mesh_instance: MeshInstance3D
-var water_mesh_instance: MeshInstance3D = null
+var water_mesh_instance: MeshInstance3D = null  # Used for lakes
+var ocean_mesh_instance: MeshInstance3D = null  # Used for ocean
 
 # Cluster objects
 var placed_objects: Array = []  # Array of MeshInstance3D for trees/buildings
@@ -1217,8 +1218,8 @@ func _create_ocean_mesh() -> void:
     surface_tool.generate_normals()
     
     var ocean_mesh = surface_tool.commit()
-    water_mesh_instance = MeshInstance3D.new()
-    water_mesh_instance.mesh = ocean_mesh
+    ocean_mesh_instance = MeshInstance3D.new()
+    ocean_mesh_instance.mesh = ocean_mesh
     
     # Create ocean water material
     var water_material = StandardMaterial3D.new()
@@ -1230,8 +1231,8 @@ func _create_ocean_mesh() -> void:
     water_material.roughness = 0.05  # Smoother than lake water
     water_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Visible from both sides
     
-    water_mesh_instance.set_surface_override_material(0, water_material)
-    add_child(water_mesh_instance)
+    ocean_mesh_instance.set_surface_override_material(0, water_material)
+    add_child(ocean_mesh_instance)
 
 ## Place lighthouses along the coastline if this chunk borders ocean
 func _place_lighthouses_if_coastal() -> void:
