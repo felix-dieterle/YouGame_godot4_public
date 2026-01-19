@@ -60,6 +60,9 @@ const CRYSTAL_SPAWN_CHANCE = 0.20  # 20% chance a rock will have crystals (reduc
 const CRYSTALS_PER_ROCK_MIN = 1
 const CRYSTALS_PER_ROCK_MAX = 2  # Reduced from 3 for rarer crystals
 
+# Path bush placement constants
+const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differentiation
+
 # ============================================================================
 # STATE VARIABLES
 # ============================================================================
@@ -1086,7 +1089,7 @@ func _place_path_bushes() -> void:
         return
     
     var rng = RandomNumberGenerator.new()
-    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ 99999  # Different seed offset for bushes
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ BUSH_SEED_OFFSET
     
     # Bush placement constants
     const BUSH_SPACING = 3.0  # Average distance between bushes
@@ -1150,5 +1153,4 @@ func _place_path_bushes() -> void:
                 
                 add_child(bush_instance)
                 placed_objects.append(bush_instance)
-    # audio_player.play()
 

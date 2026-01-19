@@ -155,10 +155,10 @@ func test_path_spans_three_chunks():
 	print("\n--- Test: Path Spans At Least 3 Chunks ---")
 	
 	PathSystem.clear_all_paths()
-	var world_seed = 12345
+	var world_seed = 12345  # Seed chosen to ensure consistent test results
 	
 	# Generate a grid of chunks to trace paths
-	var chunk_grid_size = 8  # 8x8 grid of chunks
+	var chunk_grid_size = 8  # Generates 17x17 grid (from -8 to +8 inclusive)
 	for x in range(-chunk_grid_size, chunk_grid_size + 1):
 		for z in range(-chunk_grid_size, chunk_grid_size + 1):
 			var chunk_pos = Vector2i(x, z)
