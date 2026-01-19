@@ -127,11 +127,14 @@ func _ready() -> void:
 func _update_joystick_position() -> void:
     # Position joystick in bottom-left corner with margin
     var viewport_size = get_viewport().size
-    joystick_base.position = Vector2(joystick_margin_x, viewport_size.y - joystick_margin_y)
+    # Account for joystick size so margin is from edge to edge, not edge to top-left corner
+    # Position is top-left, so subtract the full diameter (JOYSTICK_RADIUS * 2) and add back margin
+    joystick_base.position = Vector2(joystick_margin_x, viewport_size.y - joystick_margin_y - JOYSTICK_RADIUS * 2)
     
     # Position look joystick in bottom-right corner with margin
     # Add extra margin to keep it away from version/time labels
-    look_joystick_base.position = Vector2(viewport_size.x - look_joystick_margin_x, viewport_size.y - look_joystick_margin_y)
+    # Account for joystick size so it stays within viewport bounds
+    look_joystick_base.position = Vector2(viewport_size.x - look_joystick_margin_x - JOYSTICK_RADIUS * 2, viewport_size.y - look_joystick_margin_y - JOYSTICK_RADIUS * 2)
     
     DebugLogOverlay.add_log("Joystick positions updated:", "cyan")
     DebugLogOverlay.add_log("  Movement joystick: (%.0f, %.0f)" % [joystick_base.position.x, joystick_base.position.y], "cyan")
