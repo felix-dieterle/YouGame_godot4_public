@@ -556,7 +556,13 @@ func _load_saved_state():
         
         # Restore inventory if available
         if player_data.has("inventory") and player_data["inventory"] is Dictionary:
-            crystal_inventory = player_data["inventory"]
+            # Need to convert JSON keys (strings) to integers for crystal types
+            var loaded_inventory = player_data["inventory"]
+            crystal_inventory = {}
+            for key in loaded_inventory:
+                # Convert string key to int if needed
+                var int_key = int(key) if key is String else key
+                crystal_inventory[int_key] = loaded_inventory[key]
             
             # Update UI with loaded inventory
             var ui_manager = get_tree().get_first_node_in_group("UIManager")
@@ -564,5 +570,3 @@ func _load_saved_state():
                 ui_manager.update_crystal_count(crystal_inventory)
         
         print("Player: Loaded saved position: ", global_position)
-
-

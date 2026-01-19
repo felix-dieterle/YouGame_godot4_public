@@ -191,16 +191,15 @@ func test_save_and_load_inventory_data():
     var player_data = SaveGameManager.get_player_data()
     var inventory = player_data.get("inventory", {})
     
-    var inventory_match = true
-    for crystal_type in test_inventory:
-        if not inventory.has(str(crystal_type)):  # JSON keys are strings
-            inventory_match = false
-            break
-        if inventory[str(crystal_type)] != test_inventory[crystal_type]:
-            inventory_match = false
-            break
+    var inventory_match = inventory.size() == test_inventory.size()
+    if inventory_match:
+        for crystal_type in test_inventory:
+            # JSON keys are strings
+            if not inventory.has(str(crystal_type)) or inventory[str(crystal_type)] != test_inventory[crystal_type]:
+                inventory_match = false
+                break
     
-    if inventory_match and inventory.size() == test_inventory.size():
+    if inventory_match:
         add_test_result(test_name, true, "Inventory data saved and loaded correctly")
     else:
         add_test_result(test_name, false, 
