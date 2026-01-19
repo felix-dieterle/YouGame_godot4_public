@@ -554,10 +554,11 @@ func _load_saved_state():
             # Convert JSON keys (strings) to integers for crystal types
             # JSON always serializes dictionary keys as strings
             var loaded_inventory = player_data["inventory"]
-            crystal_inventory = {}
+            # Update existing inventory values while preserving initialized structure
             for key in loaded_inventory:
                 var int_key = int(key)
-                crystal_inventory[int_key] = loaded_inventory[key]
+                if int_key in crystal_inventory:
+                    crystal_inventory[int_key] = loaded_inventory[key]
             
             # Update UI with loaded inventory
             var ui_manager = get_tree().get_first_node_in_group("UIManager")
