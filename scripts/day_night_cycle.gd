@@ -223,6 +223,11 @@ func _process(delta) -> void:
         else:
             _update_lighting()
 
+# DEPRECATED: This function is no longer used.
+# The sun time offset is now only applied to the displayed time in the UI,
+# not to the actual sun position calculation. This prevents discontinuities
+# when the offset wraps around day boundaries.
+# 
 # Apply sun time offset to a time ratio.
 # 
 # Takes a normalized time ratio (0.0 to 1.0) representing position in the day cycle
@@ -254,8 +259,8 @@ func _update_lighting() -> void:
     # 0 = sunrise, DAY_CYCLE_DURATION/2 = noon, DAY_CYCLE_DURATION = sunset
     var time_ratio = current_time / DAY_CYCLE_DURATION
     
-    # Apply sun time offset using helper function
-    time_ratio = _apply_sun_time_offset(time_ratio)
+    # NOTE: Sun offset is NOT applied to sun position - it only affects displayed time
+    # This prevents discontinuities when offset wraps around day boundaries
     
     # Sun moves from sunrise angle (-60°) to sunset angle (60°) over the course of the day
     # At noon, sun is directly overhead (0°)
@@ -488,9 +493,9 @@ func _calculate_current_sun_angle() -> float:
     elif is_night:
         return NIGHT_SUN_ANGLE
     else:
-        # Normal day progression - apply sun time offset using helper function
+        # Normal day progression - sun offset is NOT applied to sun position
+        # Offset only affects displayed time to prevent discontinuities
         var time_ratio = current_time / DAY_CYCLE_DURATION
-        time_ratio = _apply_sun_time_offset(time_ratio)
         return lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
 
 # Update moon position based on time of day.
