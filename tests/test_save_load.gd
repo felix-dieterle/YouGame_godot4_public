@@ -158,10 +158,10 @@ func test_save_and_load_inventory_data():
     
     # Create test inventory
     var test_inventory = {
-        0: 5,  # CrystalType.RED
-        1: 3,  # CrystalType.BLUE
-        2: 7,  # CrystalType.GREEN
-        3: 2   # CrystalType.YELLOW
+        0: 5,  # CrystalType.MOUNTAIN_CRYSTAL
+        1: 3,  # CrystalType.EMERALD
+        2: 7,  # CrystalType.GARNET
+        3: 2   # CrystalType.RUBY
     }
     
     # Update player data with inventory

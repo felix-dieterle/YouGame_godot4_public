@@ -61,11 +61,6 @@ func _ready() -> void:
     # Initialize crystal inventory with all crystal types
     for crystal_type in CrystalSystem.CrystalType.values():
         crystal_inventory[crystal_type] = 0
-    add_to_group("Player")
-    
-    # Initialize crystal inventory with all crystal types
-    for crystal_type in CrystalSystem.CrystalType.values():
-        crystal_inventory[crystal_type] = 0
     
     # Configure CharacterBody3D slope handling
     floor_max_angle = deg_to_rad(max_slope_angle)
@@ -555,7 +550,7 @@ func _load_saved_state():
                 part.visible = not is_first_person
         
         # Restore inventory if available
-        if player_data.has("inventory") and player_data["inventory"] is Dictionary:
+        if "inventory" in player_data and player_data["inventory"] is Dictionary:
             # Convert JSON keys (strings) to integers for crystal types
             # JSON always serializes dictionary keys as strings
             var loaded_inventory = player_data["inventory"]
