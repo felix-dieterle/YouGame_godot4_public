@@ -8,6 +8,7 @@ const SUNSET_DURATION: float = 60.0  # 1 minute sunset animation
 const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
 const WARNING_TIME_2MIN: float = 2.0 * 60.0  # 2 minutes before sunset
 const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
+const DAY_DURATION_HOURS: float = 10.0  # Day is 10 game hours (7 AM to 5 PM)
 
 # Sun angle constants
 const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
@@ -222,6 +223,18 @@ func _process(delta) -> void:
         else:
             _update_lighting()
 
+# Apply sun time offset to a time ratio
+func _apply_sun_time_offset(time_ratio: float) -> float:
+    # Apply sun time offset (convert hours to time ratio)
+    # Offset is in hours, day is DAY_DURATION_HOURS, so divide to get ratio
+    var offset_ratio = sun_time_offset_hours / DAY_DURATION_HOURS
+    time_ratio = time_ratio + offset_ratio
+    # Proper modulo wrapping to handle negative values
+    time_ratio = fmod(time_ratio, 1.0)
+    if time_ratio < 0.0:
+        time_ratio += 1.0
+    return time_ratio
+
 func _update_lighting() -> void:
     if not directional_light:
         return
@@ -234,14 +247,8 @@ func _update_lighting() -> void:
     # 0 = sunrise, DAY_CYCLE_DURATION/2 = noon, DAY_CYCLE_DURATION = sunset
     var time_ratio = current_time / DAY_CYCLE_DURATION
     
-    # Apply sun time offset (convert hours to time ratio)
-    # Offset is in hours, day is 10 hours, so divide by 10 to get ratio
-    var offset_ratio = sun_time_offset_hours / 10.0
-    time_ratio = time_ratio + offset_ratio
-    # Proper modulo wrapping to handle negative values
-    time_ratio = fmod(time_ratio, 1.0)
-    if time_ratio < 0.0:
-        time_ratio += 1.0
+    # Apply sun time offset using helper function
+    time_ratio = _apply_sun_time_offset(time_ratio)
     
     # Sun moves from sunrise angle (-60°) to sunset angle (60°) over the course of the day
     # At noon, sun is directly overhead (0°)
@@ -474,18 +481,9 @@ func _calculate_current_sun_angle() -> float:
     elif is_night:
         return NIGHT_SUN_ANGLE
     else:
-        # Normal day progression - apply sun time offset
+        # Normal day progression - apply sun time offset using helper function
         var time_ratio = current_time / DAY_CYCLE_DURATION
-        
-        # Apply sun time offset (convert hours to time ratio)
-        # Offset is in hours, day is 10 hours, so divide by 10 to get ratio
-        var offset_ratio = sun_time_offset_hours / 10.0
-        time_ratio = time_ratio + offset_ratio
-        # Proper modulo wrapping to handle negative values
-        time_ratio = fmod(time_ratio, 1.0)
-        if time_ratio < 0.0:
-            time_ratio += 1.0
-        
+        time_ratio = _apply_sun_time_offset(time_ratio)
         return lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
 
 # Update moon position based on time of day.
