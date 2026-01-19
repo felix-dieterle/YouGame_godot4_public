@@ -367,7 +367,7 @@ Potential improvements for these features:
 A procedural path/road system (Wegesystem) and starting location (Startplatz) that creates an immersive starting experience:
 
 ### Path System Features
-- **Origin Paths**: Main paths begin at the starting location (chunk 0,0)
+- **No path at starting point**: The starting location (chunk 0,0) has no paths, providing an unmarked starting area
 - **Chunk Continuity**: Paths seamlessly extend across chunk boundaries
 - **Random Branching**: 15% probability for paths to branch
 - **Cluster Targeting**: Branches intelligently aim toward forests and settlements

@@ -23,17 +23,18 @@ func test_path_generation():
 	
 	var segments = PathSystem.get_path_segments_for_chunk(chunk_pos, world_seed)
 	
-	if segments.size() > 0:
-		print("PASS: Path segments generated for starting chunk: ", segments.size())
+	# Starting chunk should NOT have path segments (removed per user request)
+	if segments.size() == 0:
+		print("PASS: No path segments at starting chunk (as intended)")
 	else:
-		print("FAIL: No path segments generated for starting chunk")
+		print("FAIL: Unexpected path segments at starting chunk: ", segments.size())
 	
-	# Check that segments are registered
-	var total_segments = PathSystem.get_total_segments()
-	if total_segments > 0:
-		print("PASS: Segments registered in system: ", total_segments)
-	else:
-		print("FAIL: Segments not registered in system")
+	# Test a different chunk to verify path system still works
+	var test_chunk_pos = Vector2i(1, 0)
+	var test_segments = PathSystem.get_path_segments_for_chunk(test_chunk_pos, world_seed)
+	
+	# Note: test_segments may be empty if no paths come from neighbors
+	print("INFO: Test chunk ", test_chunk_pos, " has ", test_segments.size(), " segment(s)")
 
 func test_path_continuation():
 	print("\n--- Test: Path Continuation Across Chunks ---")
@@ -108,7 +109,7 @@ func test_path_endpoint_detection():
 		print("INFO: No endpoints found (depends on random seed)")
 
 func test_starting_chunk():
-	print("\n--- Test: Starting Chunk (0,0) Has Path ---")
+	print("\n--- Test: Starting Chunk (0,0) Has No Path ---")
 	
 	PathSystem.clear_all_paths()
 	var world_seed = 12345
@@ -116,19 +117,11 @@ func test_starting_chunk():
 	
 	var segments = PathSystem.get_path_segments_for_chunk(chunk_pos, world_seed)
 	
-	if segments.size() > 0:
-		var has_main_path = false
-		for segment in segments:
-			if segment.path_type == PathSystem.PathType.MAIN_PATH:
-				has_main_path = true
-				break
-		
-		if has_main_path:
-			print("PASS: Starting chunk has main path")
-		else:
-			print("FAIL: Starting chunk missing main path")
+	# Starting chunk should NOT have paths (removed per user request)
+	if segments.size() == 0:
+		print("PASS: Starting chunk has no paths (as intended)")
 	else:
-		print("FAIL: Starting chunk has no paths")
+		print("FAIL: Starting chunk should not have paths but has: ", segments.size())
 	
 	PathSystem.clear_all_paths()
 

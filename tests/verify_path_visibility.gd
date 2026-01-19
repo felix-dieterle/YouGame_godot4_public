@@ -34,53 +34,14 @@ func verify_starting_chunk_path():
 	
 	print("Starting chunk (0,0) has ", segments.size(), " path segment(s)")
 	
+	# Starting chunk should NOT have paths (removed per user request)
 	if segments.size() == 0:
-		print("❌ FAIL: No paths in starting chunk!")
-		return
-	
-	for i in range(segments.size()):
-		var segment = segments[i]
-		print("  Segment ", i, ":")
-		
-		# Safely get path type name
-		var type_name = "UNKNOWN"
-		match segment.path_type:
-			PathSystem.PathType.MAIN_PATH:
-				type_name = "MAIN_PATH"
-			PathSystem.PathType.BRANCH:
-				type_name = "BRANCH"
-			PathSystem.PathType.FOREST_PATH:
-				type_name = "FOREST_PATH"
-			PathSystem.PathType.VILLAGE_PATH:
-				type_name = "VILLAGE_PATH"
-		
-		print("    Type: ", type_name)
-		print("    Width: ", segment.width, " (default: ", PathSystem.DEFAULT_PATH_WIDTH, ")")
-		print("    Start: ", segment.start_pos)
-		print("    End: ", segment.end_pos)
-		
-		var length = segment.start_pos.distance_to(segment.end_pos)
-		print("    Length: ", length)
-		
-		# Verify main path properties
-		if segment.path_type == PathSystem.PathType.MAIN_PATH:
-			var expected_width = PathSystem.DEFAULT_PATH_WIDTH * PathSystem.MAIN_PATH_WIDTH_MULTIPLIER
-			if abs(segment.width - expected_width) < WIDTH_TOLERANCE:
-				print("    ✓ Main path has correct width (", expected_width, ")")
-			else:
-				print("    ❌ Main path width incorrect: ", segment.width, " expected: ", expected_width)
-			
-			# Check if path starts at starting location (0, 0)
-			if segment.start_pos.distance_to(Vector2(0, 0)) < POSITION_TOLERANCE:
-				print("    ✓ Path starts at starting location (0, 0)")
-			else:
-				print("    ❌ Path does not start at starting location: ", segment.start_pos)
-			
-			# Check if path is long enough to be visible
-			if length >= PathSystem.MAX_SEGMENT_LENGTH * PathSystem.MIN_STARTING_PATH_RATIO:
-				print("    ✓ Path is long enough to be visible (>= ", PathSystem.MAX_SEGMENT_LENGTH * PathSystem.MIN_STARTING_PATH_RATIO, ")")
-			else:
-				print("    ⚠ Path might be too short: ", length)
+		print("✓ Starting chunk has no paths (as intended)")
+	else:
+		print("❌ FAIL: Starting chunk should not have paths but has: ", segments.size())
+		for i in range(segments.size()):
+			var segment = segments[i]
+			print("  Unexpected segment ", i, ": ", segment.start_pos, " -> ", segment.end_pos)
 	
 	print("✓ Starting chunk verification complete\n")
 
