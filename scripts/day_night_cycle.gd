@@ -223,30 +223,6 @@ func _process(delta) -> void:
         else:
             _update_lighting()
 
-# DEPRECATED: This function is no longer used.
-# The sun time offset is now only applied to the displayed time in the UI,
-# not to the actual sun position calculation. This prevents discontinuities
-# when the offset wraps around day boundaries.
-# 
-# Apply sun time offset to a time ratio.
-# 
-# Takes a normalized time ratio (0.0 to 1.0) representing position in the day cycle
-# and applies the sun_time_offset_hours offset to shift the sun's position.
-# The offset is converted from hours to a ratio based on DAY_DURATION_HOURS.
-# 
-# @param time_ratio: Normalized time (0.0 = sunrise, 0.5 = noon, 1.0 = sunset)
-# @return: Offset time ratio with proper wrapping to stay in 0.0-1.0 range
-func _apply_sun_time_offset(time_ratio: float) -> float:
-    # Apply sun time offset (convert hours to time ratio)
-    # Offset is in hours, day is DAY_DURATION_HOURS, so divide to get ratio
-    var offset_ratio = sun_time_offset_hours / DAY_DURATION_HOURS
-    time_ratio = time_ratio + offset_ratio
-    # Proper modulo wrapping to handle negative values
-    time_ratio = fmod(time_ratio, 1.0)
-    if time_ratio < 0.0:
-        time_ratio += 1.0
-    return time_ratio
-
 func _update_lighting() -> void:
     if not directional_light:
         return

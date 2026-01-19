@@ -781,9 +781,12 @@ func test_sun_offset_no_discontinuity():
 	day_night.current_time = 0.0
 	day_night.sun_time_offset_hours = 5.0  # Keep offset
 	
-	var previous_sun_angle = -1000.0  # Initialize to invalid value
+	var previous_sun_angle: float = 0.0
+	var first_iteration = true
 	var has_discontinuity = false
-	var max_expected_change = 2.0  # Degrees per 1% of day (should be smooth)
+	# Sun moves from -60° to +60° over full day (120° total)
+	# Per 1% of day = 1.2°, using 2.0° threshold for safety margin
+	var max_expected_change = 2.0
 	
 	# Step through day in small increments
 	for i in range(101):
@@ -792,7 +795,7 @@ func test_sun_offset_no_discontinuity():
 		day_night._update_lighting()
 		var current_sun_angle = light.rotation_degrees.x
 		
-		if previous_sun_angle != -1000.0:
+		if not first_iteration:
 			var change = abs(current_sun_angle - previous_sun_angle)
 			# Check for large jumps (discontinuities)
 			if change > max_expected_change:
@@ -800,6 +803,7 @@ func test_sun_offset_no_discontinuity():
 				print("  WARNING: Discontinuity at %.1f%% - sun jumped %.2f degrees" % [time_ratio * 100, change])
 		
 		previous_sun_angle = current_sun_angle
+		first_iteration = false
 	
 	assert_false(has_discontinuity, 
 		"Sun position should progress smoothly without discontinuities even with offset")
