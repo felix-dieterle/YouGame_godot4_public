@@ -35,7 +35,7 @@ const SUNSET_COLOR_INTENSITY: float = 1.5  # Intensity of warm colors
 @export var debug_skip_lockout: bool = false  # When true, skip the 4-hour lockout
 
 # Time scaling
-var time_scale: float = 1.0  # Multiplier for time progression (1.0 = normal speed)
+var time_scale: float = 2.0  # Multiplier for time progression (2.0 = default, faster initial progression)
 
 # Time tracking
 var current_time: float = 0.0  # Current time in the day cycle (0 to DAY_CYCLE_DURATION)
