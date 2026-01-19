@@ -614,11 +614,11 @@ func _save_game_state():
     var ruler = get_tree().get_first_node_in_group("RulerOverlay")
     
     if player:
-        var inventory = player.crystal_inventory if player.has("crystal_inventory") else {}
+        var inventory = player.crystal_inventory if "crystal_inventory" in player else {}
         SaveGameManager.update_player_data(
             player.global_position,
             player.rotation.y,
-            player.is_first_person if player.has("is_first_person") else false,
+            player.is_first_person if "is_first_person" in player else false,
             inventory
         )
     
