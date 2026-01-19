@@ -426,7 +426,9 @@ func _load_state() -> void:
             # No save file or error loading, use defaults for first start
             is_locked_out = false
             lockout_end_time = 0.0
-            current_time = 0.0  # Start at sunrise (dawn)
+            # Start 3 hours into the day cycle (sun at 10:00 AM position)
+            # Display will show 7:00 AM due to sun_time_offset_hours = -3.0
+            current_time = DAY_CYCLE_DURATION * (3.0 / DAY_DURATION_HOURS)  # 3 hours into 10-hour day
             time_scale = 2.0  # Start with double speed time progression
 
 
