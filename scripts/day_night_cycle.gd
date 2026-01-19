@@ -474,8 +474,18 @@ func _calculate_current_sun_angle() -> float:
     elif is_night:
         return NIGHT_SUN_ANGLE
     else:
-        # Normal day progression
+        # Normal day progression - apply sun time offset
         var time_ratio = current_time / DAY_CYCLE_DURATION
+        
+        # Apply sun time offset (convert hours to time ratio)
+        # Offset is in hours, day is 10 hours, so divide by 10 to get ratio
+        var offset_ratio = sun_time_offset_hours / 10.0
+        time_ratio = time_ratio + offset_ratio
+        # Proper modulo wrapping to handle negative values
+        time_ratio = fmod(time_ratio, 1.0)
+        if time_ratio < 0.0:
+            time_ratio += 1.0
+        
         return lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
 
 # Update moon position based on time of day.

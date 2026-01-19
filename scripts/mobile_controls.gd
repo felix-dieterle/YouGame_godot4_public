@@ -441,7 +441,7 @@ func _create_settings_panel() -> void:
     volume_slider.min_value = 0.0
     volume_slider.max_value = 100.0
     volume_slider.value = 80.0
-    volume_slider.custom_minimum_size = Vector2(100, 35)
+    volume_slider.custom_minimum_size = Vector2(100, 50)  # Increased height from 35 to 50 for better touch targets on Android
     volume_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     volume_slider.value_changed.connect(_on_volume_changed)
     volume_hbox.add_child(volume_slider)

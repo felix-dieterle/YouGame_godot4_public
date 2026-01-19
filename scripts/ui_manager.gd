@@ -35,12 +35,12 @@ const VERSION_LABEL_Z_INDEX: int = 50  # Above most UI elements but below debug 
 
 # Time control UI positioning constants
 const TIME_LABEL_OFFSET_Y: float = -25.0  # Offset above version label
-const TIME_SPEED_LABEL_OFFSET_Y: float = -50.0  # Offset above time label
-const TIME_SPEED_LABEL_BUTTON_SPACE: float = -60.0  # Space reserved for buttons
-const TIME_BUTTON_WIDTH: float = 25.0
-const TIME_BUTTON_HEIGHT: float = 20.0
-const TIME_MINUS_BUTTON_OFFSET_X: float = -55.0
-const TIME_PLUS_BUTTON_OFFSET_X: float = -25.0
+const TIME_SPEED_LABEL_OFFSET_Y: float = -70.0  # Offset above time label (increased for larger buttons)
+const TIME_SPEED_LABEL_BUTTON_SPACE: float = -90.0  # Space reserved for buttons (increased for larger buttons)
+const TIME_BUTTON_WIDTH: float = 40.0  # Increased from 25.0 for better touch targets on Android
+const TIME_BUTTON_HEIGHT: float = 40.0  # Increased from 20.0 for better touch targets on Android
+const TIME_MINUS_BUTTON_OFFSET_X: float = -85.0  # Adjusted for larger button width
+const TIME_PLUS_BUTTON_OFFSET_X: float = -40.0  # Adjusted for larger button width
 
 # Day/night cycle time display constants
 # The day cycle represents time AFTER sunrise animation completes
@@ -152,7 +152,7 @@ func _ready() -> void:
     time_minus_button.offset_top = VERSION_LABEL_OFFSET_TOP + TIME_SPEED_LABEL_OFFSET_Y
     time_minus_button.offset_right = TIME_MINUS_BUTTON_OFFSET_X + TIME_BUTTON_WIDTH
     time_minus_button.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM + TIME_SPEED_LABEL_OFFSET_Y + TIME_BUTTON_HEIGHT
-    time_minus_button.add_theme_font_size_override("font_size", 14)
+    time_minus_button.add_theme_font_size_override("font_size", 24)  # Increased from 14 for better visibility
     time_minus_button.z_index = VERSION_LABEL_Z_INDEX
     time_minus_button.focus_mode = Control.FOCUS_NONE
     time_minus_button.pressed.connect(_on_time_minus_pressed)
@@ -169,7 +169,7 @@ func _ready() -> void:
     time_plus_button.offset_top = VERSION_LABEL_OFFSET_TOP + TIME_SPEED_LABEL_OFFSET_Y
     time_plus_button.offset_right = VERSION_LABEL_OFFSET_RIGHT
     time_plus_button.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM + TIME_SPEED_LABEL_OFFSET_Y + TIME_BUTTON_HEIGHT
-    time_plus_button.add_theme_font_size_override("font_size", 14)
+    time_plus_button.add_theme_font_size_override("font_size", 24)  # Increased from 14 for better visibility
     time_plus_button.z_index = VERSION_LABEL_Z_INDEX
     time_plus_button.focus_mode = Control.FOCUS_NONE
     time_plus_button.pressed.connect(_on_time_plus_pressed)
