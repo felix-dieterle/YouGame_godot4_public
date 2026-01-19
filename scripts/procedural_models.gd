@@ -437,15 +437,15 @@ static func create_lighthouse_mesh(seed_val: int = 0) -> ArrayMesh:
     
     # Add beacon platform (dark gray)
     var platform_y = LIGHTHOUSE_TOWER_HEIGHT
-    _add_cylinder(st, Vector3(0, platform_y, 0), 0.3, 
-                  LIGHTHOUSE_BEACON_RADIUS * 0.9, LIGHTHOUSE_TOWER_SEGMENTS, 
-                  Color(0.3, 0.3, 0.3))
+    _add_cylinder_section(st, Vector3(0, platform_y, 0), 0.3, 
+                          LIGHTHOUSE_BEACON_RADIUS * 0.9, LIGHTHOUSE_TOWER_SEGMENTS, 
+                          Color(0.3, 0.3, 0.3))
     
     # Add beacon light housing (yellow/gold glass)
     var beacon_y = platform_y + 0.3
-    _add_cylinder(st, Vector3(0, beacon_y, 0), 
-                  LIGHTHOUSE_BEACON_HEIGHT, LIGHTHOUSE_BEACON_RADIUS * 0.7, 
-                  LIGHTHOUSE_TOWER_SEGMENTS, Color(0.9, 0.8, 0.3, 0.7))
+    _add_cylinder_section(st, Vector3(0, beacon_y, 0), 
+                          LIGHTHOUSE_BEACON_HEIGHT, LIGHTHOUSE_BEACON_RADIUS * 0.7, 
+                          LIGHTHOUSE_TOWER_SEGMENTS, Color(0.9, 0.8, 0.3, 0.7))
     
     # Add beacon roof (red cone)
     var roof_y = beacon_y + LIGHTHOUSE_BEACON_HEIGHT
