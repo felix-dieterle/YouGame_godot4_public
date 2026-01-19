@@ -19,6 +19,7 @@ func run_tests():
     test_save_and_load_player_data()
     test_save_and_load_world_data()
     test_save_and_load_day_night_data()
+    test_save_and_load_inventory_data()
     test_delete_save_file()
 
 func test_save_game_manager_exists():
@@ -147,6 +148,63 @@ func test_save_and_load_day_night_data():
     else:
         add_test_result(test_name, false, 
             "Day/night data mismatch - Time: %s, Locked: %s, Lockout: %s, TimeScale: %s" % [time_match, locked_match, lockout_match, time_scale_match])
+
+func test_save_and_load_inventory_data():
+    var test_name = "Save and load inventory data"
+    
+    # Clean up any existing save to start fresh
+    SaveGameManager.delete_save()
+    SaveGameManager.reset_loaded_flag()
+    
+    # Create test inventory
+    var test_inventory = {
+        0: 5,  # CrystalType.RED
+        1: 3,  # CrystalType.BLUE
+        2: 7,  # CrystalType.GREEN
+        3: 2   # CrystalType.YELLOW
+    }
+    
+    # Update player data with inventory
+    var test_position = Vector3(1.0, 2.0, 3.0)
+    var test_rotation = 0.5
+    var test_first_person = false
+    
+    SaveGameManager.update_player_data(test_position, test_rotation, test_first_person, test_inventory)
+    
+    # Save
+    var save_success = SaveGameManager.save_game()
+    if not save_success:
+        add_test_result(test_name, false, "Failed to save game")
+        return
+    
+    # Reset data
+    SaveGameManager.save_data["player"]["inventory"] = {}
+    SaveGameManager.reset_loaded_flag()
+    
+    # Load
+    var load_success = SaveGameManager.load_game()
+    if not load_success:
+        add_test_result(test_name, false, "Failed to load game")
+        return
+    
+    # Verify inventory data
+    var player_data = SaveGameManager.get_player_data()
+    var inventory = player_data.get("inventory", {})
+    
+    var inventory_match = true
+    for crystal_type in test_inventory:
+        if not inventory.has(str(crystal_type)):  # JSON keys are strings
+            inventory_match = false
+            break
+        if inventory[str(crystal_type)] != test_inventory[crystal_type]:
+            inventory_match = false
+            break
+    
+    if inventory_match and inventory.size() == test_inventory.size():
+        add_test_result(test_name, true, "Inventory data saved and loaded correctly")
+    else:
+        add_test_result(test_name, false, 
+            "Inventory data mismatch - Expected: %s, Got: %s" % [test_inventory, inventory])
 
 func test_delete_save_file():
     var test_name = "Delete save file"
