@@ -34,8 +34,9 @@ const SUNSET_COLOR_INTENSITY: float = 1.5  # Intensity of warm colors
 @export var debug_mode: bool = false  # When true, time runs 60x faster
 @export var debug_skip_lockout: bool = false  # When true, skip the 4-hour lockout
 
-# Time scaling
+# Time scaling and offset
 var time_scale: float = 2.0  # Multiplier for time progression (2.0 = default, faster initial progression)
+var sun_time_offset_hours: float = 0.0  # Offset in hours to manually adjust sun position (for testing/preferences)
 
 # Time tracking
 var current_time: float = 0.0  # Current time in the day cycle (0 to DAY_CYCLE_DURATION)
@@ -225,13 +226,18 @@ func _update_lighting() -> void:
     if not directional_light:
         return
     
-    # Update UI time display
+    # Update UI time display (includes sun offset for display)
     if ui_manager and ui_manager.has_method("update_game_time"):
-        ui_manager.update_game_time(current_time, DAY_CYCLE_DURATION)
+        ui_manager.update_game_time(current_time, DAY_CYCLE_DURATION, sun_time_offset_hours)
     
     # Calculate sun angle based on current time
     # 0 = sunrise, DAY_CYCLE_DURATION/2 = noon, DAY_CYCLE_DURATION = sunset
     var time_ratio = current_time / DAY_CYCLE_DURATION
+    
+    # Apply sun time offset (convert hours to time ratio)
+    # Offset is in hours, day is 10 hours, so divide by 10 to get ratio
+    var offset_ratio = sun_time_offset_hours / 10.0
+    time_ratio = fmod(time_ratio + offset_ratio, 1.0)  # Wrap around using modulo
     
     # Sun moves from sunrise angle (-60°) to sunset angle (60°) over the course of the day
     # At noon, sun is directly overhead (0°)

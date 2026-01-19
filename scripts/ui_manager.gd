@@ -291,7 +291,7 @@ func _update_night_countdown():
         night_label.text = "Sleeping...\n\nYou cannot play for:\n%02d:%02d:%02d" % [hours, minutes, seconds]
 
 # Update the in-game time display.
-func update_game_time(time_seconds: float, cycle_duration: float) -> void:
+func update_game_time(time_seconds: float, cycle_duration: float, sun_offset_hours: float = 0.0) -> void:
     current_game_time = time_seconds
     day_cycle_duration = cycle_duration
     
@@ -303,7 +303,11 @@ func update_game_time(time_seconds: float, cycle_duration: float) -> void:
     # Maps the day cycle (sunrise to sunset) to 7:00 AM - 5:00 PM
     # This ensures noon (12:00) is at 50% of the cycle duration when sun is at zenith
     var time_ratio = time_seconds / cycle_duration
-    var total_minutes = int(time_ratio * DAY_DURATION_HOURS * 60.0) + SUNRISE_TIME_MINUTES
+    
+    # Apply sun offset to display time
+    # Offset is in hours, convert to minutes and add to base calculation
+    var offset_minutes = sun_offset_hours * 60.0
+    var total_minutes = int(time_ratio * DAY_DURATION_HOURS * 60.0) + SUNRISE_TIME_MINUTES + int(offset_minutes)
     var hours = int(total_minutes / 60) % 24
     var minutes = int(total_minutes) % 60
     

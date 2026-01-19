@@ -5,6 +5,8 @@ extends Node
 # IMPORTANT: This test must configure MobileControls with the same anchors and layout
 # properties as used in main.tscn (PRESET_FULL_RECT with anchor_right=1.0, anchor_bottom=1.0)
 # to ensure proper positioning and visibility of joystick elements.
+#
+# ENHANCED: Now uses realistic viewport size to catch Android-specific issues
 
 const ScreenshotHelper = preload("res://tests/screenshot_helper.gd")
 
@@ -13,8 +15,18 @@ var screenshot_count = 0
 var test_passed: int = 0
 var test_failed: int = 0
 
+# Android-like viewport size for realistic testing
+const ANDROID_VIEWPORT_WIDTH: int = 1080
+const ANDROID_VIEWPORT_HEIGHT: int = 2400
+
 func _ready():
-	print("=== Starting Mobile Controls Tests ===")
+	print("=== Starting Mobile Controls Tests (Enhanced) ===")
+	
+	# Set realistic viewport size to match Android devices
+	get_window().size = Vector2i(ANDROID_VIEWPORT_WIDTH, ANDROID_VIEWPORT_HEIGHT)
+	await get_tree().process_frame  # Wait for resize to take effect
+	
+	print("Viewport size set to: %dx%d (Android-like)" % [ANDROID_VIEWPORT_WIDTH, ANDROID_VIEWPORT_HEIGHT])
 	
 	# Run unit tests
 	test_mobile_controls_script_exists()
@@ -196,13 +208,11 @@ func test_joystick_positions():
 	print("  Look joystick position: (%.0f, %.0f)" % [look_base.position.x, look_base.position.y])
 	print("  Look joystick global position: (%.0f, %.0f)" % [look_base.global_position.x, look_base.global_position.y])
 	
-	# Check if viewport is large enough for meaningful position tests
-	# In headless test environments, viewport is often very small (64x64)
-	var min_required_size = look_margin_x * 2  # Need space for margins on both sides
-	if viewport_size.x < min_required_size or viewport_size.y < min_required_size:
-		print("  NOTE: Viewport too small for position tests (%.0fx%.0f < %.0f required)" % [viewport_size.x, viewport_size.y, min_required_size])
-		print("  Skipping position assertions (expected in headless test environment)")
-		return
+	# With Android-like viewport, position tests are meaningful
+	assert_true(viewport_size.x == ANDROID_VIEWPORT_WIDTH, 
+		"Viewport width should be %d for Android testing" % ANDROID_VIEWPORT_WIDTH)
+	assert_true(viewport_size.y == ANDROID_VIEWPORT_HEIGHT,
+		"Viewport height should be %d for Android testing" % ANDROID_VIEWPORT_HEIGHT)
 	
 	# Check if position is in the right area (bottom-right quadrant)
 	var is_right_side = look_base.position.x > viewport_size.x / 2
@@ -211,12 +221,12 @@ func test_joystick_positions():
 	if is_right_side:
 		assert_pass("Look joystick is on the right side of screen")
 	else:
-		assert_fail("Look joystick should be on the right side of screen")
+		assert_fail("Look joystick should be on the right side of screen (pos.x=%.0f, mid=%.0f)" % [look_base.position.x, viewport_size.x / 2])
 	
 	if is_bottom:
 		assert_pass("Look joystick is on the bottom of screen")
 	else:
-		assert_fail("Look joystick should be on the bottom of screen")
+		assert_fail("Look joystick should be on the bottom of screen (pos.y=%.0f, mid=%.0f)" % [look_base.position.y, viewport_size.y / 2])
 	
 	# Verify it's within viewport bounds (accounting for joystick size)
 	var joystick_right_edge = look_base.global_position.x + look_base.size.x
