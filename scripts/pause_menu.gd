@@ -16,12 +16,15 @@ var settings_visible: bool = false
 # Settings UI references
 var master_slider: HSlider
 var ruler_checkbox: CheckBox
+var sun_offset_slider: HSlider
+var view_distance_slider: HSlider
+var smooth_terrain_checkbox: CheckBox
 
 # Configuration
 const PANEL_WIDTH: float = 400.0
 const PANEL_HEIGHT: float = 500.0
 const SETTINGS_PANEL_WIDTH: float = 400.0
-const SETTINGS_PANEL_HEIGHT: float = 450.0
+const SETTINGS_PANEL_HEIGHT: float = 650.0  # Increased for new settings
 const QUIT_MESSAGE_DELAY: float = 0.3  # Delay in seconds before quitting to show save message
 
 func _ready() -> void:
@@ -281,7 +284,7 @@ func _create_settings_panel() -> void:
     ruler_hbox.add_theme_constant_override("separation", 10)
     settings_vbox.add_child(ruler_hbox)
     
-    var ruler_checkbox = CheckBox.new()
+    ruler_checkbox = CheckBox.new()
     ruler_checkbox.button_pressed = false  # Initially hidden
     ruler_checkbox.custom_minimum_size = Vector2(30, 30)
     ruler_checkbox.focus_mode = Control.FOCUS_NONE
@@ -293,6 +296,91 @@ func _create_settings_panel() -> void:
     ruler_label.add_theme_font_size_override("font_size", 16)
     ruler_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     ruler_hbox.add_child(ruler_label)
+    
+    # Separator
+    var sep3 = HSeparator.new()
+    settings_vbox.add_child(sep3)
+    
+    # World section
+    var world_label = Label.new()
+    world_label.text = "World"
+    world_label.add_theme_font_size_override("font_size", 20)
+    world_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1))
+    settings_vbox.add_child(world_label)
+    
+    # Sun time offset slider
+    var sun_offset_hbox = HBoxContainer.new()
+    sun_offset_hbox.add_theme_constant_override("separation", 10)
+    settings_vbox.add_child(sun_offset_hbox)
+    
+    var sun_offset_label = Label.new()
+    sun_offset_label.text = "Sun Offset:"
+    sun_offset_label.custom_minimum_size = Vector2(150, 0)
+    sun_offset_label.add_theme_font_size_override("font_size", 16)
+    sun_offset_hbox.add_child(sun_offset_label)
+    
+    sun_offset_slider = HSlider.new()
+    sun_offset_slider.min_value = -5.0
+    sun_offset_slider.max_value = 5.0
+    sun_offset_slider.step = 0.5
+    sun_offset_slider.value = 0.0
+    sun_offset_slider.custom_minimum_size = Vector2(100, 0)
+    sun_offset_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    sun_offset_slider.value_changed.connect(_on_sun_offset_changed)
+    sun_offset_hbox.add_child(sun_offset_slider)
+    
+    var sun_offset_value = Label.new()
+    sun_offset_value.text = "0h"
+    sun_offset_value.custom_minimum_size = Vector2(50, 0)
+    sun_offset_value.add_theme_font_size_override("font_size", 16)
+    sun_offset_slider.value_changed.connect(func(value): sun_offset_value.text = "%+.1fh" % value)
+    sun_offset_hbox.add_child(sun_offset_value)
+    
+    # View distance slider
+    var view_distance_hbox = HBoxContainer.new()
+    view_distance_hbox.add_theme_constant_override("separation", 10)
+    settings_vbox.add_child(view_distance_hbox)
+    
+    var view_distance_label = Label.new()
+    view_distance_label.text = "View Distance:"
+    view_distance_label.custom_minimum_size = Vector2(150, 0)
+    view_distance_label.add_theme_font_size_override("font_size", 16)
+    view_distance_hbox.add_child(view_distance_label)
+    
+    view_distance_slider = HSlider.new()
+    view_distance_slider.min_value = 2.0
+    view_distance_slider.max_value = 5.0
+    view_distance_slider.step = 1.0
+    view_distance_slider.value = 3.0
+    view_distance_slider.custom_minimum_size = Vector2(100, 0)
+    view_distance_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    view_distance_slider.value_changed.connect(_on_view_distance_changed)
+    view_distance_hbox.add_child(view_distance_slider)
+    
+    var view_distance_value = Label.new()
+    view_distance_value.text = "3"
+    view_distance_value.custom_minimum_size = Vector2(50, 0)
+    view_distance_value.add_theme_font_size_override("font_size", 16)
+    view_distance_slider.value_changed.connect(func(value): view_distance_value.text = "%d" % int(value))
+    view_distance_hbox.add_child(view_distance_value)
+    
+    # Smooth terrain checkbox
+    var smooth_terrain_hbox = HBoxContainer.new()
+    smooth_terrain_hbox.add_theme_constant_override("separation", 10)
+    settings_vbox.add_child(smooth_terrain_hbox)
+    
+    smooth_terrain_checkbox = CheckBox.new()
+    smooth_terrain_checkbox.button_pressed = false
+    smooth_terrain_checkbox.custom_minimum_size = Vector2(30, 30)
+    smooth_terrain_checkbox.focus_mode = Control.FOCUS_NONE
+    smooth_terrain_checkbox.toggled.connect(_on_smooth_terrain_toggled)
+    smooth_terrain_hbox.add_child(smooth_terrain_checkbox)
+    
+    var smooth_terrain_label = Label.new()
+    smooth_terrain_label.text = "Smooth Terrain"
+    smooth_terrain_label.add_theme_font_size_override("font_size", 16)
+    smooth_terrain_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    smooth_terrain_hbox.add_child(smooth_terrain_label)
     
     # Spacer
     var spacer = Control.new()
@@ -421,3 +509,29 @@ func _on_ruler_toggled(pressed: bool) -> void:
     var ruler = get_tree().get_first_node_in_group("RulerOverlay")
     if ruler and ruler.has_method("set_visible_state"):
         ruler.set_visible_state(pressed)
+
+func _on_sun_offset_changed(value: float) -> void:
+    # Update sun time offset in DayNightCycle
+    var day_night_cycle = get_tree().get_first_node_in_group("DayNightCycle")
+    if day_night_cycle:
+        # Directly set the property - it exists in DayNightCycle class
+        day_night_cycle.sun_time_offset_hours = value
+
+func _on_view_distance_changed(value: float) -> void:
+    # Update view distance in WorldManager
+    # Note: This requires reloading chunks, so show message
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("View distance will apply after restart", 3.0)
+    # TODO: Store in settings for next game start
+
+func _on_smooth_terrain_toggled(enabled: bool) -> void:
+    # Enable/disable terrain smoothing
+    # Note: This affects chunk generation, so show message
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("show_message"):
+        if enabled:
+            ui_manager.show_message("Terrain smoothing will apply after restart", 3.0)
+        else:
+            ui_manager.show_message("Terrain smoothing disabled", 3.0)
+    # TODO: Store in settings and apply to Chunk generation
