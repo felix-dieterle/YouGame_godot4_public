@@ -13,11 +13,14 @@
 The path system generates procedural paths that:
 
 - **Start from origin**: Main paths begin at the starting location (chunk 0,0)
-- **Continue across chunks**: Paths seamlessly extend to neighboring chunks
+- **Continue across chunks**: Paths seamlessly extend to neighboring chunks with improved continuity
 - **Random branching**: Paths can branch with configurable probability (15% default)
 - **Target destinations**: Branches attempt to lead toward forests and settlements
 - **Endpoint detection**: Paths can randomly end or terminate near clusters
 - **Visual representation**: Paths are rendered as colored mesh overlays on terrain
+- **Terrain-based coloring**: Path colors vary based on biome (mountain, rocky hills, grassland)
+- **Path type variation**: Different colors for main paths, forest paths, and village paths
+- **Bush decoration**: Small bushes placed along path edges for natural appearance
 
 ### Starting Location (Startplatz)
 
@@ -270,14 +273,16 @@ godot --headless --path . res://tests/test_scene_path_system.tscn
 - ✅ Path branching detection
 - ✅ Endpoint detection
 - ✅ Seed consistency
+- ✅ **Path spans at least 3 chunks** (new requirement from issue)
 
 ### Manual Testing
 
 1. Run the game
 2. Move to chunk (0, 0) - observe starting location
 3. Walk around - observe path generation
-4. Look for brown/tan paths on terrain
-5. Check console for endpoint messages
+4. Look for brown/tan paths on terrain with varying colors based on biome
+5. Observe small bushes placed along path edges
+6. Check console for endpoint messages
 
 ## Performance / Leistung
 
@@ -437,12 +442,46 @@ Paths adapt to terrain:
 
 These changes make paths clearly visible against the terrain while maintaining a natural appearance.
 
+### January 2026 - Path Improvements and Testing (Issue: "Weg verbessern und Tests einbinden")
+
+**Improvements**:
+1. **Terrain-based path colors**: Paths now adapt their color based on the terrain biome:
+   - Mountain paths: Rocky, lighter gray-brown tones
+   - Rocky hills paths: More gray tones
+   - Grassland paths: More brown/earthy tones
+   - Forest paths: Darker, more earthy appearance
+   - Village paths: Lighter, more worn appearance
+
+2. **Bush placement along paths**: Small bushes are now automatically placed along path edges:
+   - 60% placement chance at each position
+   - 3-unit average spacing between bushes
+   - Placed 1.2 units from path edge
+   - ±30% size variation for natural look
+   - Uses existing ProceduralModels.TreeType.SMALL_BUSH
+
+3. **Improved path continuity**: Main paths now continue more reliably across chunks:
+   - Main paths have 70% less random endpoint chance (1.5% vs 5% for other paths)
+   - Main paths have 50% less angular variation for straighter routes
+   - Better connectivity ensures paths span multiple chunks
+
+4. **New test coverage**: Added `test_path_spans_three_chunks()` test:
+   - Generates 8x8 grid of chunks (16x16 chunk area)
+   - Traces all path connections using depth-first search
+   - Verifies at least one path spans 3 or more chunks
+   - Reports longest path found and which chunks it traverses
+
+**Files Changed**:
+- `scripts/path_system.gd` - Improved endpoint and continuation logic
+- `scripts/chunk.gd` - Added terrain-based colors, bush placement function
+- `tests/test_path_system.gd` - Added 3-chunk spanning test
+- `docs/systems/PATH_SYSTEM.md` - Updated documentation
+
 ## License / Lizenz
 
 Same as main project.
 
 ---
 
-**Version**: 1.0  
+**Version**: 1.1  
 **Date**: January 2026  
 **Status**: ✅ Core implementation complete, sound files deferred
