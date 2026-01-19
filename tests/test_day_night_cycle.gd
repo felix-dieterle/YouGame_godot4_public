@@ -57,6 +57,22 @@ func test_day_cycle_constants():
 func test_time_progression():
 	print("\n--- Test: Time Progression ---")
 	
+	# Clean up any existing save files first to ensure fresh start
+	var dir = DirAccess.open("user://")
+	if dir:
+		dir.remove("day_night_save.cfg")
+		dir.remove("game_save.cfg")
+	
+	# Reset SaveGameManager to ensure clean state
+	if SaveGameManager:
+		SaveGameManager._data_loaded = false
+		SaveGameManager.save_data = {
+			"player": {},
+			"world": {},
+			"day_night": {},
+			"settings": {}
+		}
+	
 	# Create a temporary scene with required nodes
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
@@ -75,13 +91,20 @@ func test_time_progression():
 	# Add day/night cycle
 	test_scene.add_child(day_night)
 	
-	# Test initial state
-	assert_equal(day_night.current_time, 0.0, "Initial time should be 0")
+	# Test initial state - should start 3 hours into the day (sun at 10:00 AM position)
+	# Display will show 7:00 AM due to sun_time_offset_hours = -3.0
+	var expected_initial_time = DayNightCycle.DAY_CYCLE_DURATION * (3.0 / DayNightCycle.DAY_DURATION_HOURS)
+	assert_equal(day_night.current_time, expected_initial_time, "Initial time should be 3 hours into day cycle (540 seconds)")
 	assert_equal(day_night.is_night, false, "Should start as day")
 	assert_equal(day_night.is_locked_out, false, "Should not be locked out initially")
 	
 	# Cleanup
 	test_scene.queue_free()
+	
+	# Clean up save files
+	if dir:
+		dir.remove("day_night_save.cfg")
+		dir.remove("game_save.cfg")
 
 func test_save_load_state():
 	print("\n--- Test: Save/Load State ---")
