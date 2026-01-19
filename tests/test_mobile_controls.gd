@@ -197,55 +197,60 @@ func test_joystick_positions():
 		return
 	
 	var look_base = mobile_controls.look_joystick_base
-	var viewport_size = get_viewport().size
+	var window_size = get_viewport().size
+	# Get the rendering viewport size (what mobile_controls uses for positioning)
+	var rendering_viewport_size = mobile_controls.get_viewport_rect().size
 	
 	# Read actual margin values from mobile_controls
 	var look_margin_x = mobile_controls.look_joystick_margin_x
 	var look_margin_y = mobile_controls.look_joystick_margin_y
 	
-	print("  Viewport size: %.0fx%.0f" % [viewport_size.x, viewport_size.y])
+	print("  Window size: %.0fx%.0f" % [window_size.x, window_size.y])
+	print("  Rendering viewport size: %.0fx%.0f" % [rendering_viewport_size.x, rendering_viewport_size.y])
 	print("  Look joystick margins: X=%.0f, Y=%.0f" % [look_margin_x, look_margin_y])
 	print("  Look joystick position: (%.0f, %.0f)" % [look_base.position.x, look_base.position.y])
 	print("  Look joystick global position: (%.0f, %.0f)" % [look_base.global_position.x, look_base.global_position.y])
 	
-	# With Android-like viewport, position tests are meaningful
-	if viewport_size.x == ANDROID_VIEWPORT_WIDTH:
-		assert_pass("Viewport width is %d for Android testing" % ANDROID_VIEWPORT_WIDTH)
+	# Verify window size was set correctly for testing
+	if window_size.x == ANDROID_VIEWPORT_WIDTH:
+		assert_pass("Window width is %d for Android testing" % ANDROID_VIEWPORT_WIDTH)
 	else:
-		assert_fail("Viewport width should be %d but is %.0f" % [ANDROID_VIEWPORT_WIDTH, viewport_size.x])
+		assert_fail("Window width should be %d but is %.0f" % [ANDROID_VIEWPORT_WIDTH, window_size.x])
 	
-	if viewport_size.y == ANDROID_VIEWPORT_HEIGHT:
-		assert_pass("Viewport height is %d for Android testing" % ANDROID_VIEWPORT_HEIGHT)
+	if window_size.y == ANDROID_VIEWPORT_HEIGHT:
+		assert_pass("Window height is %d for Android testing" % ANDROID_VIEWPORT_HEIGHT)
 	else:
-		assert_fail("Viewport height should be %d but is %.0f" % [ANDROID_VIEWPORT_HEIGHT, viewport_size.y])
+		assert_fail("Window height should be %d but is %.0f" % [ANDROID_VIEWPORT_HEIGHT, window_size.y])
 	
-	# Check if position is in the right area (bottom-right quadrant)
-	var is_right_side = look_base.position.x > viewport_size.x / 2
-	var is_bottom = look_base.position.y > viewport_size.y / 2
+	# Check if position is in the right area (bottom-right quadrant) of RENDERING viewport
+	# Joysticks are positioned based on rendering viewport, not window size
+	var is_right_side = look_base.position.x > rendering_viewport_size.x / 2
+	var is_bottom = look_base.position.y > rendering_viewport_size.y / 2
 	
 	if is_right_side:
-		assert_pass("Look joystick is on the right side of screen")
+		assert_pass("Look joystick is on the right side of rendering viewport")
 	else:
-		assert_fail("Look joystick should be on the right side of screen (pos.x=%.0f, mid=%.0f)" % [look_base.position.x, viewport_size.x / 2])
+		assert_fail("Look joystick should be on the right side of rendering viewport (pos.x=%.0f, mid=%.0f)" % [look_base.position.x, rendering_viewport_size.x / 2])
 	
 	if is_bottom:
-		assert_pass("Look joystick is on the bottom of screen")
+		assert_pass("Look joystick is on the bottom of rendering viewport")
 	else:
-		assert_fail("Look joystick should be on the bottom of screen (pos.y=%.0f, mid=%.0f)" % [look_base.position.y, viewport_size.y / 2])
+		assert_fail("Look joystick should be on the bottom of rendering viewport (pos.y=%.0f, mid=%.0f)" % [look_base.position.y, rendering_viewport_size.y / 2])
 	
-	# Verify it's within viewport bounds (accounting for joystick size)
+	# Verify it's within rendering viewport bounds (accounting for joystick size)
+	# This is the key: joysticks should be within the RENDERING viewport, not the window
 	var joystick_right_edge = look_base.global_position.x + look_base.size.x
 	var joystick_bottom_edge = look_base.global_position.y + look_base.size.y
 	
-	if look_base.global_position.x >= 0 and joystick_right_edge <= viewport_size.x:
-		assert_pass("Look joystick X position is fully within viewport")
+	if look_base.global_position.x >= 0 and joystick_right_edge <= rendering_viewport_size.x:
+		assert_pass("Look joystick X position is fully within rendering viewport")
 	else:
-		assert_fail("Look joystick extends outside viewport horizontally (pos: %.0f, right edge: %.0f, viewport: %.0f)" % [look_base.global_position.x, joystick_right_edge, viewport_size.x])
+		assert_fail("Look joystick extends outside rendering viewport horizontally (pos: %.0f, right edge: %.0f, viewport: %.0f)" % [look_base.global_position.x, joystick_right_edge, rendering_viewport_size.x])
 	
-	if look_base.global_position.y >= 0 and joystick_bottom_edge <= viewport_size.y:
-		assert_pass("Look joystick Y position is fully within viewport")
+	if look_base.global_position.y >= 0 and joystick_bottom_edge <= rendering_viewport_size.y:
+		assert_pass("Look joystick Y position is fully within rendering viewport")
 	else:
-		assert_fail("Look joystick extends outside viewport vertically (pos: %.0f, bottom edge: %.0f, viewport: %.0f)" % [look_base.global_position.y, joystick_bottom_edge, viewport_size.y])
+		assert_fail("Look joystick extends outside rendering viewport vertically (pos: %.0f, bottom edge: %.0f, viewport: %.0f)" % [look_base.global_position.y, joystick_bottom_edge, rendering_viewport_size.y])
 
 # Helper functions for tracking test results
 func assert_pass(message: String):
