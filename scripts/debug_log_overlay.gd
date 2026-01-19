@@ -150,6 +150,37 @@ func _create_log_panel() -> void:
     log_label.bbcode_enabled = true
     log_label.scroll_following = true  # Auto-scroll to bottom
     log_label.fit_content = false
+    
+    # Make scrollbar larger for better mobile usability
+    # Create custom scrollbar style with larger grabber
+    var scrollbar_style = StyleBoxFlat.new()
+    scrollbar_style.bg_color = Color(0.3, 0.3, 0.3, 0.8)
+    scrollbar_style.corner_radius_top_left = 4
+    scrollbar_style.corner_radius_top_right = 4
+    scrollbar_style.corner_radius_bottom_left = 4
+    scrollbar_style.corner_radius_bottom_right = 4
+    
+    var scrollbar_grabber = StyleBoxFlat.new()
+    scrollbar_grabber.bg_color = Color(0.5, 0.8, 0.5, 0.9)
+    scrollbar_grabber.corner_radius_top_left = 4
+    scrollbar_grabber.corner_radius_top_right = 4
+    scrollbar_grabber.corner_radius_bottom_left = 4
+    scrollbar_grabber.corner_radius_bottom_right = 4
+    
+    var scrollbar_grabber_hover = StyleBoxFlat.new()
+    scrollbar_grabber_hover.bg_color = Color(0.6, 0.9, 0.6, 1.0)
+    scrollbar_grabber_hover.corner_radius_top_left = 4
+    scrollbar_grabber_hover.corner_radius_top_right = 4
+    scrollbar_grabber_hover.corner_radius_bottom_left = 4
+    scrollbar_grabber_hover.corner_radius_bottom_right = 4
+    
+    # Apply custom scrollbar theme with larger width for mobile
+    log_label.add_theme_constant_override("scrollbar_width", 20)  # Increased from default 12 for better mobile touch
+    log_label.add_theme_stylebox_override("scrollbar", scrollbar_style)
+    log_label.add_theme_stylebox_override("scrollbar_grabber", scrollbar_grabber)
+    log_label.add_theme_stylebox_override("scrollbar_grabber_hover", scrollbar_grabber_hover)
+    log_label.add_theme_stylebox_override("scrollbar_grabber_pressed", scrollbar_grabber_hover)
+    
     log_panel.add_child(log_label)
 
 func _on_toggle_pressed() -> void:

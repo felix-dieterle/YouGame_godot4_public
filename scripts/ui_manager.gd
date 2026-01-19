@@ -499,9 +499,24 @@ func _create_start_menu():
     spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL
     inner_vbox.add_child(spacer2)
     
-    # Info label
+    # Info label - show save state information
     var info_label = Label.new()
-    info_label.text = "A saved game was found"
+    
+    # Get save state info
+    var day_night_data = SaveGameManager.get_day_night_data()
+    var info_text = "A saved game was found"
+    
+    # Check if game ended during sleep time
+    if day_night_data.get("is_locked_out", false):
+        var lockout_end = day_night_data.get("lockout_end_time", 0.0)
+        var current_time = Time.get_unix_time_from_system()
+        
+        if current_time < lockout_end:
+            info_text += "\n(Game ended during sleep time)"
+        else:
+            info_text += "\n(Sleep time has ended)"
+    
+    info_label.text = info_text
     info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     info_label.add_theme_font_size_override("font_size", 16)
     info_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1))
@@ -524,7 +539,19 @@ func _on_continue_game(overlay: ColorRect):
     # Just hide the menu and resume
     overlay.queue_free()
     get_tree().paused = false
-    show_message("Game loaded! Welcome back.", 3.0)
+    
+    # Show different message based on whether sleep time has ended
+    var day_night_data = SaveGameManager.get_day_night_data()
+    if day_night_data.get("is_locked_out", false):
+        var lockout_end = day_night_data.get("lockout_end_time", 0.0)
+        var current_time = Time.get_unix_time_from_system()
+        
+        if current_time >= lockout_end:
+            show_message("Old save loaded! Sleep time has ended. Welcome back!", 4.0)
+        else:
+            show_message("Old save loaded! Welcome back.", 3.0)
+    else:
+        show_message("Old save loaded! Welcome back.", 3.0)
 
 func _on_new_game(overlay: ColorRect):
     # Delete save file and start fresh

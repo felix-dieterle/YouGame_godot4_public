@@ -554,5 +554,15 @@ func _load_saved_state():
             for part in robot_parts:
                 part.visible = not is_first_person
         
+        # Restore inventory if available
+        if player_data.has("inventory") and player_data["inventory"] is Dictionary:
+            crystal_inventory = player_data["inventory"]
+            
+            # Update UI with loaded inventory
+            var ui_manager = get_tree().get_first_node_in_group("UIManager")
+            if ui_manager and ui_manager.has_method("update_crystal_count"):
+                ui_manager.update_crystal_count(crystal_inventory)
+        
         print("Player: Loaded saved position: ", global_position)
+
 
