@@ -188,7 +188,13 @@ func test_time_scale():
 	
 	# Reset SaveGameManager to ensure clean state
 	# This is critical because SaveGameManager is an autoload and may have cached data
+	print("  DEBUG: Checking SaveGameManager state before reset...")
 	if SaveGameManager:
+		print("  DEBUG: SaveGameManager exists")
+		print("  DEBUG: has_save_file() = ", SaveGameManager.has_save_file())
+		print("  DEBUG: _data_loaded = ", SaveGameManager._data_loaded)
+		print("  DEBUG: Current time_scale in save_data = ", SaveGameManager.save_data["day_night"]["time_scale"])
+		
 		# Force SaveGameManager to think no file exists and reset to defaults
 		SaveGameManager._data_loaded = false
 		# Reset entire save_data to fresh defaults with time_scale = 2.0
@@ -219,7 +225,10 @@ func test_time_scale():
 				"timestamp": 0
 			}
 		}
+		print("  DEBUG: After reset, time_scale in save_data = ", SaveGameManager.save_data["day_night"]["time_scale"])
+		print("  DEBUG: After reset, has_save_file() = ", SaveGameManager.has_save_file())
 	
+	print("  DEBUG: Creating DayNightCycle instance...")
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
 	
@@ -233,7 +242,12 @@ func test_time_scale():
 	env_node.add_to_group("WorldEnvironment")
 	test_scene.add_child(env_node)
 	
+	print("  DEBUG: Adding DayNightCycle to scene (will trigger _ready and _load_state)...")
 	test_scene.add_child(day_night)
+	
+	print("  DEBUG: DayNightCycle.time_scale after _ready = ", day_night.time_scale)
+	if SaveGameManager:
+		print("  DEBUG: SaveGameManager.save_data time_scale after day_night._ready = ", SaveGameManager.save_data["day_night"]["time_scale"])
 	
 	# Test initial time scale for fresh start (no save file)
 	assert_equal(day_night.time_scale, 2.0, "Initial time scale should be 2.0 for fresh start")
