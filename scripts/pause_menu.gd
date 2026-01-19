@@ -513,7 +513,8 @@ func _on_ruler_toggled(pressed: bool) -> void:
 func _on_sun_offset_changed(value: float) -> void:
     # Update sun time offset in DayNightCycle
     var day_night_cycle = get_tree().get_first_node_in_group("DayNightCycle")
-    if day_night_cycle and day_night_cycle.has("sun_time_offset_hours"):
+    if day_night_cycle:
+        # Directly set the property - it exists in DayNightCycle class
         day_night_cycle.sun_time_offset_hours = value
 
 func _on_view_distance_changed(value: float) -> void:

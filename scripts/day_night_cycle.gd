@@ -237,7 +237,11 @@ func _update_lighting() -> void:
     # Apply sun time offset (convert hours to time ratio)
     # Offset is in hours, day is 10 hours, so divide by 10 to get ratio
     var offset_ratio = sun_time_offset_hours / 10.0
-    time_ratio = fmod(time_ratio + offset_ratio, 1.0)  # Wrap around using modulo
+    time_ratio = time_ratio + offset_ratio
+    # Proper modulo wrapping to handle negative values
+    time_ratio = fmod(time_ratio, 1.0)
+    if time_ratio < 0.0:
+        time_ratio += 1.0
     
     # Sun moves from sunrise angle (-60°) to sunset angle (60°) over the course of the day
     # At noon, sun is directly overhead (0°)
