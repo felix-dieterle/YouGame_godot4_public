@@ -35,6 +35,13 @@ const ROCK_COLORS = [
 	Color(0.38, 0.36, 0.35)   # Dark brownish
 ]
 
+# Lighthouse generation constants
+const LIGHTHOUSE_TOWER_HEIGHT = 8.0
+const LIGHTHOUSE_TOWER_RADIUS = 0.8
+const LIGHTHOUSE_TOWER_SEGMENTS = 8
+const LIGHTHOUSE_BEACON_HEIGHT = 1.5
+const LIGHTHOUSE_BEACON_RADIUS = 1.2
+
 # Tree type enum
 enum TreeType {
 	AUTO = -1,  # Automatically select tree type based on seed
@@ -378,5 +385,82 @@ static func create_rock_material() -> StandardMaterial3D:
     material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
     material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
     material.roughness = 0.95  # Rocks are very rough
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
+## Create a low-poly lighthouse mesh
+static func create_lighthouse_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Tower colors - white with red/black stripes pattern
+    var white_color = Color(0.95, 0.95, 0.95)
+    var red_color = Color(0.8, 0.2, 0.2)
+    
+    # Build tower in sections with alternating colors
+    var num_sections = 4
+    var section_height = LIGHTHOUSE_TOWER_HEIGHT / num_sections
+    
+    for i in range(num_sections):
+        var y_offset = i * section_height
+        var color = white_color if i % 2 == 0 else red_color
+        _add_cylinder_section(surface_tool, Vector3(0, y_offset, 0), 
+                              section_height, LIGHTHOUSE_TOWER_RADIUS, 
+                              LIGHTHOUSE_TOWER_SEGMENTS, color)
+    
+    # Add beacon platform (dark gray)
+    var platform_y = LIGHTHOUSE_TOWER_HEIGHT
+    _add_cylinder(surface_tool, Vector3(0, platform_y, 0), 0.3, 
+                  LIGHTHOUSE_BEACON_RADIUS * 0.9, LIGHTHOUSE_TOWER_SEGMENTS, 
+                  Color(0.3, 0.3, 0.3))
+    
+    # Add beacon light housing (yellow/gold glass)
+    var beacon_y = platform_y + 0.3
+    _add_cylinder(surface_tool, Vector3(0, beacon_y, 0), 
+                  LIGHTHOUSE_BEACON_HEIGHT, LIGHTHOUSE_BEACON_RADIUS * 0.7, 
+                  LIGHTHOUSE_TOWER_SEGMENTS, Color(0.9, 0.8, 0.3, 0.7))
+    
+    # Add beacon roof (red cone)
+    var roof_y = beacon_y + LIGHTHOUSE_BEACON_HEIGHT
+    _add_cone(surface_tool, Vector3(0, roof_y, 0), 1.0, 
+              LIGHTHOUSE_BEACON_RADIUS * 0.8, LIGHTHOUSE_TOWER_SEGMENTS, red_color)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Helper: Add a cylinder section (no top/bottom caps) for tower sections
+static func _add_cylinder_section(st: SurfaceTool, base_pos: Vector3, height: float, 
+                                  radius: float, segments: int, color: Color):
+    var angle_step = TAU / segments
+    
+    # Side faces only
+    for i in range(segments):
+        var angle1 = i * angle_step
+        var angle2 = (i + 1) * angle_step
+        
+        var p1_bottom = base_pos + Vector3(cos(angle1) * radius, 0, sin(angle1) * radius)
+        var p2_bottom = base_pos + Vector3(cos(angle2) * radius, 0, sin(angle2) * radius)
+        var p1_top = p1_bottom + Vector3(0, height, 0)
+        var p2_top = p2_bottom + Vector3(0, height, 0)
+        
+        st.set_color(color)
+        st.add_vertex(p1_bottom)
+        st.add_vertex(p2_bottom)
+        st.add_vertex(p1_top)
+        
+        st.add_vertex(p2_bottom)
+        st.add_vertex(p2_top)
+        st.add_vertex(p1_top)
+
+## Create a material for lighthouses
+static func create_lighthouse_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.6
     material.cull_mode = BaseMaterial3D.CULL_BACK
     return material
