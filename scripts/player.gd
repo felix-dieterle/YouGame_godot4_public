@@ -29,7 +29,7 @@ var head_bob_time: float = 0.0
 # Camera rotation (for mouse/joystick look)
 var camera_rotation_x: float = 0.0  # Vertical rotation (pitch)
 var camera_rotation_y: float = 0.0  # Horizontal rotation (yaw)
-@export var camera_sensitivity: float = 0.16667  # Reduced to 1/3 sensitivity (0.5/3) for less sensitive look joystick
+@export var camera_sensitivity: float = 0.083333  # Reduced to 1/6 sensitivity (0.5/6) for half as sensitive look joystick
 @export var camera_max_pitch: float = 80.0  # Maximum vertical look angle in degrees
 
 # Footstep sound system
