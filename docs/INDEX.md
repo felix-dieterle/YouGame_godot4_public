@@ -39,6 +39,7 @@ Deep dives into each major system:
 - **[DAY_NIGHT_CYCLE.md](systems/DAY_NIGHT_CYCLE.md)** - Time of day and lighting system
 - **[DEBUG_OVERLAY_SYSTEM.md](systems/DEBUG_OVERLAY_SYSTEM.md)** - Debug UI and logging
 - **[NARRATIVE_SYSTEM.md](systems/NARRATIVE_SYSTEM.md)** - Narrative markers and quest generation
+- **[OCEAN_LIGHTHOUSE_SYSTEM.md](systems/OCEAN_LIGHTHOUSE_SYSTEM.md)** - Ocean biome and coastal lighthouses
 - **[PATH_SYSTEM.md](systems/PATH_SYSTEM.md)** - Path generation across terrain
 - **[SAVE_LOAD_SYSTEM.md](systems/SAVE_LOAD_SYSTEM.md)** - Save and load functionality
 - **[TERRAIN_RENDERING.md](systems/TERRAIN_RENDERING.md)** - Terrain generation and rendering

@@ -63,6 +63,11 @@ const CRYSTALS_PER_ROCK_MAX = 2  # Reduced from 3 for rarer crystals
 # Path bush placement constants
 const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differentiation
 
+# Ocean and lighthouse constants
+const OCEAN_LEVEL = -8.0  # Elevation threshold for ocean biome
+const LIGHTHOUSE_SEED_OFFSET = 77777  # Offset for lighthouse placement seed
+const LIGHTHOUSE_SPACING = 80.0  # Distance between lighthouses along coastline
+
 # ============================================================================
 # STATE VARIABLES
 # ============================================================================
@@ -91,13 +96,21 @@ var lake_center: Vector2 = Vector2.ZERO
 var lake_radius: float = 0.0
 var lake_depth: float = 1.5  # Knee-deep water depth
 
+# Ocean data
+var is_ocean: bool = false
+var ocean_water_level: float = OCEAN_LEVEL
+
+# Lighthouse data
+var placed_lighthouses: Array = []  # Array of lighthouse MeshInstance3D
+
 # Lake generation constants
 const WATER_LEVEL_SAMPLE_RADIUS = 2
 const LAKE_MESH_SEGMENTS = 16
 
 # Mesh
 var mesh_instance: MeshInstance3D
-var water_mesh_instance: MeshInstance3D = null
+var water_mesh_instance: MeshInstance3D = null  # Used for lakes
+var ocean_mesh_instance: MeshInstance3D = null  # Used for ocean
 
 # Cluster objects
 var placed_objects: Array = []  # Array of MeshInstance3D for trees/buildings
@@ -122,7 +135,7 @@ func _init(x: int, z: int, world_seed: int):
 
 ## Generates all terrain data and visuals for this chunk
 ## This is the main entry point called after chunk creation
-## Pipeline: noise → heightmap → walkability → metadata → markers → lake → mesh → objects → paths
+## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → lighthouses
 func generate() -> void:
     _setup_noise()
     _generate_heightmap()
@@ -131,10 +144,12 @@ func generate() -> void:
     _calculate_metadata()
     _generate_narrative_markers()
     _generate_lake_if_valley()
+    _generate_ocean_if_low()
     _create_mesh()
     _place_rocks()  # Add rocks to terrain
     _place_cluster_objects()
     _generate_paths()
+    _place_lighthouses_if_coastal()
 
 # ============================================================================
 # TERRAIN GENERATION
@@ -294,7 +309,10 @@ func _create_mesh() -> void:
             
             # Determine material color based on height (biome)
             var base_color: Color
-            if avg_height > 8.0:
+            if avg_height <= OCEAN_LEVEL:
+                # Ocean floor - sandy/rocky seabed
+                base_color = Color(0.6, 0.55, 0.4)  # Sandy color for ocean floor
+            elif avg_height > 8.0:
                 # Mountain - stone/rocky gray color
                 var height_factor = clamp((avg_height - 8.0) / 15.0, 0.0, 1.0)
                 base_color = Color(0.5 + height_factor * 0.2, 0.5 + height_factor * 0.2, 0.55 + height_factor * 0.15)
@@ -364,7 +382,11 @@ func _calculate_metadata() -> void:
     openness = clamp(1.0 - (variance / 10.0), 0.0, 1.0)
     
     # Determine biome and landmark type based on height and variance
-    if avg_height > 8.0:
+    if avg_height <= OCEAN_LEVEL:
+        biome = "ocean"
+        landmark_type = "ocean"
+        is_ocean = true
+    elif avg_height > 8.0:
         biome = "mountain"
         landmark_type = "mountain"
     elif avg_height > 5.0:
@@ -1153,4 +1175,207 @@ func _place_path_bushes() -> void:
                 
                 add_child(bush_instance)
                 placed_objects.append(bush_instance)
+
+## Generate ocean water for low-elevation chunks
+func _generate_ocean_if_low() -> void:
+    # Ocean chunks are identified during metadata calculation
+    if not is_ocean:
+        return
+    
+    # Create ocean water mesh covering the entire chunk
+    _create_ocean_mesh()
+
+## Create ocean water mesh covering the chunk
+func _create_ocean_mesh() -> void:
+    if not is_ocean:
+        return
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Create a flat water plane at ocean level
+    var ocean_color = Color(0.1, 0.3, 0.6, 0.7)  # Deep blue, semi-transparent
+    
+    # Define the four corners of the chunk
+    var corners = [
+        Vector3(0, ocean_water_level, 0),
+        Vector3(CHUNK_SIZE, ocean_water_level, 0),
+        Vector3(CHUNK_SIZE, ocean_water_level, CHUNK_SIZE),
+        Vector3(0, ocean_water_level, CHUNK_SIZE)
+    ]
+    
+    # Create two triangles to cover the chunk
+    surface_tool.set_color(ocean_color)
+    surface_tool.add_vertex(corners[0])
+    surface_tool.add_vertex(corners[1])
+    surface_tool.add_vertex(corners[2])
+    
+    surface_tool.set_color(ocean_color)
+    surface_tool.add_vertex(corners[0])
+    surface_tool.add_vertex(corners[2])
+    surface_tool.add_vertex(corners[3])
+    
+    surface_tool.generate_normals()
+    
+    var ocean_mesh = surface_tool.commit()
+    ocean_mesh_instance = MeshInstance3D.new()
+    ocean_mesh_instance.mesh = ocean_mesh
+    
+    # Create ocean water material
+    var water_material = StandardMaterial3D.new()
+    water_material.vertex_color_use_as_albedo = true
+    water_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    water_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    water_material.specular_mode = BaseMaterial3D.SPECULAR_SCHLICK_GGX
+    water_material.metallic = 0.0
+    water_material.roughness = 0.05  # Smoother than lake water
+    water_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Visible from both sides
+    
+    ocean_mesh_instance.set_surface_override_material(0, water_material)
+    add_child(ocean_mesh_instance)
+
+## Place lighthouses along the coastline if this chunk borders ocean
+func _place_lighthouses_if_coastal() -> void:
+    # Only place lighthouses if this is NOT ocean but has ocean neighbors
+    if is_ocean:
+        return
+    
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ LIGHTHOUSE_SEED_OFFSET
+    
+    # Check if chunk position is on a regular grid for lighthouse placement
+    # Place lighthouses every LIGHTHOUSE_SPACING units (approximately)
+    var spacing_chunks = max(1, int(LIGHTHOUSE_SPACING / CHUNK_SIZE))  # Ensure at least 1
+    
+    # Only place lighthouse if this chunk is on the grid (either x or z coordinate matches)
+    var on_x_grid = (chunk_x % spacing_chunks) == 0
+    var on_z_grid = (chunk_z % spacing_chunks) == 0
+    
+    if not (on_x_grid or on_z_grid):
+        return
+    
+    # Check if any neighboring chunks are ocean (coastal detection)
+    var neighbors_to_check = [
+        Vector2i(chunk_x - 1, chunk_z),  # West
+        Vector2i(chunk_x + 1, chunk_z),  # East
+        Vector2i(chunk_x, chunk_z - 1),  # North
+        Vector2i(chunk_x, chunk_z + 1),  # South
+    ]
+    
+    var has_ocean_neighbor = false
+    for neighbor_pos in neighbors_to_check:
+        # Simple heuristic: check if neighbor would be ocean based on noise
+        var neighbor_height = _get_estimated_chunk_height(neighbor_pos)
+        if neighbor_height <= OCEAN_LEVEL:
+            has_ocean_neighbor = true
+            break
+    
+    if not has_ocean_neighbor:
+        return
+    
+    # Find suitable location for lighthouse near chunk edge facing ocean
+    var lighthouse_pos = _find_coastal_position(rng)
+    
+    if lighthouse_pos:
+        _place_lighthouse(lighthouse_pos, rng)
+
+## Estimate average height of a chunk based on noise (without generating full chunk)
+func _get_estimated_chunk_height(chunk_pos: Vector2i) -> float:
+    # Sample a few points in the chunk to estimate average height
+    var samples = 5
+    var total_height = 0.0
+    
+    for i in range(samples):
+        for j in range(samples):
+            var world_x = chunk_pos.x * CHUNK_SIZE + (i * CHUNK_SIZE / samples)
+            var world_z = chunk_pos.y * CHUNK_SIZE + (j * CHUNK_SIZE / samples)
+            
+            # Get biome value
+            var biome_value = biome_noise.get_noise_2d(world_x, world_z)
+            
+            var height_multiplier = 10.0
+            var height_offset = 0.0
+            
+            if biome_value > 0.3:
+                height_multiplier = 20.0
+                height_offset = 10.0
+            elif biome_value < -0.2:
+                height_multiplier = 5.0
+                height_offset = -3.0
+            
+            var height = noise.get_noise_2d(world_x, world_z) * height_multiplier + height_offset
+            total_height += height
+    
+    return total_height / (samples * samples)
+
+## Find a suitable coastal position for lighthouse
+func _find_coastal_position(rng: RandomNumberGenerator) -> Vector3:
+    # Try to find a position near the edge of the chunk
+    # Prefer elevated positions for better visibility
+    
+    var best_pos: Vector3 = Vector3.ZERO
+    var best_height = -999999.0
+    
+    # Sample positions around the chunk perimeter
+    var edge_samples = 8
+    for i in range(edge_samples):
+        var t = float(i) / float(edge_samples)
+        var local_x = 0.0
+        var local_z = 0.0
+        
+        # Sample all four edges
+        var edge = i % 4
+        match edge:
+            0:  # North edge
+                local_x = t * CHUNK_SIZE
+                local_z = 2.0
+            1:  # East edge
+                local_x = CHUNK_SIZE - 2.0
+                local_z = t * CHUNK_SIZE
+            2:  # South edge
+                local_x = t * CHUNK_SIZE
+                local_z = CHUNK_SIZE - 2.0
+            3:  # West edge
+                local_x = 2.0
+                local_z = t * CHUNK_SIZE
+        
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Check if this is walkable and elevated
+        if height > best_height and height > OCEAN_LEVEL + 2.0:
+            best_height = height
+            best_pos = Vector3(local_x, height, local_z)
+    
+    # If no good position found, use chunk center
+    if best_height == -999999.0:
+        var center_x = CHUNK_SIZE / 2.0
+        var center_z = CHUNK_SIZE / 2.0
+        var world_x = chunk_x * CHUNK_SIZE + center_x
+        var world_z = chunk_z * CHUNK_SIZE + center_z
+        best_pos = Vector3(center_x, get_height_at_world_pos(world_x, world_z), center_z)
+    
+    return best_pos
+
+## Place a lighthouse at the specified position
+func _place_lighthouse(pos: Vector3, rng: RandomNumberGenerator) -> void:
+    # Create lighthouse instance
+    var lighthouse_instance = MeshInstance3D.new()
+    lighthouse_instance.mesh = ProceduralModels.create_lighthouse_mesh(rng.randi())
+    lighthouse_instance.material_override = ProceduralModels.create_lighthouse_material()
+    lighthouse_instance.position = pos
+    lighthouse_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+    
+    # Add light beacon on top
+    var beacon_light = OmniLight3D.new()
+    beacon_light.light_color = Color(1.0, 0.9, 0.6)  # Warm yellow light
+    beacon_light.light_energy = 2.0
+    beacon_light.omni_range = 30.0  # Wide range for visibility
+    beacon_light.position = Vector3(0, ProceduralModels.LIGHTHOUSE_TOWER_HEIGHT + 2.0, 0)
+    lighthouse_instance.add_child(beacon_light)
+    
+    add_child(lighthouse_instance)
+    placed_lighthouses.append(lighthouse_instance)
+
 

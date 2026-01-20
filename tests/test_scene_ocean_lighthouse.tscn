@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8u7x5yqd3nkm"]
+
+[ext_resource type="Script" path="res://tests/test_ocean_lighthouse.gd" id="1_test"]
+
+[node name="TestOceanLighthouse" type="Node"]
+script = ExtResource("1_test")

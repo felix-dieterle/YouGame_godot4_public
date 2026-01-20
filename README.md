@@ -92,7 +92,9 @@ Detailed documentation for each major system in [docs/systems/](docs/systems/):
 - Automatic edge blending between chunks
 - Walkability calculation (≤30° slope)
 - Guaranteed 80% walkable terrain per chunk
-- Multiple biomes (grassland, forest, rocky, mountain)
+- Multiple biomes (grassland, forest, rocky, mountain, ocean)
+- Ocean biome with multi-chunk seas
+- Coastal lighthouses at regular intervals
 
 ### World Systems
 - **Cluster System:** Cross-chunk object placement (trees, buildings)
@@ -100,6 +102,7 @@ Detailed documentation for each major system in [docs/systems/](docs/systems/):
 - **Narrative System:** Dynamic quest markers and points of interest
 - **Day/Night Cycle:** Dynamic lighting and sky transitions
 - **Weather System:** Weather effects integrated with time of day
+- **Ocean System:** Large bodies of water spanning multiple chunks with lighthouses
 
 ### Player Experience
 - Third-person and first-person camera modes
