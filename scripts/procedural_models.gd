@@ -42,6 +42,14 @@ const LIGHTHOUSE_TOWER_SEGMENTS = 8
 const LIGHTHOUSE_BEACON_HEIGHT = 1.5
 const LIGHTHOUSE_BEACON_RADIUS = 1.2
 
+# Fishing boat generation constants
+const BOAT_LENGTH = 4.0
+const BOAT_WIDTH = 1.5
+const BOAT_HEIGHT = 0.8
+const BOAT_SEGMENTS = 8
+const BOAT_BENCH_OFFSET_RATIO = 0.2  # Position of bench along boat length
+const BOAT_BENCH_THICKNESS_RATIO = 0.3  # Bench height relative to its base position
+
 # Tree type enum
 enum TreeType {
 	AUTO = -1,  # Automatically select tree type based on seed
@@ -462,5 +470,184 @@ static func create_lighthouse_material() -> StandardMaterial3D:
     material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
     material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
     material.roughness = 0.6
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
+## Create a low-poly fishing boat mesh
+static func create_fishing_boat_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var st = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Boat colors - weathered wood brown
+    var wood_color = Color(0.45, 0.35, 0.25)
+    var dark_wood = Color(0.35, 0.25, 0.18)
+    
+    # Boat hull - create a simple boat shape with pointed front
+    var half_width = BOAT_WIDTH / 2.0
+    var half_length = BOAT_LENGTH / 2.0
+    
+    # Define hull vertices (bottom is flat for sitting in sand)
+    # Bottom vertices (y = 0)
+    var bottom_front = Vector3(half_length, 0, 0)  # Pointed front
+    var bottom_left_mid = Vector3(0, 0, -half_width)
+    var bottom_right_mid = Vector3(0, 0, half_width)
+    var bottom_left_back = Vector3(-half_length * 0.8, 0, -half_width * 0.7)
+    var bottom_right_back = Vector3(-half_length * 0.8, 0, half_width * 0.7)
+    var bottom_back = Vector3(-half_length, 0, 0)  # Slightly pointed back
+    
+    # Top vertices (y = BOAT_HEIGHT)
+    var top_front = Vector3(half_length * 0.9, BOAT_HEIGHT, 0)
+    var top_left_mid = Vector3(0, BOAT_HEIGHT, -half_width * 0.8)
+    var top_right_mid = Vector3(0, BOAT_HEIGHT, half_width * 0.8)
+    var top_left_back = Vector3(-half_length * 0.7, BOAT_HEIGHT, -half_width * 0.6)
+    var top_right_back = Vector3(-half_length * 0.7, BOAT_HEIGHT, half_width * 0.6)
+    var top_back = Vector3(-half_length * 0.85, BOAT_HEIGHT, 0)
+    
+    # Create hull sides - left side
+    st.set_color(wood_color)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_left_mid)
+    st.add_vertex(top_front)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_front)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(top_left_mid)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(top_left_back)
+    st.add_vertex(top_left_mid)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(top_left_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(top_back)
+    st.add_vertex(top_left_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(bottom_back)
+    st.add_vertex(top_back)
+    
+    # Right side (mirror of left)
+    st.set_color(wood_color)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_front)
+    st.add_vertex(top_right_mid)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_right_mid)
+    st.add_vertex(bottom_right_mid)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_right_mid)
+    st.add_vertex(top_right_mid)
+    st.add_vertex(top_right_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_right_mid)
+    st.add_vertex(top_right_back)
+    st.add_vertex(bottom_right_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_right_back)
+    st.add_vertex(top_right_back)
+    st.add_vertex(top_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_right_back)
+    st.add_vertex(top_back)
+    st.add_vertex(bottom_back)
+    
+    # Front triangular face
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_front)
+    st.add_vertex(top_left_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_left_mid)
+    st.add_vertex(bottom_left_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(bottom_right_mid)
+    st.add_vertex(top_right_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_right_mid)
+    st.add_vertex(top_front)
+    
+    # Back face
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_back)
+    st.add_vertex(top_left_back)
+    st.add_vertex(top_back)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_back)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(top_left_back)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_back)
+    st.add_vertex(top_back)
+    st.add_vertex(top_right_back)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_back)
+    st.add_vertex(top_right_back)
+    st.add_vertex(bottom_right_back)
+    
+    # Bottom (flat for sitting in sand)
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(bottom_right_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(bottom_right_back)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(bottom_right_back)
+    st.add_vertex(bottom_right_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(bottom_back)
+    st.add_vertex(bottom_right_back)
+    
+    # Add a simple bench seat inside (darker wood)
+    # Bench is positioned slightly toward the back (negative offset) for realistic boat interior
+    var bench_y = BOAT_HEIGHT * 0.4
+    var bench_width = BOAT_WIDTH * 0.6
+    var bench_length = BOAT_LENGTH * 0.5
+    _add_box(st, Vector3(-bench_length * BOAT_BENCH_OFFSET_RATIO, bench_y, 0), 
+             Vector3(bench_length, bench_y * BOAT_BENCH_THICKNESS_RATIO, bench_width), dark_wood)
+    
+    st.generate_normals()
+    return st.commit()
+
+## Create a material for fishing boats
+static func create_fishing_boat_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.8  # Weathered wood
     material.cull_mode = BaseMaterial3D.CULL_BACK
     return material

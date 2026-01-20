@@ -500,3 +500,47 @@ const LIGHTHOUSE_SPACING = 80.0        # Distance between lighthouses
 ```
 
 See [OCEAN_LIGHTHOUSE_SYSTEM.md](docs/systems/OCEAN_LIGHTHOUSE_SYSTEM.md) for complete documentation.
+
+## Fishing Boat on Shore
+
+A simple fishing boat placed on the beach near the first ocean area, creating a natural coastal landmark:
+
+### Features
+- **Single Boat Placement**: One fishing boat placed deterministically on a coastal chunk near spawn
+- **Realistic Positioning**: 
+  - Boat is buried 30% into the sand for a beached appearance
+  - Boat faces toward the ocean
+  - Slight random tilt for natural look
+- **Coastal Detection**: Automatically finds suitable beach locations adjacent to ocean
+- **Spawn Area**: Only placed within 96 world units (3 chunks) of starting location
+
+### Boat Design
+- **Dimensions**: 4.0 units long × 1.5 units wide × 0.8 units high
+- **Appearance**: Weathered brown wood with simple low-poly construction
+- **Details**:
+  - Pointed bow (front)
+  - Sloped sides
+  - Flat bottom for sitting on sand
+  - Simple bench seat inside
+
+### Technical Implementation
+- **Procedural Generation**: Created at runtime, no external models required
+- **Placement Logic**: 
+  - Checks for ocean-adjacent chunks
+  - Uses deterministic hash to select one coastal chunk
+  - Positions boat near water's edge
+- **Performance**: Single low-poly mesh (~150 vertices), negligible impact
+
+### Configuration
+```gdscript
+# In chunk.gd
+const FISHING_BOAT_PLACEMENT_RADIUS = 96.0  # 3 chunks from spawn
+const FISHING_BOAT_SEED_OFFSET = 88888      # Placement seed
+
+# In procedural_models.gd
+const BOAT_LENGTH = 4.0   # Boat length
+const BOAT_WIDTH = 1.5    # Boat width
+const BOAT_HEIGHT = 0.8   # Boat height
+```
+
+See [FISCHERBOOT_ZUSAMMENFASSUNG.md](FISCHERBOOT_ZUSAMMENFASSUNG.md) for complete documentation (German).
