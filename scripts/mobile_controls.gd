@@ -354,13 +354,17 @@ func _update_look_joystick(touch_pos: Vector2) -> void:
     # normalized.x maps to yaw (horizontal rotation): -1 = -80°, +1 = +80°
     # normalized.y maps to pitch (vertical rotation): -1 = -80°, +1 = +80°
     # Get max angles from player if available, default to 80 degrees
-    var max_angle_deg = 80.0
-    if player and "camera_max_yaw" in player:
-        max_angle_deg = player.camera_max_yaw
+    var max_yaw_deg = 80.0
+    var max_pitch_deg = 80.0
+    if player:
+        if "camera_max_yaw" in player:
+            max_yaw_deg = player.camera_max_yaw
+        if "camera_max_pitch" in player:
+            max_pitch_deg = player.camera_max_pitch
     
     # Convert normalized position to target angles in radians
-    look_target_yaw = normalized.x * deg_to_rad(max_angle_deg)
-    look_target_pitch = normalized.y * deg_to_rad(max_angle_deg)
+    look_target_yaw = normalized.x * deg_to_rad(max_yaw_deg)
+    look_target_pitch = normalized.y * deg_to_rad(max_pitch_deg)
 
 func _create_styled_button_style(bg_color: Color, corner_radius: int) -> StyleBoxFlat:
     # Helper function to create a styled button with rounded corners

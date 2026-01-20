@@ -2,7 +2,7 @@ extends Node
 
 # Test suite for verifying the look joystick absolute position control feature
 # 
-# This test verifies that the look joystick works with absolute positioning:
+# This test suite verifies that the look joystick works with absolute positioning:
 # - The joystick circle represents exactly 80 degrees in all directions
 # - Pushing the stick directly sets the camera angle (not velocity)
 # - The stick stays exactly where you push it
