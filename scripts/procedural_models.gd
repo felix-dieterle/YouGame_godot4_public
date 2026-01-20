@@ -47,6 +47,8 @@ const BOAT_LENGTH = 4.0
 const BOAT_WIDTH = 1.5
 const BOAT_HEIGHT = 0.8
 const BOAT_SEGMENTS = 8
+const BOAT_BENCH_OFFSET_RATIO = 0.2  # Position of bench along boat length
+const BOAT_BENCH_THICKNESS_RATIO = 0.3  # Bench height relative to its base position
 
 # Tree type enum
 enum TreeType {
@@ -633,8 +635,8 @@ static func create_fishing_boat_mesh(seed_val: int = 0) -> ArrayMesh:
     var bench_y = BOAT_HEIGHT * 0.4
     var bench_width = BOAT_WIDTH * 0.6
     var bench_length = BOAT_LENGTH * 0.5
-    _add_box(st, Vector3(-bench_length * 0.2, bench_y, 0), 
-             Vector3(bench_length, bench_y * 0.3, bench_width), dark_wood)
+    _add_box(st, Vector3(-bench_length * BOAT_BENCH_OFFSET_RATIO, bench_y, 0), 
+             Vector3(bench_length, bench_y * BOAT_BENCH_THICKNESS_RATIO, bench_width), dark_wood)
     
     st.generate_normals()
     return st.commit()

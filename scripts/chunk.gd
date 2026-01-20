@@ -71,6 +71,8 @@ const LIGHTHOUSE_SPACING = 80.0  # Distance between lighthouses along coastline
 # Fishing boat constants
 const FISHING_BOAT_SEED_OFFSET = 88888  # Offset for fishing boat placement seed
 const FISHING_BOAT_PLACEMENT_RADIUS = 96.0  # Only place boat near starting area (3 chunks = 96 units)
+const FISHING_BOAT_SELECTION_MODULO = 7  # Hash modulo for deterministic boat chunk selection
+const FISHING_BOAT_SELECTION_VALUE = 3  # Target value for boat chunk selection
 
 # ============================================================================
 # STATE VARIABLES
@@ -1393,7 +1395,7 @@ func _place_fishing_boat_if_coastal() -> void:
         return
     
     # Check distance from origin (starting area at 0,0)
-    var distance_from_origin = sqrt(float(chunk_x * chunk_x + chunk_z * chunk_z)) * CHUNK_SIZE
+    var distance_from_origin = Vector2(chunk_x, chunk_z).length() * CHUNK_SIZE
     
     # Only place boat near starting area
     if distance_from_origin > FISHING_BOAT_PLACEMENT_RADIUS:
@@ -1439,7 +1441,7 @@ func _place_fishing_boat_if_coastal() -> void:
     var boat_chunk_hash = hash(Vector2i(chunk_x, chunk_z))
     # Only place if this is the "chosen" chunk (use a simple modulo check)
     # This ensures only one coastal chunk near spawn gets the boat
-    if (boat_chunk_hash % 7) != 3:  # Arbitrary but deterministic selection
+    if (boat_chunk_hash % FISHING_BOAT_SELECTION_MODULO) != FISHING_BOAT_SELECTION_VALUE:
         return
     
     # Find suitable location for fishing boat near shoreline
