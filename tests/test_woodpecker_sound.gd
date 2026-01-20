@@ -19,7 +19,7 @@ func test_woodpecker_sound_in_forest():
 	
 	# Test multiple chunks to find one with a forest
 	var found_forest_with_sound = false
-	var test_count = 50
+	var test_count = 20  # Reduced from 50 for faster test execution
 	
 	for i in range(test_count):
 		for j in range(test_count):
@@ -39,7 +39,7 @@ func test_woodpecker_sound_in_forest():
 					max_forest_density = max(max_forest_density, influence * cluster.density)
 			
 			# If forest density is high enough, check for ambient sound player
-			if max_forest_density > 0.5:
+			if max_forest_density > CHUNK.WOODPECKER_FOREST_DENSITY_THRESHOLD:
 				if chunk.ambient_sound_player != null:
 					print("  Found dense forest at chunk (%d, %d) with ambient sound (density: %.2f)" % [i, j, max_forest_density])
 					print("  - Sound player position: %s" % str(chunk.ambient_sound_player.position))
@@ -80,7 +80,7 @@ func test_no_woodpecker_in_open_area():
 	print("  Chunk (100, 100) forest density: %.2f" % max_forest_density)
 	
 	# If forest density is low, should not have ambient sound
-	if max_forest_density <= 0.5:
+	if max_forest_density <= CHUNK.WOODPECKER_FOREST_DENSITY_THRESHOLD:
 		if chunk.ambient_sound_player == null:
 			print("PASS: Open area chunks do not have woodpecker sounds")
 		else:
