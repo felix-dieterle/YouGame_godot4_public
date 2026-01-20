@@ -205,9 +205,9 @@ func _get_weather_params(weather: WeatherState) -> Dictionary:
             return {
                 "fog_density": 0.0,
                 "rain_intensity": 0.0,
-                "turbidity": 8.0,  # Clear bright sky (reduced from 10.0)
+                "turbidity": 3.0,  # Clear bright sky - low turbidity for vibrant blue
                 "mie_coefficient": 0.003,  # Minimal haze (reduced from 0.005)
-                "rayleigh_coefficient": 3.0  # Bright vibrant blue sky (increased from 2.0)
+                "rayleigh_coefficient": 10.0  # Strong blue sky scattering for vibrant daytime blue
             }
         WeatherState.LIGHT_FOG:
             return {
