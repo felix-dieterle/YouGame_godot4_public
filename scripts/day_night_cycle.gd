@@ -398,11 +398,11 @@ func _save_state() -> void:
 func _load_state() -> void:
     # Get day/night state from SaveGameManager (already loaded at startup)
     var loaded_from_manager = false
-    if SaveGameManager.has_save_file():
+    if SaveGameManager.has_save_file() and SaveGameManager._data_loaded:
         var day_night_data = SaveGameManager.get_day_night_data()
-        is_locked_out = day_night_data["is_locked_out"]
-        lockout_end_time = day_night_data["lockout_end_time"]
-        current_time = day_night_data["current_time"]
+        is_locked_out = day_night_data.get("is_locked_out", false)
+        lockout_end_time = day_night_data.get("lockout_end_time", 0.0)
+        current_time = day_night_data.get("current_time", 0.0)
         # Load time_scale if available (with default of 2.0 for old saves to match fresh start)
         time_scale = day_night_data.get("time_scale", 2.0)
         # Load day count and night start time (defaults for old saves)
