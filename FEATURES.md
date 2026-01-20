@@ -140,7 +140,9 @@ The world now features distinct biome regions with varied terrain types:
 
 1. **Mountain Regions**
    - High elevation (>8.0 units)
-   - Stone/rocky gray appearance
+   - Stone/rocky gray appearance transitioning to snow-covered peaks
+   - **Snow Coverage**: At elevations above 12 units, terrain becomes snow-covered (white/bluish-white)
+   - **Wind Sounds**: Ambient wind whistling in high mountains (elevation >10 units)
    - Steep slopes and dramatic elevation changes
    - Landmark type: "mountain"
 
@@ -354,13 +356,59 @@ Potential improvements for these features:
   - In-game clock display
   - **Time speed control with +/- buttons** (v1.0.24+)
 - [ ] Tutorial messages for first-time players
-- [ ] Additional biome types (desert, snow, forest)
+- [x] Snow-covered mountain peaks - **COMPLETED**
+  - Snow appears at elevations above 12 units
+  - Smooth color transitions from rock to snow
+- [x] Wind whistling sounds in high mountains - **COMPLETED**
+  - Ambient wind sound in mountain regions with elevation >10 units
+  - Spatial 3D audio with distance attenuation
 - [ ] Weather effects that affect footstep sounds
 - [ ] Debug UI customization options
 - [ ] Mesh instancing for forests and settlements
 - [ ] LOD system for distant objects
 - [ ] More tree and building variations
 - [ ] Biome-specific cluster types (pine forests, tropical settlements)
+
+## Wind and Snow in Mountain Regions
+
+Mountain regions now feature enhanced atmospheric effects:
+
+### Snow Coverage
+- **Elevation Threshold**: Snow appears at elevations above 12 units
+- **Visual Appearance**: Smooth transition from rocky gray to bluish-white snow
+- **Color Blending**: Progressive snow coverage based on height (fully snow-covered at highest peaks)
+- **Biome Integration**: Only applies to mountain biome regions
+
+### Wind Whistling Sounds
+- **Ambient Sound**: Procedural wind whistling in high mountain regions
+- **Activation Threshold**: Mountain biome with average elevation >10 units
+- **Sound Design**: 
+  - Low frequency rumble (30Hz) for wind base
+  - High frequency whistle (800Hz) for wind through mountain gaps
+  - Natural noise texture for realism
+  - Slow amplitude modulation for varying intensity
+- **Spatial Audio**: 3D positioned sound with 50-unit audible range
+- **Performance**: Lightweight procedural generation using AudioStreamGenerator
+
+### Technical Details
+```gdscript
+# Snow coverage constants
+const SNOW_START_ELEVATION = 12.0  # Height where snow begins
+const SNOW_TRANSITION_RANGE = 8.0  # Gradual transition to full snow
+
+# Wind sound configuration
+const WIND_ELEVATION_THRESHOLD = 10.0  # Minimum avg height for wind
+const WIND_MAX_DISTANCE = 50.0  # Audible range in units
+const WIND_VOLUME_DB = -15.0  # Quieter ambient sound
+```
+
+### Usage
+Wind and snow are automatically applied during chunk generation:
+- No configuration needed - features activate based on terrain elevation
+- Snow visible immediately on high mountain terrain
+- Wind sound starts playing when chunk is generated
+- Both features contribute to immersive mountain atmosphere
+
 
 ## Path System and Starting Location
 
