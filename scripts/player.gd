@@ -103,22 +103,21 @@ func _physics_process(delta) -> void:
     # Handle camera rotation from look joystick
     var look_input = Vector2.ZERO
     if mobile_controls and mobile_controls.has_method("get_look_vector"):
-        look_input = mobile_controls.get_look_vector()
-        
-        if look_input.length() > 0.01:
-            # Apply camera rotation based on joystick input
-            # X-axis controls horizontal rotation (yaw)
-            # Y-axis controls vertical rotation (pitch)
-            camera_rotation_y -= look_input.x * camera_sensitivity * delta * 60.0
-            camera_rotation_x -= look_input.y * camera_sensitivity * delta * 60.0
-            
-            # Clamp vertical rotation to prevent looking too far up/down
-            camera_rotation_x = clamp(camera_rotation_x, -deg_to_rad(camera_max_pitch), deg_to_rad(camera_max_pitch))
-            # Clamp horizontal rotation to prevent looking too far left/right
-            camera_rotation_y = clamp(camera_rotation_y, -deg_to_rad(camera_max_yaw), deg_to_rad(camera_max_yaw))
-            
-            # Apply rotation to camera
-            _update_camera_rotation()
+        # NEW: Use absolute position control instead of velocity
+        if mobile_controls.has_method("has_look_input") and mobile_controls.has_look_input():
+            # User is actively controlling the joystick - set camera to target angles
+            if mobile_controls.has_method("get_look_target_angles"):
+                var target_angles = mobile_controls.get_look_target_angles()
+                camera_rotation_y = target_angles.x  # yaw
+                camera_rotation_x = target_angles.y  # pitch
+                
+                # Clamp to ensure we stay within limits
+                camera_rotation_x = clamp(camera_rotation_x, -deg_to_rad(camera_max_pitch), deg_to_rad(camera_max_pitch))
+                camera_rotation_y = clamp(camera_rotation_y, -deg_to_rad(camera_max_yaw), deg_to_rad(camera_max_yaw))
+                
+                # Apply rotation to camera
+                _update_camera_rotation()
+        # If not actively touching, camera rotation stays at last set position
     
     # Get input - support both keyboard and mobile controls
     var input_dir = Vector2.ZERO

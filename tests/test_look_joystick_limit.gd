@@ -84,7 +84,7 @@ func test_player_camera_limits_applied():
 	player.queue_free()
 
 func test_mobile_controls_direction_indicator_exists():
-	print("\n--- Test: Mobile Controls Direction Indicator Exists ---")
+	print("\n--- Test: Mobile Controls Absolute Position Control Exists ---")
 	
 	# Load and create mobile controls
 	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
@@ -103,23 +103,28 @@ func test_mobile_controls_direction_indicator_exists():
 	add_child(mobile_controls)
 	await get_tree().process_frame
 	
-	# Check if look_direction_indicator variable exists
-	if "look_direction_indicator" in mobile_controls:
-		assert_pass("MobileControls has look_direction_indicator variable")
-		
-		# Check if it was created
-		if mobile_controls.look_direction_indicator != null:
-			assert_pass("look_direction_indicator is initialized")
-			
-			# Check if it's a Control node
-			if mobile_controls.look_direction_indicator is Control:
-				assert_pass("look_direction_indicator is a Control node")
-			else:
-				assert_fail("look_direction_indicator should be a Control node")
-		else:
-			assert_fail("look_direction_indicator is null")
+	# Check if look_target_yaw and look_target_pitch variables exist
+	if "look_target_yaw" in mobile_controls:
+		assert_pass("MobileControls has look_target_yaw variable")
 	else:
-		assert_fail("MobileControls does not have look_direction_indicator variable")
+		assert_fail("MobileControls does not have look_target_yaw variable")
+	
+	if "look_target_pitch" in mobile_controls:
+		assert_pass("MobileControls has look_target_pitch variable")
+	else:
+		assert_fail("MobileControls does not have look_target_pitch variable")
+	
+	# Check if get_look_target_angles method exists
+	if mobile_controls.has_method("get_look_target_angles"):
+		assert_pass("MobileControls has get_look_target_angles method")
+	else:
+		assert_fail("MobileControls does not have get_look_target_angles method")
+	
+	# Check if has_look_input method exists
+	if mobile_controls.has_method("has_look_input"):
+		assert_pass("MobileControls has has_look_input method")
+	else:
+		assert_fail("MobileControls does not have has_look_input method")
 	
 	mobile_controls.queue_free()
 

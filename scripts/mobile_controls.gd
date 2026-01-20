@@ -14,6 +14,9 @@ var look_joystick_stick: Control
 var look_joystick_active: bool = false
 var look_joystick_touch_index: int = -1
 var look_joystick_vector: Vector2 = Vector2.ZERO
+# Target camera angles in radians (set by joystick position)
+var look_target_yaw: float = 0.0  # Horizontal rotation
+var look_target_pitch: float = 0.0  # Vertical rotation
 
 # Menu button and settings panel
 var menu_button: Button
@@ -130,7 +133,7 @@ func _process(_delta: float) -> void:
 
 func _update_look_joystick_stick_position() -> void:
     # Update the look joystick stick position to reflect current camera rotation
-    # This makes the stick "remember" where the player is looking
+    # This only happens when the joystick is NOT being actively touched
     if not player or not "camera_rotation_x" in player or not "camera_rotation_y" in player:
         return
     
@@ -138,7 +141,7 @@ func _update_look_joystick_stick_position() -> void:
         return
     
     # Don't update stick position while the user is actively touching the joystick
-    # This prevents interference with user input
+    # This prevents interference with user input and keeps stick exactly where pushed
     if look_joystick_active:
         return
     
@@ -169,8 +172,14 @@ func _update_look_joystick_stick_position() -> void:
     # Multiply by JOYSTICK_RADIUS to get pixel offset from center
     var offset = Vector2(normalized_x * JOYSTICK_RADIUS, normalized_y * JOYSTICK_RADIUS)
     
-    # Update the stick position
+    # Update the stick position to match camera angles
+    # This ensures the stick visually represents where the camera is looking
     look_joystick_stick.position = offset
+    
+    # Also update the target angles to match current camera position
+    # This ensures continuity when user starts touching the joystick again
+    look_target_yaw = yaw
+    look_target_pitch = pitch
 
 func _update_joystick_position() -> void:
     # Position joystick in bottom-left corner with margin
@@ -259,6 +268,14 @@ func get_input_vector() -> Vector2:
 func get_look_vector() -> Vector2:
     return look_joystick_vector
 
+func get_look_target_angles() -> Vector2:
+    """Returns target camera angles in radians as Vector2(yaw, pitch)"""
+    return Vector2(look_target_yaw, look_target_pitch)
+
+func has_look_input() -> bool:
+    """Returns true if the look joystick is currently being touched"""
+    return look_joystick_active
+
 func _create_look_joystick() -> void:
     DebugLogOverlay.add_log("Creating look joystick...", "cyan")
     
@@ -323,14 +340,31 @@ func _update_look_joystick(touch_pos: Vector2) -> void:
     
     look_joystick_stick.position = offset
     
-    # Calculate normalized vector
+    # Calculate normalized vector (-1 to 1 range)
     var normalized = offset / JOYSTICK_RADIUS
     
-    # Apply deadzone
+    # Apply deadzone for the vector (for backward compatibility)
     if normalized.length() < DEADZONE:
         look_joystick_vector = Vector2.ZERO
     else:
         look_joystick_vector = normalized
+    
+    # NEW: Convert joystick position directly to target camera angles
+    # The joystick circle represents exactly 80 degrees in all directions
+    # normalized.x maps to yaw (horizontal rotation): -1 = -80°, +1 = +80°
+    # normalized.y maps to pitch (vertical rotation): -1 = -80°, +1 = +80°
+    # Get max angles from player if available, default to 80 degrees
+    var max_yaw_deg = 80.0
+    var max_pitch_deg = 80.0
+    if player:
+        if "camera_max_yaw" in player:
+            max_yaw_deg = player.camera_max_yaw
+        if "camera_max_pitch" in player:
+            max_pitch_deg = player.camera_max_pitch
+    
+    # Convert normalized position to target angles in radians
+    look_target_yaw = normalized.x * deg_to_rad(max_yaw_deg)
+    look_target_pitch = normalized.y * deg_to_rad(max_pitch_deg)
 
 func _create_styled_button_style(bg_color: Color, corner_radius: int) -> StyleBoxFlat:
     # Helper function to create a styled button with rounded corners
