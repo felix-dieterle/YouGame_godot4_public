@@ -287,13 +287,13 @@ func _create_look_joystick() -> void:
     var indicator_length = JOYSTICK_RADIUS - INDICATOR_MARGIN
     look_direction_indicator = Control.new()
     look_direction_indicator.position = Vector2(0, 0)
-    look_direction_indicator.size = Vector2(INDICATOR_WIDTH, indicator_length)  # Thin rectangle from center to edge
-    look_direction_indicator.pivot_offset = Vector2(INDICATOR_WIDTH / 2, indicator_length)  # Pivot at the base (center of joystick)
+    look_direction_indicator.size = Vector2(INDICATOR_WIDTH, indicator_length)  # Thin rectangle extending upward
+    look_direction_indicator.pivot_offset = Vector2(INDICATOR_WIDTH / 2, 0)  # Pivot at the base (center of joystick)
     look_joystick_base.add_child(look_direction_indicator)
     
     var indicator_panel = Panel.new()
     indicator_panel.size = Vector2(INDICATOR_WIDTH, indicator_length)
-    indicator_panel.position = Vector2(-INDICATOR_WIDTH / 2, -indicator_length)  # Position from center upward
+    indicator_panel.position = Vector2(-INDICATOR_WIDTH / 2, -indicator_length)  # Position extending upward from pivot
     indicator_panel.modulate = Color(1.0, 1.0, 0.0, 0.9)  # Bright yellow for visibility
     look_direction_indicator.add_child(indicator_panel)
     
