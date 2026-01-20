@@ -9,7 +9,7 @@ const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
 const WARNING_TIME_2MIN: float = 2.0 * 60.0  # 2 minutes before sunset
 const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 const DAY_DURATION_HOURS: float = 10.0  # Day cycle represents 10 game hours (7 AM to 5 PM)
-const INITIAL_TIME_OFFSET_HOURS: float = 3.0  # Hours to advance sun position at game start (creates 10 AM lighting while displaying 7 AM due to sun_time_offset_hours)
+const INITIAL_TIME_OFFSET_HOURS: float = 3.0  # Hours to advance sun position at game start (creates 10 AM lighting while displaying 5 AM due to sun_time_offset_hours)
 
 # Sun angle constants
 const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
@@ -38,7 +38,7 @@ const SUNSET_COLOR_INTENSITY: float = 1.5  # Intensity of warm colors
 
 # Time scaling and offset
 var time_scale: float = 2.0  # Multiplier for time progression (2.0 = default, faster initial progression)
-var sun_time_offset_hours: float = -3.0  # Offset in hours to adjust displayed time (negative = earlier, positive = later)
+var sun_time_offset_hours: float = -5.0  # Offset in hours to adjust displayed time (negative = earlier, positive = later)
 
 # Time tracking
 var current_time: float = 0.0  # Current time in the day cycle (0 to DAY_CYCLE_DURATION)
@@ -433,7 +433,7 @@ func _load_state() -> void:
             is_locked_out = false
             lockout_end_time = 0.0
             # Start INITIAL_TIME_OFFSET_HOURS into the day cycle (sun ahead of displayed time)
-            # Display will show 7:00 AM due to sun_time_offset_hours = -3.0
+            # Display will show 5:00 AM due to sun_time_offset_hours = -5.0
             current_time = DAY_CYCLE_DURATION * (INITIAL_TIME_OFFSET_HOURS / DAY_DURATION_HOURS)
             time_scale = 2.0  # Start with double speed time progression
             print("DayNightCycle: Set current_time to: ", current_time)
