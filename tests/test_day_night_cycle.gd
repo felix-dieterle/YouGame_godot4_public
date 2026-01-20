@@ -77,9 +77,6 @@ func test_time_progression():
 	var test_scene = Node3D.new()
 	var day_night = DayNightCycle.new()
 	
-	# Add test_scene to scene tree so _ready() gets called on children
-	get_tree().root.add_child(test_scene)
-	
 	# Add mock directional light
 	var light = DirectionalLight3D.new()
 	light.add_to_group("DirectionalLight3D")
@@ -91,8 +88,14 @@ func test_time_progression():
 	env_node.add_to_group("WorldEnvironment")
 	test_scene.add_child(env_node)
 	
-	# Add day/night cycle (this will trigger _ready())
+	# Add day/night cycle
 	test_scene.add_child(day_night)
+	
+	# Add test_scene to scene tree using call_deferred to avoid timing conflicts
+	get_tree().root.call_deferred("add_child", test_scene)
+	
+	# Wait for next frame to ensure _ready() has been called
+	await get_tree().process_frame
 	
 	# Test initial state - should start INITIAL_TIME_OFFSET_HOURS into the day
 	# Display will show 7:00 AM due to sun_time_offset_hours = -3.0
@@ -102,7 +105,7 @@ func test_time_progression():
 	assert_equal(day_night.is_locked_out, false, "Should not be locked out initially")
 	
 	# Cleanup - remove from scene tree and free
-	get_tree().root.remove_child(test_scene)
+	get_tree().root.call_deferred("remove_child", test_scene)
 	test_scene.queue_free()
 	
 	# Clean up save files
