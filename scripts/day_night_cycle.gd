@@ -9,6 +9,7 @@ const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
 const WARNING_TIME_2MIN: float = 2.0 * 60.0  # 2 minutes before sunset
 const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 const DAY_DURATION_HOURS: float = 10.0  # Day cycle represents 10 game hours (7 AM to 5 PM)
+const INITIAL_TIME_OFFSET_HOURS: float = 3.0  # Hours to advance sun position at game start (creates 10 AM lighting while displaying 7 AM due to sun_time_offset_hours)
 
 # Sun angle constants
 const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
@@ -397,11 +398,12 @@ func _save_state() -> void:
 func _load_state() -> void:
     # Get day/night state from SaveGameManager (already loaded at startup)
     var loaded_from_manager = false
-    if SaveGameManager.has_save_file():
+    if SaveGameManager.has_save_file() and SaveGameManager._data_loaded:
+        print("DayNightCycle: Loading from SaveGameManager")
         var day_night_data = SaveGameManager.get_day_night_data()
-        is_locked_out = day_night_data["is_locked_out"]
-        lockout_end_time = day_night_data["lockout_end_time"]
-        current_time = day_night_data["current_time"]
+        is_locked_out = day_night_data.get("is_locked_out", false)
+        lockout_end_time = day_night_data.get("lockout_end_time", 0.0)
+        current_time = day_night_data.get("current_time", 0.0)
         # Load time_scale if available (with default of 2.0 for old saves to match fresh start)
         time_scale = day_night_data.get("time_scale", 2.0)
         # Load day count and night start time (defaults for old saves)
@@ -412,22 +414,29 @@ func _load_state() -> void:
     
     # Fall back to legacy save file if SaveGameManager didn't have data
     if not loaded_from_manager:
+        print("DayNightCycle: Trying to load from legacy file")
         var config = ConfigFile.new()
         var error = config.load(SAVE_FILE_PATH)
         
         if error == OK:
+            print("DayNightCycle: Legacy file loaded successfully")
             is_locked_out = config.get_value("day_night", "is_locked_out", false)
             lockout_end_time = config.get_value("day_night", "lockout_end_time", 0.0)
             current_time = config.get_value("day_night", "current_time", 0.0)
             time_scale = config.get_value("day_night", "time_scale", 2.0)  # Default 2.0 for old saves
             day_count = config.get_value("day_night", "day_count", 1)
             night_start_time = config.get_value("day_night", "night_start_time", 0.0)
+            print("DayNightCycle: current_time from legacy file: ", current_time)
         else:
             # No save file or error loading, use defaults for first start
+            print("DayNightCycle: No save file, using fresh start defaults")
             is_locked_out = false
             lockout_end_time = 0.0
-            current_time = 0.0  # Start at sunrise (dawn)
+            # Start INITIAL_TIME_OFFSET_HOURS into the day cycle (sun ahead of displayed time)
+            # Display will show 7:00 AM due to sun_time_offset_hours = -3.0
+            current_time = DAY_CYCLE_DURATION * (INITIAL_TIME_OFFSET_HOURS / DAY_DURATION_HOURS)
             time_scale = 2.0  # Start with double speed time progression
+            print("DayNightCycle: Set current_time to: ", current_time)
 
 
 # Create a moon that appears during night.
