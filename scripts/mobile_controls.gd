@@ -130,6 +130,9 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
     # Update the look direction indicator to show where the camera is pointing
     _update_look_direction_indicator()
+    
+    # Update the look joystick stick position to reflect current camera rotation
+    _update_look_joystick_stick_position()
 
 func _update_look_direction_indicator() -> void:
     # Update the visual indicator to show current look direction
@@ -146,6 +149,46 @@ func _update_look_direction_indicator() -> void:
     # The indicator points upward when yaw=0 (straight ahead)
     # and rotates left/right as the player looks left/right
     look_direction_indicator.rotation = yaw
+
+func _update_look_joystick_stick_position() -> void:
+    # Update the look joystick stick position to reflect current camera rotation
+    # This makes the stick "remember" where the player is looking
+    if not player or not "camera_rotation_x" in player or not "camera_rotation_y" in player:
+        return
+    
+    if not look_joystick_stick:
+        return
+    
+    # Don't update stick position while the user is actively touching the joystick
+    # This prevents interference with user input
+    if look_joystick_active:
+        return
+    
+    # Get camera rotation from player
+    var yaw = player.camera_rotation_y    # Horizontal rotation (radians)
+    var pitch = player.camera_rotation_x  # Vertical rotation (radians)
+    
+    # Get max rotation angles in radians
+    var max_yaw_rad = deg_to_rad(player.camera_max_yaw)
+    var max_pitch_rad = deg_to_rad(player.camera_max_pitch)
+    
+    # Convert camera rotation to joystick position
+    # Yaw controls X position (left/right)
+    # Pitch controls Y position (up/down)
+    # Normalize to -1..1 range based on max angles
+    var normalized_x = yaw / max_yaw_rad if max_yaw_rad > 0 else 0.0
+    var normalized_y = pitch / max_pitch_rad if max_pitch_rad > 0 else 0.0
+    
+    # Clamp to ensure we stay within -1..1 range
+    normalized_x = clamp(normalized_x, -1.0, 1.0)
+    normalized_y = clamp(normalized_y, -1.0, 1.0)
+    
+    # Convert normalized values to joystick offset
+    # Multiply by JOYSTICK_RADIUS to get pixel offset from center
+    var offset = Vector2(normalized_x * JOYSTICK_RADIUS, normalized_y * JOYSTICK_RADIUS)
+    
+    # Update the stick position
+    look_joystick_stick.position = offset
 
 func _update_joystick_position() -> void:
     # Position joystick in bottom-left corner with margin
@@ -199,7 +242,8 @@ func _input(event: InputEvent) -> void:
                 look_joystick_active = false
                 look_joystick_touch_index = -1
                 look_joystick_vector = Vector2.ZERO
-                look_joystick_stick.position = Vector2.ZERO
+                # Don't reset stick position - it will be updated by _update_look_joystick_stick_position()
+                # to reflect the current camera direction
     
     elif event is InputEventScreenDrag:
         var drag = event as InputEventScreenDrag
