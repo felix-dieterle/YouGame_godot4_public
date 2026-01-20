@@ -91,10 +91,18 @@ func test_path_handoff_at_boundaries():
 		PathSystem.get_path_segments_for_chunk(chunk, world_seed)
 	
 	# Check for continuity between chunks
-	var continuity_found = false
-	for i in range(chunks_to_generate.size() - 1):
-		var chunk1 = chunks_to_generate[i]
-		var chunk2 = chunks_to_generate[i + 1]
+	var continuity_found = _check_continuity_between_chunks(chunks_to_generate)
+	
+	if not continuity_found:
+		print("INFO: No path continuity found in tested chunks (depends on random seed)")
+	
+	PathSystem.clear_all_paths()
+
+## Helper function to check continuity between chunks
+func _check_continuity_between_chunks(chunks: Array) -> bool:
+	for i in range(chunks.size() - 1):
+		var chunk1 = chunks[i]
+		var chunk2 = chunks[i + 1]
 		
 		if not PathSystem.chunk_segments.has(chunk1):
 			continue
@@ -112,18 +120,11 @@ func test_path_handoff_at_boundaries():
 				if PathSystem.chunk_segments.has(chunk2):
 					var segments2 = PathSystem.chunk_segments[chunk2]
 					if segments2.size() > 0:
-						continuity_found = true
 						print("PASS: Found path continuity from chunk ", chunk1, " to ", chunk2)
 						print("  Exit at: ", exit_pos, " in chunk ", chunk1)
-						break
-		
-		if continuity_found:
-			break
+						return true
 	
-	if not continuity_found:
-		print("INFO: No path continuity found in tested chunks (depends on random seed)")
-	
-	PathSystem.clear_all_paths()
+	return false
 
 ## Test that paths reliably span multiple chunks
 func test_path_reliability_across_chunks():

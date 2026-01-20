@@ -99,7 +99,7 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 				var start_pos = Vector2(CHUNK_CENTER_OFFSET, CHUNK_CENTER_OFFSET)
 				
 				# Determine direction away from origin
-				var direction = Vector2(chunk_pos.x, chunk_pos.y).normalized()
+				var direction = Vector2(chunk_pos).normalized()
 				
 				# Add some random variation
 				var angle_variation = rng.randf_range(-PI/8, PI/8)
