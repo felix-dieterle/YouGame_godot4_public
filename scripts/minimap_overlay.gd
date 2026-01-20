@@ -12,6 +12,23 @@ const MAP_SCALE: float = 2.0  # How many world units per pixel
 const UPDATE_INTERVAL: float = 0.1  # Update map every 0.1 seconds (10 FPS)
 const POSITION_UPDATE_THRESHOLD: float = 2.0  # Only update if player moved this many units
 
+# Terrain color thresholds and colors
+const WATER_DEPTH_SHALLOW: float = 0.1
+const WATER_DEPTH_SCALE: float = 2.0
+const WATER_DARKNESS_R: float = 0.15
+const WATER_DARKNESS_G: float = 0.2
+const WATER_DARKNESS_B: float = 0.3
+
+const HEIGHT_THRESHOLD_LOW: float = 2.0  # Plains/grass
+const HEIGHT_THRESHOLD_MEDIUM: float = 5.0  # Forests/hills
+const HEIGHT_THRESHOLD_HIGH: float = 10.0  # Mountains
+
+const COLOR_WATER_BASE: Color = Color(0.2, 0.4, 0.8, 1.0)
+const COLOR_PLAINS: Color = Color(0.3, 0.6, 0.3, 1.0)
+const COLOR_FOREST: Color = Color(0.2, 0.5, 0.2, 1.0)
+const COLOR_MOUNTAIN: Color = Color(0.5, 0.4, 0.3, 1.0)
+const COLOR_PEAK: Color = Color(0.6, 0.6, 0.6, 1.0)
+
 # References
 var world_manager = null
 var player = null
@@ -97,7 +114,10 @@ func _update_positioning() -> void:
 	# Initialize or resize the map image
 	if not map_image or map_image.get_width() != map_size:
 		map_image = Image.create(map_size, map_size, false, Image.FORMAT_RGBA8)
-		map_texture = ImageTexture.create_from_image(map_image)
+		if map_texture:
+			map_texture.set_image(map_image)
+		else:
+			map_texture = ImageTexture.create_from_image(map_image)
 		map_rect.texture = map_texture
 
 func _process(delta: float) -> void:
@@ -126,9 +146,7 @@ func _process(delta: float) -> void:
 		if distance_moved > POSITION_UPDATE_THRESHOLD or last_player_position == Vector3.ZERO:
 			_render_map()
 			last_player_position = player_pos
-			update_timer = UPDATE_INTERVAL
-		else:
-			update_timer = UPDATE_INTERVAL
+		update_timer = UPDATE_INTERVAL
 
 func _update_compass() -> void:
 	if not player:
@@ -212,23 +230,24 @@ func _get_terrain_color(world_pos: Vector3) -> Color:
 	var water_depth = world_manager.get_water_depth_at_position(world_pos)
 	
 	# Water (blue, darker for deeper water)
-	if water_depth > 0.1:
-		var depth_factor = clamp(water_depth / 2.0, 0.0, 1.0)
-		return Color(0.2 - depth_factor * 0.15, 0.4 - depth_factor * 0.2, 0.8 - depth_factor * 0.3, 1.0)
+	if water_depth > WATER_DEPTH_SHALLOW:
+		var depth_factor = clamp(water_depth / WATER_DEPTH_SCALE, 0.0, 1.0)
+		return Color(
+			COLOR_WATER_BASE.r - depth_factor * WATER_DARKNESS_R,
+			COLOR_WATER_BASE.g - depth_factor * WATER_DARKNESS_G,
+			COLOR_WATER_BASE.b - depth_factor * WATER_DARKNESS_B,
+			1.0
+		)
 	
 	# Land colors based on height
-	# Low areas (green - grass/plains)
-	if height < 2.0:
-		return Color(0.3, 0.6, 0.3, 1.0)
-	# Medium height (darker green - forests/hills)
-	elif height < 5.0:
-		return Color(0.2, 0.5, 0.2, 1.0)
-	# High areas (brown/gray - mountains)
-	elif height < 10.0:
-		return Color(0.5, 0.4, 0.3, 1.0)
-	# Very high (gray - peaks)
+	if height < HEIGHT_THRESHOLD_LOW:
+		return COLOR_PLAINS  # Low areas (green - grass/plains)
+	elif height < HEIGHT_THRESHOLD_MEDIUM:
+		return COLOR_FOREST  # Medium height (darker green - forests/hills)
+	elif height < HEIGHT_THRESHOLD_HIGH:
+		return COLOR_MOUNTAIN  # High areas (brown/gray - mountains)
 	else:
-		return Color(0.6, 0.6, 0.6, 1.0)
+		return COLOR_PEAK  # Very high (gray - peaks)
 
 func _draw_player_indicator() -> void:
 	if not player or not map_image:
@@ -252,8 +271,9 @@ func _draw_player_indicator() -> void:
 					map_image.set_pixel(px, py, player_color)
 	
 	# Draw direction indicator (arrow pointing in facing direction)
-	# In Godot: rotation.y of 0 points north (+Z), PI/2 points east (+X)
-	# For top-down map: Y-axis is vertical (down = south), X-axis is horizontal (right = east)
+	# Note: In Godot, rotation.y follows right-hand rule around Y-axis
+	# When viewed from above (top-down), increasing rotation.y rotates clockwise
+	# rotation.y = 0 means facing forward along model's default orientation
 	var rotation = player.rotation.y
 	var arrow_length = 8
 	var arrow_end_x = center_x + int(sin(rotation) * arrow_length)
