@@ -164,6 +164,14 @@ starting_loc.adjust_to_terrain(world_manager)
 
 The starting chunk (0,0) intentionally has no path segments. Players begin in an unmarked area without visible paths.
 
+### Initial Path Seeding
+
+To ensure paths exist in the world, **initial seed paths** are created in chunks directly adjacent to the origin:
+- Chunks at distance 1 from origin (e.g., (1,0), (-1,0), (0,1), (0,-1))
+- If no paths from neighbors exist, create a main path starting from chunk center
+- Path direction points away from origin with slight random variation
+- These seed paths then propagate to other chunks through continuation
+
 ### Path Continuation
 
 For each chunk:
@@ -171,6 +179,7 @@ For each chunk:
 2. Find segments that exit toward current chunk
 3. Create corresponding entry segment
 4. Add random direction variation
+5. If no paths from neighbors and not adjacent to origin, chunk has no paths
 
 ### Branching Logic
 
@@ -484,6 +493,31 @@ These changes make paths clearly visible against the terrain while maintaining a
 - `tests/test_path_system.gd` - Updated tests to expect no paths at starting chunk
 - `tests/verify_path_visibility.gd` - Updated verification to expect no paths at starting chunk
 - `docs/systems/PATH_SYSTEM.md` - Updated documentation
+
+### January 2026 - Critical Bug Fix: Path Generation Not Working
+
+**Issue**: "Überprüfen sie weg generierung" (Check path generation)
+
+**Problem**: No paths were being generated anywhere in the world due to missing initial path seeding.
+
+**Root Cause**: 
+1. Chunk (0,0) intentionally has no paths (by design)
+2. All other chunks only continue paths from neighboring chunks
+3. **No mechanism existed to create initial/seed paths**
+4. Result: The entire path system was broken - no paths anywhere
+
+**Solution**: Added initial path generation for chunks directly adjacent to origin (distance=1):
+- Adjacent chunks now create seed paths if no paths from neighbors exist
+- Seed paths start from chunk center and point away from origin
+- These initial paths then propagate to other chunks through the existing continuation system
+- Path network can now grow naturally from the seed paths
+
+**Files Changed**:
+- `scripts/path_system.gd` - Added initial path seeding logic
+- `tests/test_path_system.gd` - Updated to verify initial paths are created
+- `tests/test_path_continuity.gd` - New comprehensive path continuity tests
+- `tests/verify_path_generation.gd` - New verification script
+- `docs/systems/PATH_SYSTEM.md` - Updated documentation with seeding algorithm
 
 ## License / Lizenz
 
