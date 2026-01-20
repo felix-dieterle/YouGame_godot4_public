@@ -899,8 +899,8 @@ func _place_forest_objects(cluster: ClusterSystem.ClusterData) -> void:
             sample_count += 1
     
     avg_influence /= sample_count
-    # Increased multiplier from 0.02 to 0.05 for denser forests
-    var tree_count = int(chunk_area * cluster.density * avg_influence * 0.05)
+    # Increased multiplier from 0.05 to 0.08 for significantly denser forests
+    var tree_count = int(chunk_area * cluster.density * avg_influence * 0.08)
     
     # Place trees
     for i in range(tree_count):

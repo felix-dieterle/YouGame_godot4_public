@@ -9,11 +9,11 @@ class_name ProceduralModels
 ## - Rocks (for terrain decoration)
 ## All models are optimized for mobile rendering
 
-# Tree generation constants
-const TREE_TRUNK_HEIGHT = 2.0
-const TREE_TRUNK_RADIUS = 0.15
-const TREE_CANOPY_RADIUS = 1.2
-const TREE_CANOPY_HEIGHT = 2.5
+# Tree generation constants - Increased for larger, more prominent trees
+const TREE_TRUNK_HEIGHT = 4.0  # Increased from 2.0 for taller trees
+const TREE_TRUNK_RADIUS = 0.25  # Increased from 0.15 for thicker trunks
+const TREE_CANOPY_RADIUS = 2.5  # Increased from 1.2 for wider canopies
+const TREE_CANOPY_HEIGHT = 4.5  # Increased from 2.5 for taller canopies
 const TREE_TRUNK_SEGMENTS = 6
 const TREE_CANOPY_SEGMENTS = 8
 
@@ -90,39 +90,55 @@ static func create_tree_mesh(seed_val: int = 0, tree_type: int = TreeType.AUTO) 
     surface_tool.generate_normals()
     return surface_tool.commit()
 
-## Create a conifer (pine/spruce) tree
+## Create a conifer (pine/spruce) tree with enhanced realism
 static func _create_conifer_tree(st: SurfaceTool, rng: RandomNumberGenerator):
-    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(1.2, 1.5)
-    var base_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.6, 0.8)
+    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(1.3, 1.6)  # Taller trunks for conifers
+    var base_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.7, 0.9)
     
-    # Trunk (brown cylinder)
-    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS * 0.8, 
-                  TREE_TRUNK_SEGMENTS, Color(0.35, 0.22, 0.13))
+    # Trunk (brown cylinder with darker brown for conifers)
+    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS * 0.9, 
+                  TREE_TRUNK_SEGMENTS, Color(0.3, 0.18, 0.10))
     
-    # Multiple cone layers for conifer shape
-    var layer_count = 3
+    # Multiple cone layers for classic conifer shape - more layers for better appearance
+    var layer_count = 4  # Increased from 3 for fuller trees
     for i in range(layer_count):
-        var layer_height = trunk_height + i * 0.8
-        var cone_height = 1.5
-        var cone_radius = base_radius * (1.0 - i * 0.25)
-        var green_shade = rng.randf_range(0.15, 0.25)
+        var layer_height = trunk_height + i * 0.9
+        var cone_height = 1.8  # Taller cone sections
+        var cone_radius = base_radius * (1.0 - i * 0.2)  # Gradual taper
+        var green_shade = rng.randf_range(0.12, 0.20)  # Darker greens for conifers
         _add_cone(st, Vector3(0, layer_height, 0), cone_height, 
-                  cone_radius, TREE_CANOPY_SEGMENTS, Color(green_shade, 0.5 + green_shade, green_shade))
+                  cone_radius, TREE_CANOPY_SEGMENTS, Color(green_shade, 0.45 + green_shade, green_shade))
 
-## Create a broad-leaf tree (original style)
+## Create a broad-leaf tree with improved multi-layer canopy
 static func _create_broadleaf_tree(st: SurfaceTool, rng: RandomNumberGenerator):
-    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(0.9, 1.1)
-    var canopy_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.8, 1.2)
-    var canopy_height = TREE_CANOPY_HEIGHT * rng.randf_range(0.9, 1.1)
+    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(1.1, 1.4)  # Taller trunks for broadleaf
+    var base_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.9, 1.2)
     
-    # Trunk (brown cylinder)
-    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS, 
-                  TREE_TRUNK_SEGMENTS, Color(0.4, 0.25, 0.15))
+    # Trunk (brown cylinder with slight variation)
+    var trunk_brown = Color(0.35, 0.22, 0.14)
+    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS * 1.2, 
+                  TREE_TRUNK_SEGMENTS, trunk_brown)
     
-    # Canopy (green cone)
-    var green_variation = rng.randf_range(-0.1, 0.1)
-    _add_cone(st, Vector3(0, trunk_height, 0), canopy_height, 
-              canopy_radius, TREE_CANOPY_SEGMENTS, Color(0.2 + green_variation, 0.6 + green_variation, 0.2 + green_variation))
+    # Multi-layer rounded canopy for realistic broadleaf appearance
+    # Use overlapping spherical shapes to create a fuller, more natural canopy
+    var layer_count = 3
+    var green_base = rng.randf_range(0.15, 0.25)
+    
+    for i in range(layer_count):
+        # Layers positioned to create rounded canopy shape
+        var layer_height = trunk_height + i * 1.2 - 0.3
+        var layer_radius = base_radius * (1.2 - i * 0.2)  # Slightly smaller as we go up
+        var cone_height = 2.2
+        
+        # Vary green shades for depth and realism
+        var green_shade = Color(green_base + i * 0.03, 0.5 + green_base + i * 0.02, green_base + i * 0.03)
+        _add_cone(st, Vector3(0, layer_height, 0), cone_height, 
+                  layer_radius, TREE_CANOPY_SEGMENTS, green_shade)
+    
+    # Add top crown cone for rounded top
+    var crown_height = trunk_height + (layer_count - 1) * 1.2 + 1.0
+    _add_cone(st, Vector3(0, crown_height, 0), 1.5, 
+              base_radius * 0.7, TREE_CANOPY_SEGMENTS, Color(green_base + 0.1, 0.55 + green_base, green_base + 0.1))
 
 ## Create a small bush
 static func _create_small_bush(st: SurfaceTool, rng: RandomNumberGenerator):
