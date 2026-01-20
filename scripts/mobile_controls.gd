@@ -29,6 +29,8 @@ const JOYSTICK_DETECTION_MULTIPLIER: float = 1.5  # Multiplier for joystick dete
 const BUTTON_SIZE: float = 60.0
 const PANEL_WIDTH: float = 300.0
 const PANEL_HEIGHT: float = 350.0
+const INDICATOR_MARGIN: float = 10.0  # Margin for direction indicator from edge
+const INDICATOR_WIDTH: float = 6.0  # Width of direction indicator line
 @export var joystick_margin_x: float = 120.0
 @export var joystick_margin_y: float = 120.0
 @export var look_joystick_margin_x: float = 120.0  # Right margin for look joystick
@@ -282,15 +284,16 @@ func _create_look_joystick() -> void:
     stick_panel.add_theme_stylebox_override("panel", stick_style)
     
     # Create direction indicator (shows current look direction relative to straight ahead)
+    var indicator_length = JOYSTICK_RADIUS - INDICATOR_MARGIN
     look_direction_indicator = Control.new()
     look_direction_indicator.position = Vector2(0, 0)
-    look_direction_indicator.size = Vector2(6, JOYSTICK_RADIUS - 10)  # Thin rectangle from center to edge
-    look_direction_indicator.pivot_offset = Vector2(3, 0)  # Pivot at the center base
+    look_direction_indicator.size = Vector2(INDICATOR_WIDTH, indicator_length)  # Thin rectangle from center to edge
+    look_direction_indicator.pivot_offset = Vector2(INDICATOR_WIDTH / 2, indicator_length)  # Pivot at the base (center of joystick)
     look_joystick_base.add_child(look_direction_indicator)
     
     var indicator_panel = Panel.new()
-    indicator_panel.size = Vector2(6, JOYSTICK_RADIUS - 10)
-    indicator_panel.position = Vector2(-3, -JOYSTICK_RADIUS + 10)  # Position from center upward
+    indicator_panel.size = Vector2(INDICATOR_WIDTH, indicator_length)
+    indicator_panel.position = Vector2(-INDICATOR_WIDTH / 2, -indicator_length)  # Position from center upward
     indicator_panel.modulate = Color(1.0, 1.0, 0.0, 0.9)  # Bright yellow for visibility
     look_direction_indicator.add_child(indicator_panel)
     
