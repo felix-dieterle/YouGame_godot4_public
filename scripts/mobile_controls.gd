@@ -164,6 +164,10 @@ func _update_look_joystick_stick_position() -> void:
     if look_joystick_active:
         return
     
+    # Check if player has the required properties for max angles
+    if not "camera_max_yaw" in player or not "camera_max_pitch" in player:
+        return
+    
     # Get camera rotation from player
     var yaw = player.camera_rotation_y    # Horizontal rotation (radians)
     var pitch = player.camera_rotation_x  # Vertical rotation (radians)
