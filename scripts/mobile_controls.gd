@@ -133,7 +133,7 @@ func _process(_delta: float) -> void:
 
 func _update_look_direction_indicator() -> void:
     # Update the visual indicator to show current look direction
-    if not player or not player.has("camera_rotation_x") or not player.has("camera_rotation_y"):
+    if not player or not "camera_rotation_x" in player or not "camera_rotation_y" in player:
         return
     
     if not look_direction_indicator:

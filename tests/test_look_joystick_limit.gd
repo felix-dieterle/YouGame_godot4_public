@@ -40,7 +40,7 @@ func test_player_camera_yaw_limit_exists():
 	await get_tree().process_frame
 	
 	# Check if camera_max_yaw variable exists
-	if player.has("camera_max_yaw"):
+	if "camera_max_yaw" in player:
 		assert_pass("Player has camera_max_yaw variable")
 		
 		# Check the default value
@@ -67,7 +67,7 @@ func test_player_camera_limits_applied():
 	await get_tree().process_frame
 	
 	# Verify that camera_rotation_x and camera_rotation_y exist
-	if not player.has("camera_rotation_x") or not player.has("camera_rotation_y"):
+	if not "camera_rotation_x" in player or not "camera_rotation_y" in player:
 		assert_fail("Player missing camera rotation variables")
 		player.queue_free()
 		return
@@ -104,7 +104,7 @@ func test_mobile_controls_direction_indicator_exists():
 	await get_tree().process_frame
 	
 	# Check if look_direction_indicator variable exists
-	if mobile_controls.has("look_direction_indicator"):
+	if "look_direction_indicator" in mobile_controls:
 		assert_pass("MobileControls has look_direction_indicator variable")
 		
 		# Check if it was created
