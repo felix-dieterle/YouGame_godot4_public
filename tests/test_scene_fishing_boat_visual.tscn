@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dnp3bx8vh5rsg"]
+
+[ext_resource type="Script" path="res://tests/test_fishing_boat_visual.gd" id="1_fishing_boat_visual"]
+
+[node name="TestFishingBoatVisual" type="Node3D"]
+script = ExtResource("1_fishing_boat_visual")
