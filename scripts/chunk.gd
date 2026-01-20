@@ -1421,26 +1421,25 @@ func _setup_wind_sound() -> void:
     # Create procedural wind sound using AudioStreamGenerator
     var generator = AudioStreamGenerator.new()
     generator.mix_rate = 22050.0
-    generator.buffer_length = 0.5  # 0.5 second buffer
+    generator.buffer_length = 2.0  # 2 second buffer for looping
     
     wind_sound_player.stream = generator
-    wind_sound_player.autoplay = false
     wind_sound_player.volume_db = -15.0  # Quieter ambient sound
     
     add_child(wind_sound_player)
     
-    # Start playing the wind sound
-    wind_sound_player.play()
-    
-    # Start generating wind sound in the background
-    _generate_wind_sound()
+    # Generate wind sound buffer once and let it loop
+    call_deferred("_generate_wind_sound_buffer")
 
-## Generate procedural wind whistling sound
-func _generate_wind_sound() -> void:
-    if not wind_sound_player or not wind_sound_player.playing:
+## Generate procedural wind whistling sound buffer (one-time generation)
+func _generate_wind_sound_buffer() -> void:
+    if not wind_sound_player:
         return
     
-    # Wait one frame for stream to initialize
+    # Start playing to initialize the stream
+    wind_sound_player.play()
+    
+    # Wait for stream to initialize
     await get_tree().process_frame
     
     var playback = wind_sound_player.get_stream_playback() as AudioStreamGeneratorPlayback
@@ -1448,31 +1447,36 @@ func _generate_wind_sound() -> void:
         return
     
     var generator = wind_sound_player.stream as AudioStreamGenerator
+    var duration = generator.buffer_length
+    var total_frames = int(generator.mix_rate * duration)
     
-    # Continuously generate wind sound
-    while wind_sound_player and wind_sound_player.playing:
-        var frames_available = playback.get_frames_available()
+    # Pre-generate noise values for natural variation
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z))
+    
+    # Generate a looping wind sound buffer
+    for i in range(total_frames):
+        var t = float(i) / generator.mix_rate
         
-        # Generate wind whistling sound (mix of low rumble and high whistle)
-        for i in range(frames_available):
-            var t = float(i) / generator.mix_rate
-            
-            # Low frequency rumble (wind base)
-            var rumble = sin(2.0 * PI * 30.0 * t + randf() * 0.5) * 0.3
-            
-            # High frequency whistle (wind through gaps)
-            var whistle = sin(2.0 * PI * 800.0 * t + sin(2.0 * PI * 5.0 * t) * 3.0) * 0.15
-            
-            # Add noise for natural wind texture
-            var noise = (randf() * 2.0 - 1.0) * 0.2
-            
-            # Combine all components with slow amplitude modulation
-            var modulation = (sin(2.0 * PI * 0.5 * (Time.get_ticks_msec() / 1000.0 + t)) + 1.0) / 2.0
-            var sample = (rumble + whistle + noise) * modulation * 0.5
-            
-            playback.push_frame(Vector2(sample, sample))
+        # Low frequency rumble (wind base) - slow varying
+        var rumble = sin(2.0 * PI * 30.0 * t) * 0.3
         
-        # Wait a bit before generating more frames
-        await get_tree().create_timer(0.1).timeout
+        # High frequency whistle (wind through gaps) - with slow frequency modulation
+        var freq_mod = sin(2.0 * PI * 0.3 * t) * 100.0  # Vary frequency slowly
+        var whistle = sin(2.0 * PI * (800.0 + freq_mod) * t) * 0.15
+        
+        # Add deterministic noise for natural wind texture
+        var noise_val = sin(2.0 * PI * 50.0 * t + rng.randf() * TAU) * 0.2
+        
+        # Slow amplitude modulation for varying wind intensity
+        var modulation = (sin(2.0 * PI * 0.4 * t) + 1.0) / 2.0
+        var sample = (rumble + whistle + noise_val) * modulation * 0.5
+        
+        # Push stereo frame
+        playback.push_frame(Vector2(sample, sample))
+        
+        # Yield periodically to avoid blocking
+        if i % 1000 == 0:
+            await get_tree().process_frame
 
 
