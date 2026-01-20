@@ -99,6 +99,7 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 				var start_pos = Vector2(CHUNK_CENTER_OFFSET, CHUNK_CENTER_OFFSET)
 				
 				# Determine direction away from origin
+				# Convert chunk grid position to direction vector (e.g., (1,0) -> right, (0,-1) -> up)
 				var direction = Vector2(chunk_pos).normalized()
 				
 				# Add some random variation

@@ -37,7 +37,8 @@ func test_boundary_detection():
 	]
 	
 	for test_case in test_cases:
-		# Create a test segment
+		# Create a test segment directly (not using _create_segment) to test boundary detection in isolation
+		# This allows testing specific edge cases without involving the full segment creation logic
 		var rng = RandomNumberGenerator.new()
 		rng.seed = world_seed
 		var chunk_pos = Vector2i(0, 0)
