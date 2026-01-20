@@ -21,15 +21,19 @@ func test_boundary_detection():
 	PathSystem.clear_all_paths()
 	var world_seed = 12345
 	
+	# Get boundary detection threshold from PathSystem
+	var threshold = PathSystem.BOUNDARY_DETECTION_THRESHOLD
+	var chunk_size = PathSystem.CHUNK_SIZE
+	
 	# Test paths at various positions near boundaries
 	var test_cases = [
-		{"name": "Near left edge", "end_x": 1.5, "should_exit_left": true},
-		{"name": "Just inside threshold", "end_x": 1.9, "should_exit_left": true},
-		{"name": "Just outside threshold", "end_x": 2.1, "should_exit_left": false},
-		{"name": "Middle of chunk", "end_x": 16.0, "should_exit_left": false},
-		{"name": "Near right edge", "end_x": 30.5, "should_exit_right": true},
-		{"name": "Just inside right threshold", "end_x": 30.1, "should_exit_right": true},
-		{"name": "Just outside right threshold", "end_x": 29.9, "should_exit_right": false},
+		{"name": "Near left edge", "end_x": threshold - 0.5, "should_exit_left": true},
+		{"name": "Just inside threshold", "end_x": threshold - 0.1, "should_exit_left": true},
+		{"name": "Just outside threshold", "end_x": threshold + 0.1, "should_exit_left": false},
+		{"name": "Middle of chunk", "end_x": chunk_size / 2.0, "should_exit_left": false},
+		{"name": "Near right edge", "end_x": chunk_size - threshold + 0.5, "should_exit_right": true},
+		{"name": "Just inside right threshold", "end_x": chunk_size - threshold + 0.1, "should_exit_right": true},
+		{"name": "Just outside right threshold", "end_x": chunk_size - threshold - 0.1, "should_exit_right": false},
 	]
 	
 	for test_case in test_cases:
@@ -37,10 +41,12 @@ func test_boundary_detection():
 		var rng = RandomNumberGenerator.new()
 		rng.seed = world_seed
 		var chunk_pos = Vector2i(0, 0)
-		var start = Vector2(16, 16)
-		var end = Vector2(test_case.end_x, 16)
+		var start = Vector2(chunk_size / 2.0, chunk_size / 2.0)
+		var end = Vector2(test_case.end_x, chunk_size / 2.0)
 		
-		var segment = PathSystem.PathSegment.new(0, chunk_pos, start, end, PathSystem.PathType.MAIN_PATH, 2.5)
+		# Use constants for segment creation
+		var test_width = PathSystem.DEFAULT_PATH_WIDTH
+		var segment = PathSystem.PathSegment.new(0, chunk_pos, start, end, PathSystem.PathType.MAIN_PATH, test_width)
 		
 		# Check left exit
 		var left_neighbor = Vector2i(-1, 0)

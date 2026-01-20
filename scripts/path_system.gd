@@ -48,6 +48,7 @@ static var next_segment_id: int = 0
 # Constants - Reference chunk size from a known constant
 # Note: Must match the chunk size used in the game
 const CHUNK_SIZE = 32.0  # Should match Chunk.CHUNK_SIZE
+const CHUNK_CENTER_OFFSET = CHUNK_SIZE / 2.0  # Center position within a chunk
 const DEFAULT_PATH_WIDTH = 2.5  # Increased for better visibility
 const MAIN_PATH_WIDTH_MULTIPLIER = 1.5  # Main paths are 50% wider than default
 const BRANCH_PATH_WIDTH_MULTIPLIER = 0.8  # Branch paths are 80% of default width (20% narrower)
@@ -57,6 +58,7 @@ const MIN_SEGMENT_LENGTH = 8.0
 const MAX_SEGMENT_LENGTH = 20.0
 const PATH_ROUGHNESS = 0.3  # How much paths can deviate (0 = straight, 1 = very curvy)
 const MIN_STARTING_PATH_RATIO = 0.7  # Starting path is at least 70% of max length for visibility
+const BOUNDARY_DETECTION_THRESHOLD = 2.0  # Distance from edge to consider path exiting chunk
 
 ## Generate or get path segments for a chunk
 static func get_path_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -> Array[PathSegment]:
@@ -94,7 +96,7 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 			
 			# Create initial paths in chunks directly adjacent to origin (distance = 1)
 			if distance_from_origin == 1:
-				var start_pos = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
+				var start_pos = Vector2(CHUNK_CENTER_OFFSET, CHUNK_CENTER_OFFSET)
 				
 				# Determine direction away from origin
 				var direction = Vector2(chunk_pos.x, chunk_pos.y).normalized()
@@ -169,19 +171,18 @@ static func _continue_paths_from_neighbors(chunk_pos: Vector2i, world_seed: int,
 ## Get position where segment exits chunk (if any)
 static func _get_chunk_exit_position(segment: PathSegment, segment_chunk: Vector2i, target_chunk: Vector2i) -> Vector2:
 	var end = segment.end_pos
-	var threshold = 2.0  # Distance from edge to consider exiting
 	
 	# Left neighbor
-	if target_chunk.x < segment_chunk.x and end.x < threshold:
+	if target_chunk.x < segment_chunk.x and end.x < BOUNDARY_DETECTION_THRESHOLD:
 		return end
 	# Right neighbor
-	if target_chunk.x > segment_chunk.x and end.x > CHUNK_SIZE - threshold:
+	if target_chunk.x > segment_chunk.x and end.x > CHUNK_SIZE - BOUNDARY_DETECTION_THRESHOLD:
 		return end
 	# Top neighbor
-	if target_chunk.y < segment_chunk.y and end.y < threshold:
+	if target_chunk.y < segment_chunk.y and end.y < BOUNDARY_DETECTION_THRESHOLD:
 		return end
 	# Bottom neighbor
-	if target_chunk.y > segment_chunk.y and end.y > CHUNK_SIZE - threshold:
+	if target_chunk.y > segment_chunk.y and end.y > CHUNK_SIZE - BOUNDARY_DETECTION_THRESHOLD:
 		return end
 	
 	return Vector2(-1, -1)  # No exit
