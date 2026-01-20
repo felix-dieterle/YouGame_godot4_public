@@ -37,20 +37,47 @@ var sun_time_offset_hours: float = 0.0
 
 | Game State | Previous Display | New Display | Change |
 |------------|------------------|-------------|--------|
-| Game start (fresh start) | 5:00 AM | 7:00 AM | +2 hours |
-| After sunrise animation | 2:00 AM | 7:00 AM | +5 hours |
-| Sun at zenith (noon) | 7:00 AM | 12:00 PM | +5 hours |
-| Day end (sunset start) | 12:00 PM | 5:00 PM | +5 hours |
+| Game start (fresh start) | 10:00 AM (with offset -5.0 and initial 3.0) | 7:00 AM | -3 hours |
+| After sunrise animation | 7:00 AM (default) | 7:00 AM | No change |
+| Sun at zenith (noon) | 12:00 PM | 12:00 PM | No change |
+| Day end (sunset start) | 5:00 PM | 5:00 PM | No change |
+
+Note: The "Previous Display" for game start was calculated as:
+- time_ratio = 3.0/10.0 = 0.3
+- base_minutes = 0.3 * 10.0 * 60.0 = 180
+- SUNRISE_TIME_MINUTES = 420 (7:00 AM)
+- sun_time_offset = -5.0 * 60 = -300
+- total = 180 + 420 - 300 = 300 minutes = 5:00 AM
+
+Actually, with the previous settings (INITIAL_TIME_OFFSET_HOURS = 3.0, sun_time_offset_hours = -5.0):
+- The game started at 5:00 AM on the display
+
+Now with new settings (INITIAL_TIME_OFFSET_HOURS = 0.0, sun_time_offset_hours = 0.0):
+- The game starts at 7:00 AM on the display
 
 ## Calculation Example
 
 At game start with new values:
 ```
 time_ratio = 0.0 * (0.0 / 10.0) = 0.0
-total_minutes = 0.0 * 10.0 * 60.0 + 420 + 0.0 * 60.0
+base_minutes = 0.0 * 10.0 * 60.0 = 0
+SUNRISE_TIME_MINUTES = 420 (7:00 AM in minutes from midnight)
+sun_offset_minutes = 0.0 * 60.0 = 0
+total_minutes = base_minutes + SUNRISE_TIME_MINUTES + sun_offset_minutes
              = 0 + 420 + 0
              = 420 minutes
-             = 7:00 AM
+             = 7:00 AM (420 / 60 = 7 hours)
+```
+
+With previous values (for comparison):
+```
+time_ratio = 0.0 * (3.0 / 10.0) = 0.3
+base_minutes = 0.3 * 10.0 * 60.0 = 180
+SUNRISE_TIME_MINUTES = 420 (7:00 AM in minutes from midnight)
+sun_offset_minutes = -5.0 * 60.0 = -300
+total_minutes = 180 + 420 - 300
+             = 300 minutes
+             = 5:00 AM
 ```
 
 ## User Experience
