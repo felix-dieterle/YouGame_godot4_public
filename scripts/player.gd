@@ -31,6 +31,7 @@ var camera_rotation_x: float = 0.0  # Vertical rotation (pitch)
 var camera_rotation_y: float = 0.0  # Horizontal rotation (yaw)
 @export var camera_sensitivity: float = 0.083333  # Reduced to 1/6 sensitivity (0.5/6) for half as sensitive look joystick
 @export var camera_max_pitch: float = 80.0  # Maximum vertical look angle in degrees
+@export var camera_max_yaw: float = 80.0  # Maximum horizontal look angle in degrees
 
 # Footstep sound system
 var footstep_player: AudioStreamPlayer
@@ -113,6 +114,8 @@ func _physics_process(delta) -> void:
             
             # Clamp vertical rotation to prevent looking too far up/down
             camera_rotation_x = clamp(camera_rotation_x, -deg_to_rad(camera_max_pitch), deg_to_rad(camera_max_pitch))
+            # Clamp horizontal rotation to prevent looking too far left/right
+            camera_rotation_y = clamp(camera_rotation_y, -deg_to_rad(camera_max_yaw), deg_to_rad(camera_max_yaw))
             
             # Apply rotation to camera
             _update_camera_rotation()
