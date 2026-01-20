@@ -38,10 +38,10 @@ class ClusterData:
 static var all_clusters: Dictionary = {}  # Key: cluster_id, Value: ClusterData
 static var next_cluster_id: int = 0
 
-# Constants
+# Constants - Increased for larger, more prominent forests
 const CHUNK_SIZE = 32  # Must match Chunk.CHUNK_SIZE
-const FOREST_MIN_RADIUS = 15.0
-const FOREST_MAX_RADIUS = 40.0
+const FOREST_MIN_RADIUS = 30.0  # Increased from 15.0 for larger forests
+const FOREST_MAX_RADIUS = 70.0  # Increased from 40.0 for much larger forests
 const SETTLEMENT_MIN_RADIUS = 12.0
 const SETTLEMENT_MAX_RADIUS = 25.0
 
@@ -116,7 +116,7 @@ static func _create_forest_cluster(chunk_pos: Vector2i, world_seed: int, rng: Ra
     )
     
     var radius = rng.randf_range(FOREST_MIN_RADIUS, FOREST_MAX_RADIUS)
-    var density = rng.randf_range(0.5, 1.0)  # Increased density for proper forests
+    var density = rng.randf_range(0.7, 1.0)  # Increased from 0.5-1.0 for denser forests
     
     var cluster = ClusterData.new(
         cluster_id,
