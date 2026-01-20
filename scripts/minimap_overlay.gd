@@ -9,7 +9,8 @@ const MAP_SIZE_RATIO: float = 0.2  # 1/5 of screen width
 const MAP_OPACITY: float = 0.8  # 80% opacity (20% transparency)
 const MAP_MARGIN: float = 10.0  # Margin from screen edges
 const MAP_SCALE: float = 2.0  # How many world units per pixel
-const VISITED_DECAY_TIME: float = 300.0  # 5 minutes before visited areas start to fade
+const UPDATE_INTERVAL: float = 0.1  # Update map every 0.1 seconds (10 FPS)
+const POSITION_UPDATE_THRESHOLD: float = 2.0  # Only update if player moved this many units
 
 # References
 var world_manager = null
@@ -20,8 +21,12 @@ var map_texture: ImageTexture
 var map_image: Image
 var map_size: int = 200  # Will be calculated based on screen size
 
-# Visited areas tracking (stores Vector2i chunk positions with timestamp)
+# Visited areas tracking (stores Vector2i chunk positions)
 var visited_chunks: Dictionary = {}
+
+# Performance optimization
+var update_timer: float = 0.0
+var last_player_position: Vector3 = Vector3.ZERO
 
 # UI elements
 var map_panel: PanelContainer
@@ -95,25 +100,35 @@ func _update_positioning() -> void:
 		map_texture = ImageTexture.create_from_image(map_image)
 		map_rect.texture = map_texture
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not player or not world_manager:
 		return
 	
-	# Update positioning if window size changed
-	_update_positioning()
+	# Update positioning if window size changed (infrequent check)
+	if update_timer <= 0.0:
+		_update_positioning()
 	
 	# Track current chunk as visited
 	var player_pos = player.global_position
 	var chunk_x = int(floor(player_pos.x / world_manager.CHUNK_SIZE))
 	var chunk_z = int(floor(player_pos.z / world_manager.CHUNK_SIZE))
 	var chunk_pos = Vector2i(chunk_x, chunk_z)
-	visited_chunks[chunk_pos] = Time.get_unix_time_from_system()
+	visited_chunks[chunk_pos] = true
 	
-	# Update compass direction
+	# Update compass direction (cheap operation)
 	_update_compass()
 	
-	# Render the map
-	_render_map()
+	# Throttle expensive map rendering
+	update_timer -= delta
+	if update_timer <= 0.0:
+		# Check if player moved significantly
+		var distance_moved = player_pos.distance_to(last_player_position)
+		if distance_moved > POSITION_UPDATE_THRESHOLD or last_player_position == Vector3.ZERO:
+			_render_map()
+			last_player_position = player_pos
+			update_timer = UPDATE_INTERVAL
+		else:
+			update_timer = UPDATE_INTERVAL
 
 func _update_compass() -> void:
 	if not player:
@@ -237,10 +252,12 @@ func _draw_player_indicator() -> void:
 					map_image.set_pixel(px, py, player_color)
 	
 	# Draw direction indicator (arrow pointing in facing direction)
+	# In Godot: rotation.y of 0 points north (+Z), PI/2 points east (+X)
+	# For top-down map: Y-axis is vertical (down = south), X-axis is horizontal (right = east)
 	var rotation = player.rotation.y
 	var arrow_length = 8
 	var arrow_end_x = center_x + int(sin(rotation) * arrow_length)
-	var arrow_end_y = center_y + int(cos(rotation) * arrow_length)
+	var arrow_end_y = center_y - int(cos(rotation) * arrow_length)  # Negate Y to match top-down view
 	
 	# Draw line from player to arrow end
 	_draw_line(center_x, center_y, arrow_end_x, arrow_end_y, Color(1.0, 0.0, 0.0, 1.0))
