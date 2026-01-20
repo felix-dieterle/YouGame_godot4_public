@@ -74,6 +74,15 @@ const FISHING_BOAT_PLACEMENT_RADIUS = 96.0  # Only place boat near starting area
 const FISHING_BOAT_SELECTION_MODULO = 7  # Hash modulo for deterministic boat chunk selection
 const FISHING_BOAT_SELECTION_VALUE = 3  # Target value for boat chunk selection
 
+# Woodpecker ambient sound constants
+const WOODPECKER_SOUND_DURATION = 1.5  # Duration of woodpecker sound in seconds
+const WOODPECKER_FREQUENCY = 800.0  # Frequency of woodpecker knock sound in Hz
+const WOODPECKER_TONE_AMPLITUDE = 0.3  # Amplitude of tonal component
+const WOODPECKER_NOISE_AMPLITUDE = 0.7  # Amplitude of noise component (woody sound)
+const WOODPECKER_INTERVAL_MIN = 10.0  # Minimum seconds between woodpecker sounds
+const WOODPECKER_INTERVAL_MAX = 30.0  # Maximum seconds between woodpecker sounds
+const WOODPECKER_FOREST_DENSITY_THRESHOLD = 0.5  # Minimum forest density for woodpecker sounds
+
 # ============================================================================
 # STATE VARIABLES
 # ============================================================================
@@ -112,6 +121,12 @@ var placed_lighthouses: Array = []  # Array of lighthouse MeshInstance3D
 # Fishing boat data
 var placed_fishing_boat: MeshInstance3D = null  # Single fishing boat if placed
 
+# Ambient sound data
+var ambient_sound_player: AudioStreamPlayer3D = null  # For ambient sounds like woodpecker
+var woodpecker_timer: float = 0.0  # Timer for next woodpecker sound
+var woodpecker_interval: float = 0.0  # Random interval between sounds (set when chunk is generated)
+var woodpecker_rng: RandomNumberGenerator = null  # Reusable RNG for woodpecker sounds
+
 # Lake generation constants
 const WATER_LEVEL_SAMPLE_RADIUS = 2
 const LAKE_MESH_SEGMENTS = 16
@@ -144,7 +159,7 @@ func _init(x: int, z: int, world_seed: int):
 
 ## Generates all terrain data and visuals for this chunk
 ## This is the main entry point called after chunk creation
-## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → lighthouses → fishing boat
+## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → lighthouses → fishing boat → ambient sounds
 func generate() -> void:
     _setup_noise()
     _generate_heightmap()
@@ -160,6 +175,7 @@ func generate() -> void:
     _generate_paths()
     _place_lighthouses_if_coastal()
     _place_fishing_boat_if_coastal()
+    _setup_ambient_sounds()  # Setup ambient sounds for dense forests
 
 # ============================================================================
 # TERRAIN GENERATION
@@ -1495,4 +1511,160 @@ func _place_fishing_boat(pos: Vector3, rng: RandomNumberGenerator, ocean_directi
     placed_fishing_boat.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
     
     add_child(placed_fishing_boat)
+
+# ============================================================================
+# AMBIENT SOUND SYSTEM
+# ============================================================================
+
+## Setup ambient sounds for this chunk (e.g., woodpecker in dense forests)
+func _setup_ambient_sounds() -> void:
+    # Calculate forest density in this chunk
+    var chunk_pos = Vector2i(chunk_x, chunk_z)
+    var forest_clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, seed_value)
+    
+    # Find the maximum forest influence in the chunk
+    var max_forest_density = 0.0
+    for cluster in forest_clusters:
+        if cluster.type == ClusterSystem.ClusterType.FOREST:
+            # Sample forest density at chunk center
+            var chunk_center = Vector2(chunk_x * CHUNK_SIZE + CHUNK_SIZE / 2.0, chunk_z * CHUNK_SIZE + CHUNK_SIZE / 2.0)
+            var influence = ClusterSystem.get_cluster_influence_at_pos(chunk_center, cluster)
+            max_forest_density = max(max_forest_density, influence * cluster.density)
+    
+    # Only setup ambient sounds in densely forested areas
+    if max_forest_density > WOODPECKER_FOREST_DENSITY_THRESHOLD:
+        _setup_woodpecker_sound()
+
+## Setup woodpecker sound for dense forests
+func _setup_woodpecker_sound() -> void:
+    # Create 3D audio player for spatial sound
+    ambient_sound_player = AudioStreamPlayer3D.new()
+    ambient_sound_player.volume_db = -5.0  # Moderate volume
+    ambient_sound_player.max_distance = 50.0  # Can be heard from 50 units away
+    ambient_sound_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+    
+    # Position at chunk center, slightly elevated (tree height)
+    var chunk_center_x = CHUNK_SIZE / 2.0
+    var chunk_center_z = CHUNK_SIZE / 2.0
+    var world_x = chunk_x * CHUNK_SIZE + chunk_center_x
+    var world_z = chunk_z * CHUNK_SIZE + chunk_center_z
+    var height = get_height_at_world_pos(world_x, world_z)
+    ambient_sound_player.position = Vector3(chunk_center_x, height + 8.0, chunk_center_z)  # 8 units up (tree height)
+    
+    add_child(ambient_sound_player)
+    
+    # Initialize RNG for woodpecker timing (reused for efficiency)
+    woodpecker_rng = RandomNumberGenerator.new()
+    woodpecker_rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ 12121212  # Unique seed for woodpecker timing
+    
+    # Set random initial interval between woodpecker sounds
+    woodpecker_interval = woodpecker_rng.randf_range(WOODPECKER_INTERVAL_MIN, WOODPECKER_INTERVAL_MAX)
+    woodpecker_timer = woodpecker_rng.randf_range(0.0, woodpecker_interval)  # Start at random offset
+    
+    # Enable processing only for chunks with ambient sounds (performance optimization)
+    set_process(true)
+
+## Update ambient sounds (called from _process)
+func _process(delta: float) -> void:
+    # Only called for chunks with ambient sounds (set_process enabled in _setup_woodpecker_sound)
+    if ambient_sound_player:
+        _update_woodpecker_sound(delta)
+
+## Update woodpecker sound timer and play when ready
+func _update_woodpecker_sound(delta: float) -> void:
+    woodpecker_timer += delta
+    
+    if woodpecker_timer >= woodpecker_interval:
+        woodpecker_timer = 0.0
+        _play_woodpecker_sound()
+        
+        # Set next random interval using reusable RNG
+        woodpecker_interval = woodpecker_rng.randf_range(WOODPECKER_INTERVAL_MIN, WOODPECKER_INTERVAL_MAX)
+
+## Play a procedural woodpecker sound
+func _play_woodpecker_sound() -> void:
+    if not ambient_sound_player or not woodpecker_rng:
+        return
+    
+    # Create a procedural woodpecker sound using AudioStreamGenerator
+    # Woodpecker sound = series of rapid "knock" sounds
+    var generator = AudioStreamGenerator.new()
+    generator.mix_rate = 22050.0
+    generator.buffer_length = WOODPECKER_SOUND_DURATION
+    
+    ambient_sound_player.stream = generator
+    ambient_sound_player.play()
+    
+    # Schedule async audio generation to avoid blocking
+    _generate_woodpecker_audio.call_deferred()
+
+## Generate woodpecker audio frames (async to avoid blocking)
+func _generate_woodpecker_audio() -> void:
+    # Safety check: ensure chunk and player are still valid
+    if not is_inside_tree() or not ambient_sound_player or not ambient_sound_player.playing:
+        return
+    
+    # Wait one frame for the stream to initialize
+    await get_tree().process_frame
+    
+    # Safety check after await: chunk might have been freed
+    if not is_inside_tree() or not ambient_sound_player:
+        return
+    
+    # Generate the woodpecker knocking pattern
+    var playback = ambient_sound_player.get_stream_playback() as AudioStreamGeneratorPlayback
+    if not playback:
+        return
+    
+    var generator = ambient_sound_player.stream as AudioStreamGenerator
+    if not generator:
+        return
+    
+    var total_frames = roundi(generator.mix_rate * WOODPECKER_SOUND_DURATION)
+    
+    # Woodpecker pattern: 4-6 rapid knocks
+    var knock_count = woodpecker_rng.randi_range(4, 6)
+    var knock_spacing = 0.12  # 120ms between knocks
+    var knock_duration = 0.04  # Each knock is 40ms
+    
+    # Generate all audio frames (ensure complete generation)
+    var frames_generated = 0
+    while frames_generated < total_frames:
+        # Safety check: ensure we're still valid
+        if not is_inside_tree() or not ambient_sound_player:
+            return
+        
+        var frames_available = playback.get_frames_available()
+        if frames_available == 0:
+            # Wait for buffer to have space
+            await get_tree().process_frame
+            continue
+        
+        var frames_to_generate = min(frames_available, total_frames - frames_generated)
+        
+        for i in range(frames_to_generate):
+            var frame_idx = frames_generated + i
+            var t = float(frame_idx) / generator.mix_rate
+            var sample = 0.0
+            
+            # Generate each knock
+            for knock_idx in range(knock_count):
+                var knock_start = knock_idx * knock_spacing
+                var knock_end = knock_start + knock_duration
+                
+                if t >= knock_start and t < knock_end:
+                    var knock_t = (t - knock_start) / knock_duration
+                    # Each knock: sharp attack, quick decay
+                    var envelope = exp(-knock_t * 20.0)
+                    
+                    # Woodpecker knock = mix of high frequency tone and noise (wood impact sound)
+                    var tone = sin(2.0 * PI * WOODPECKER_FREQUENCY * knock_t) * WOODPECKER_TONE_AMPLITUDE
+                    var noise = (woodpecker_rng.randf() * 2.0 - 1.0) * WOODPECKER_NOISE_AMPLITUDE
+                    
+                    sample += (tone + noise) * envelope * 0.4
+            
+            playback.push_frame(Vector2(sample, sample))
+        
+        frames_generated += frames_to_generate
+
 
