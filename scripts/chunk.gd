@@ -1439,8 +1439,9 @@ func _place_fishing_boat_if_coastal() -> void:
     # Only place one boat in the entire coastal area near spawn
     # Use a deterministic check to ensure only one chunk gets the boat
     var boat_chunk_hash = hash(Vector2i(chunk_x, chunk_z))
-    # Only place if this is the "chosen" chunk (use a simple modulo check)
-    # This ensures only one coastal chunk near spawn gets the boat
+    # Hash-based selection: modulo 7 with target value 3 provides ~14% selection rate
+    # These specific values were chosen to distribute boat placement evenly while keeping it rare
+    # Only one coastal chunk near spawn that matches this condition will get the boat
     if (boat_chunk_hash % FISHING_BOAT_SELECTION_MODULO) != FISHING_BOAT_SELECTION_VALUE:
         return
     

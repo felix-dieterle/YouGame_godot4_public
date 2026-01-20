@@ -632,6 +632,7 @@ static func create_fishing_boat_mesh(seed_val: int = 0) -> ArrayMesh:
     st.add_vertex(bottom_right_back)
     
     # Add a simple bench seat inside (darker wood)
+    # Bench is positioned slightly toward the back (negative offset) for realistic boat interior
     var bench_y = BOAT_HEIGHT * 0.4
     var bench_width = BOAT_WIDTH * 0.6
     var bench_length = BOAT_LENGTH * 0.5
