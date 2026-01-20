@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/weather_system.gd" id="9_weather"]
 [ext_resource type="Script" path="res://scripts/pause_menu.gd" id="10_pause"]
 [ext_resource type="Script" path="res://scripts/ruler_overlay.gd" id="11_ruler"]
+[ext_resource type="Script" path="res://scripts/minimap_overlay.gd" id="12_minimap"]
 
 [sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_1"]
 rayleigh_coefficient = 3.0
@@ -123,3 +124,14 @@ grow_vertical = 2
 mouse_filter = 2
 z_index = 100
 script = ExtResource("10_pause")
+
+[node name="MinimapOverlay" type="Control" parent="." groups=["MinimapOverlay"]]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 60
+script = ExtResource("12_minimap")
