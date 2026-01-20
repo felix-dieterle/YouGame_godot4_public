@@ -71,6 +71,7 @@ var stars: Node3D
 const SAVE_FILE_PATH: String = "user://day_night_save.cfg"
 
 func _ready() -> void:
+    print("DayNightCycle: _ready() called")
     # Add to DayNightCycle group so other systems can find this node
     add_to_group("DayNightCycle")
     
@@ -103,7 +104,9 @@ func _ready() -> void:
     _create_stars()
     
     # Load saved state
+    print("DayNightCycle: About to call _load_state()")
     _load_state()
+    print("DayNightCycle: After _load_state(), current_time = ", current_time)
     
     # Notify UI of loaded time scale
     _notify_time_scale_changed()
