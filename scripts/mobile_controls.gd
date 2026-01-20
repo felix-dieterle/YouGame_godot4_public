@@ -14,6 +14,7 @@ var look_joystick_stick: Control
 var look_joystick_active: bool = false
 var look_joystick_touch_index: int = -1
 var look_joystick_vector: Vector2 = Vector2.ZERO
+var look_direction_indicator: Control  # Visual indicator for current look direction
 
 # Menu button and settings panel
 var menu_button: Button
@@ -123,6 +124,30 @@ func _ready() -> void:
     _log_control_info()
     
     DebugLogOverlay.add_log("MobileControls._ready() completed", "green")
+
+func _process(_delta: float) -> void:
+    # Update the look direction indicator to show where the camera is pointing
+    _update_look_direction_indicator()
+
+func _update_look_direction_indicator() -> void:
+    # Update the visual indicator to show current look direction
+    if not player or not player.has("camera_rotation_x") or not player.has("camera_rotation_y"):
+        return
+    
+    if not look_direction_indicator:
+        return
+    
+    # Get camera rotation from player
+    var pitch = player.camera_rotation_x  # Vertical rotation (radians)
+    var yaw = player.camera_rotation_y    # Horizontal rotation (radians)
+    
+    # Convert rotation to degrees for the indicator
+    # The indicator should rotate to show combined pitch and yaw
+    # We'll use atan2 to convert the 2D rotation into a single angle
+    var angle = atan2(sin(yaw), cos(yaw) * cos(pitch))
+    
+    # Set the rotation of the indicator
+    look_direction_indicator.rotation = angle
 
 func _update_joystick_position() -> void:
     # Position joystick in bottom-left corner with margin
@@ -259,6 +284,27 @@ func _create_look_joystick() -> void:
     stick_style.corner_radius_bottom_left = int(STICK_RADIUS)
     stick_style.corner_radius_bottom_right = int(STICK_RADIUS)
     stick_panel.add_theme_stylebox_override("panel", stick_style)
+    
+    # Create direction indicator (shows current look direction relative to straight ahead)
+    look_direction_indicator = Control.new()
+    look_direction_indicator.position = Vector2(0, 0)
+    look_direction_indicator.size = Vector2(6, JOYSTICK_RADIUS - 10)  # Thin rectangle from center to edge
+    look_direction_indicator.pivot_offset = Vector2(3, 0)  # Pivot at the center base
+    look_joystick_base.add_child(look_direction_indicator)
+    
+    var indicator_panel = Panel.new()
+    indicator_panel.size = Vector2(6, JOYSTICK_RADIUS - 10)
+    indicator_panel.position = Vector2(-3, -JOYSTICK_RADIUS + 10)  # Position from center upward
+    indicator_panel.modulate = Color(1.0, 1.0, 0.0, 0.9)  # Bright yellow for visibility
+    look_direction_indicator.add_child(indicator_panel)
+    
+    var indicator_style = StyleBoxFlat.new()
+    indicator_style.bg_color = Color(1.0, 1.0, 0.0, 0.9)  # Bright yellow
+    indicator_style.corner_radius_top_left = 3
+    indicator_style.corner_radius_top_right = 3
+    indicator_style.corner_radius_bottom_left = 3
+    indicator_style.corner_radius_bottom_right = 3
+    indicator_panel.add_theme_stylebox_override("panel", indicator_style)
     
     DebugLogOverlay.add_log("Look joystick visuals created", "green")
     DebugLogOverlay.add_log("Look joystick base visible: %s" % str(look_joystick_base.visible), "cyan")
