@@ -68,6 +68,10 @@ const OCEAN_LEVEL = -8.0  # Elevation threshold for ocean biome
 const LIGHTHOUSE_SEED_OFFSET = 77777  # Offset for lighthouse placement seed
 const LIGHTHOUSE_SPACING = 80.0  # Distance between lighthouses along coastline
 
+# Fishing boat constants
+const FISHING_BOAT_SEED_OFFSET = 88888  # Offset for fishing boat placement seed
+const FISHING_BOAT_PLACEMENT_RADIUS = 96.0  # Only place boat near starting area (3 chunks = 96 units)
+
 # ============================================================================
 # STATE VARIABLES
 # ============================================================================
@@ -103,6 +107,9 @@ var ocean_water_level: float = OCEAN_LEVEL
 # Lighthouse data
 var placed_lighthouses: Array = []  # Array of lighthouse MeshInstance3D
 
+# Fishing boat data
+var placed_fishing_boat: MeshInstance3D = null  # Single fishing boat if placed
+
 # Lake generation constants
 const WATER_LEVEL_SAMPLE_RADIUS = 2
 const LAKE_MESH_SEGMENTS = 16
@@ -135,7 +142,7 @@ func _init(x: int, z: int, world_seed: int):
 
 ## Generates all terrain data and visuals for this chunk
 ## This is the main entry point called after chunk creation
-## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → lighthouses
+## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → lighthouses → fishing boat
 func generate() -> void:
     _setup_noise()
     _generate_heightmap()
@@ -150,6 +157,7 @@ func generate() -> void:
     _place_cluster_objects()
     _generate_paths()
     _place_lighthouses_if_coastal()
+    _place_fishing_boat_if_coastal()
 
 # ============================================================================
 # TERRAIN GENERATION
@@ -1378,4 +1386,110 @@ func _place_lighthouse(pos: Vector3, rng: RandomNumberGenerator) -> void:
     add_child(lighthouse_instance)
     placed_lighthouses.append(lighthouse_instance)
 
+## Place a fishing boat on coastal chunks near the starting area
+func _place_fishing_boat_if_coastal() -> void:
+    # Only place fishing boat if this is NOT ocean but has ocean neighbors
+    if is_ocean:
+        return
+    
+    # Check distance from origin (starting area at 0,0)
+    var distance_from_origin = sqrt(float(chunk_x * chunk_x + chunk_z * chunk_z)) * CHUNK_SIZE
+    
+    # Only place boat near starting area
+    if distance_from_origin > FISHING_BOAT_PLACEMENT_RADIUS:
+        return
+    
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ FISHING_BOAT_SEED_OFFSET
+    
+    # Check if any neighboring chunks are ocean (coastal detection)
+    var neighbors_to_check = [
+        Vector2i(chunk_x - 1, chunk_z),  # West
+        Vector2i(chunk_x + 1, chunk_z),  # East
+        Vector2i(chunk_x, chunk_z - 1),  # North
+        Vector2i(chunk_x, chunk_z + 1),  # South
+    ]
+    
+    var has_ocean_neighbor = false
+    var ocean_direction = Vector2.ZERO
+    
+    for i in range(neighbors_to_check.size()):
+        var neighbor_pos = neighbors_to_check[i]
+        # Simple heuristic: check if neighbor would be ocean based on noise
+        var neighbor_height = _get_estimated_chunk_height(neighbor_pos)
+        if neighbor_height <= OCEAN_LEVEL:
+            has_ocean_neighbor = true
+            # Determine direction to ocean
+            match i:
+                0:  # West
+                    ocean_direction = Vector2(-1, 0)
+                1:  # East
+                    ocean_direction = Vector2(1, 0)
+                2:  # North
+                    ocean_direction = Vector2(0, -1)
+                3:  # South
+                    ocean_direction = Vector2(0, 1)
+            break
+    
+    if not has_ocean_neighbor:
+        return
+    
+    # Only place one boat in the entire coastal area near spawn
+    # Use a deterministic check to ensure only one chunk gets the boat
+    var boat_chunk_hash = hash(Vector2i(chunk_x, chunk_z))
+    # Only place if this is the "chosen" chunk (use a simple modulo check)
+    # This ensures only one coastal chunk near spawn gets the boat
+    if (boat_chunk_hash % 7) != 3:  # Arbitrary but deterministic selection
+        return
+    
+    # Find suitable location for fishing boat near shoreline
+    var boat_pos = _find_coastal_boat_position(rng, ocean_direction)
+    
+    if boat_pos:
+        _place_fishing_boat(boat_pos, rng, ocean_direction)
+
+## Find a suitable coastal position for fishing boat near water's edge
+func _find_coastal_boat_position(rng: RandomNumberGenerator, ocean_direction: Vector2) -> Vector3:
+    # Place boat near the edge facing the ocean
+    # Offset from edge based on ocean direction
+    var edge_offset = 3.0  # Distance from chunk edge
+    var local_x = CHUNK_SIZE / 2.0
+    var local_z = CHUNK_SIZE / 2.0
+    
+    # Position boat near the edge facing the ocean
+    if abs(ocean_direction.x) > 0.5:  # Ocean is to the east or west
+        local_x = CHUNK_SIZE / 2.0 + ocean_direction.x * (CHUNK_SIZE / 2.0 - edge_offset)
+        local_z = rng.randf_range(CHUNK_SIZE * 0.3, CHUNK_SIZE * 0.7)
+    else:  # Ocean is to the north or south
+        local_z = CHUNK_SIZE / 2.0 + ocean_direction.y * (CHUNK_SIZE / 2.0 - edge_offset)
+        local_x = rng.randf_range(CHUNK_SIZE * 0.3, CHUNK_SIZE * 0.7)
+    
+    var world_x = chunk_x * CHUNK_SIZE + local_x
+    var world_z = chunk_z * CHUNK_SIZE + local_z
+    var height = get_height_at_world_pos(world_x, world_z)
+    
+    return Vector3(local_x, height, local_z)
+
+## Place a fishing boat at the specified position, half-buried in sand
+func _place_fishing_boat(pos: Vector3, rng: RandomNumberGenerator, ocean_direction: Vector2) -> void:
+    # Create fishing boat instance
+    placed_fishing_boat = MeshInstance3D.new()
+    placed_fishing_boat.mesh = ProceduralModels.create_fishing_boat_mesh(rng.randi())
+    placed_fishing_boat.material_override = ProceduralModels.create_fishing_boat_material()
+    
+    # Position boat half-buried in sand (lower y position)
+    var burial_depth = ProceduralModels.BOAT_HEIGHT * 0.3  # Bury 30% of the boat
+    placed_fishing_boat.position = Vector3(pos.x, pos.y - burial_depth, pos.z)
+    
+    # Rotate boat to face the ocean
+    var boat_rotation = atan2(ocean_direction.x, ocean_direction.y)
+    placed_fishing_boat.rotation.y = boat_rotation
+    
+    # Add slight tilt for natural beached look
+    placed_fishing_boat.rotation.x = rng.randf_range(-0.05, 0.05)
+    placed_fishing_boat.rotation.z = rng.randf_range(-0.1, 0.1)
+    
+    placed_fishing_boat.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+    
+    add_child(placed_fishing_boat)
 
