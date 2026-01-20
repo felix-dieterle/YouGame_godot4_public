@@ -123,6 +123,9 @@ var placed_crystals: Array = []  # Array of crystal MeshInstance3D with metadata
 var path_segments: Array = []  # Array of PathSystem.PathSegment
 var path_mesh_instance: MeshInstance3D = null
 
+# Wind sound data
+var wind_sound_player: AudioStreamPlayer3D = null  # Wind ambient sound for mountain regions
+
 # ============================================================================
 # INITIALIZATION
 # ============================================================================
@@ -150,6 +153,7 @@ func generate() -> void:
     _place_cluster_objects()
     _generate_paths()
     _place_lighthouses_if_coastal()
+    _setup_wind_sound()  # Add wind ambient sound for mountain regions
 
 # ============================================================================
 # TERRAIN GENERATION
@@ -313,9 +317,17 @@ func _create_mesh() -> void:
                 # Ocean floor - sandy/rocky seabed
                 base_color = Color(0.6, 0.55, 0.4)  # Sandy color for ocean floor
             elif avg_height > 8.0:
-                # Mountain - stone/rocky gray color
+                # Mountain - stone/rocky gray color transitioning to snow at high elevations
                 var height_factor = clamp((avg_height - 8.0) / 15.0, 0.0, 1.0)
-                base_color = Color(0.5 + height_factor * 0.2, 0.5 + height_factor * 0.2, 0.55 + height_factor * 0.15)
+                var rocky_color = Color(0.5 + height_factor * 0.2, 0.5 + height_factor * 0.2, 0.55 + height_factor * 0.15)
+                
+                # Add snow coverage at highest elevations (>12 units)
+                if avg_height > 12.0:
+                    var snow_factor = clamp((avg_height - 12.0) / 8.0, 0.0, 1.0)
+                    var snow_color = Color(0.95, 0.95, 0.98)  # Slightly bluish white snow
+                    base_color = rocky_color.lerp(snow_color, snow_factor)
+                else:
+                    base_color = rocky_color
             elif avg_height > 5.0:
                 # Rocky hills - brown-gray mix
                 var height_factor = clamp((avg_height - 5.0) / 3.0, 0.0, 1.0)
@@ -1377,5 +1389,90 @@ func _place_lighthouse(pos: Vector3, rng: RandomNumberGenerator) -> void:
     
     add_child(lighthouse_instance)
     placed_lighthouses.append(lighthouse_instance)
+
+## Setup wind ambient sound for mountain/high elevation regions
+func _setup_wind_sound() -> void:
+    # Only add wind sound to mountain biomes or high elevation areas
+    if biome != "mountain":
+        return
+    
+    # Calculate average height of the chunk
+    var avg_height = 0.0
+    for h in heightmap:
+        avg_height += h
+    avg_height /= heightmap.size()
+    
+    # Only add wind sound if average height is above 10 units (high mountains)
+    if avg_height < 10.0:
+        return
+    
+    # Create 3D audio player for spatial wind sound
+    wind_sound_player = AudioStreamPlayer3D.new()
+    wind_sound_player.max_distance = 50.0  # Audible from 50 units away
+    wind_sound_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+    wind_sound_player.unit_size = 10.0  # Sound source size
+    
+    # Position at chunk center, elevated
+    var center_x = CHUNK_SIZE / 2.0
+    var center_z = CHUNK_SIZE / 2.0
+    var center_height = get_height_at_world_pos(chunk_x * CHUNK_SIZE + center_x, chunk_z * CHUNK_SIZE + center_z)
+    wind_sound_player.position = Vector3(center_x, center_height + 5.0, center_z)
+    
+    # Create procedural wind sound using AudioStreamGenerator
+    var generator = AudioStreamGenerator.new()
+    generator.mix_rate = 22050.0
+    generator.buffer_length = 0.5  # 0.5 second buffer
+    
+    wind_sound_player.stream = generator
+    wind_sound_player.autoplay = false
+    wind_sound_player.volume_db = -15.0  # Quieter ambient sound
+    
+    add_child(wind_sound_player)
+    
+    # Start playing the wind sound
+    wind_sound_player.play()
+    
+    # Start generating wind sound in the background
+    _generate_wind_sound()
+
+## Generate procedural wind whistling sound
+func _generate_wind_sound() -> void:
+    if not wind_sound_player or not wind_sound_player.playing:
+        return
+    
+    # Wait one frame for stream to initialize
+    await get_tree().process_frame
+    
+    var playback = wind_sound_player.get_stream_playback() as AudioStreamGeneratorPlayback
+    if not playback:
+        return
+    
+    var generator = wind_sound_player.stream as AudioStreamGenerator
+    
+    # Continuously generate wind sound
+    while wind_sound_player and wind_sound_player.playing:
+        var frames_available = playback.get_frames_available()
+        
+        # Generate wind whistling sound (mix of low rumble and high whistle)
+        for i in range(frames_available):
+            var t = float(i) / generator.mix_rate
+            
+            # Low frequency rumble (wind base)
+            var rumble = sin(2.0 * PI * 30.0 * t + randf() * 0.5) * 0.3
+            
+            # High frequency whistle (wind through gaps)
+            var whistle = sin(2.0 * PI * 800.0 * t + sin(2.0 * PI * 5.0 * t) * 3.0) * 0.15
+            
+            # Add noise for natural wind texture
+            var noise = (randf() * 2.0 - 1.0) * 0.2
+            
+            # Combine all components with slow amplitude modulation
+            var modulation = (sin(2.0 * PI * 0.5 * (Time.get_ticks_msec() / 1000.0 + t)) + 1.0) / 2.0
+            var sample = (rumble + whistle + noise) * modulation * 0.5
+            
+            playback.push_frame(Vector2(sample, sample))
+        
+        # Wait a bit before generating more frames
+        await get_tree().create_timer(0.1).timeout
 
 
