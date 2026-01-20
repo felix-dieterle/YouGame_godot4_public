@@ -138,16 +138,12 @@ func _update_look_direction_indicator() -> void:
         return
     
     # Get camera rotation from player
-    var pitch = player.camera_rotation_x  # Vertical rotation (radians)
     var yaw = player.camera_rotation_y    # Horizontal rotation (radians)
     
-    # Convert rotation to degrees for the indicator
-    # The indicator should rotate to show combined pitch and yaw
-    # We'll use atan2 to convert the 2D rotation into a single angle
-    var angle = atan2(sin(yaw), cos(yaw) * cos(pitch))
-    
-    # Set the rotation of the indicator
-    look_direction_indicator.rotation = angle
+    # Set the rotation of the indicator to show yaw direction
+    # The indicator points upward when yaw=0 (straight ahead)
+    # and rotates left/right as the player looks left/right
+    look_direction_indicator.rotation = yaw
 
 func _update_joystick_position() -> void:
     # Position joystick in bottom-left corner with margin
