@@ -943,7 +943,7 @@ func _place_settlement_objects(cluster: ClusterSystem.ClusterData) -> void:
             sample_count += 1
     
     avg_influence /= sample_count
-    var building_count = int(chunk_area * cluster.density * avg_influence * 0.015)  # Fewer buildings than trees
+    var building_count = int(chunk_area * cluster.density * avg_influence * 0.023)  # Adjusted for ~9 houses per settlement
     
     # Place buildings
     for i in range(building_count):

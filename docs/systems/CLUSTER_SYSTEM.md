@@ -94,7 +94,7 @@ Clusters are integrated into chunk generation:
 
 ### Object Count Management
 - **Forest Density**: ~2% of chunk area × density × influence
-- **Settlement Density**: ~1.5% of chunk area × density × influence
+- **Settlement Density**: ~2.3% of chunk area × density × influence (adjusted for ~9 houses per settlement)
 - **Example**: 32×32 chunk with 50% forest influence @ 0.5 density = ~5 trees
 
 ### Memory Efficiency
