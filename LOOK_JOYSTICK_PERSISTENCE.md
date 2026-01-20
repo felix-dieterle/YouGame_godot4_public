@@ -6,6 +6,25 @@
 **Translation:**
 The look joystick should work a bit differently so that the small point stays where you are currently looking, i.e., you move the point in the joystick according to the current view direction.
 
+## Latest Update (2026-01-20)
+
+### Removed Yellow Direction Indicator
+**Problem Statement:**
+> der look joystick ist komplett verwirrend, bitte entferne den gelben strich. wir bewegen den kleinen Punkt im Kreis genau dorthin im Kreis wie unsere Sicht ausgerichtet ist und er bleibt dort wenn wir los lassen, ganz einfach also
+
+**Translation:**
+The look joystick is completely confusing, please remove the yellow line. We move the small point in the circle exactly to where in the circle our view is oriented and it stays there when we let go, quite simple.
+
+**Changes:**
+- Removed the yellow direction indicator line that was rotating to show yaw direction
+- Removed `look_direction_indicator` variable and related code
+- Removed `_update_look_direction_indicator()` function
+- Removed unused constants: `INDICATOR_MARGIN` and `INDICATOR_WIDTH`
+- The joystick now only shows the red circle (base) and the small red point (stick) that moves based on camera orientation
+
+**Result:**
+The look joystick is now simpler and less confusing. The small point (stick) moves to where the view is oriented and stays there when released, without the distracting yellow line.
+
 ## Solution
 
 Modified the look joystick behavior so that the stick position (the small point) reflects the current camera direction, rather than resetting to center when the user releases the touch.
