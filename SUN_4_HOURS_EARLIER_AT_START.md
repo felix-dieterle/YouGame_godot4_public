@@ -43,13 +43,13 @@ With the 4-hour offset:
 
 At game start (displayed 7:00 AM):
 - **Before change**: Sun at sunrise position (-60° angle), brightness at minimum (0.8 light energy)
-- **After change**: Sun at mid-morning position (-36° angle), significantly brighter (~1.36 light energy)
+- **After change**: Sun at mid-morning position (-36° angle), significantly brighter (~1.76 light energy)
 
 The intensity curve calculation:
 ```
 time_ratio = 4.0 / 10.0 = 0.4 (40% into the day)
-intensity_curve = 1.0 - abs(0.4 - 0.5) * 2.0 = 0.8
-light_energy = lerp(0.8, 2.0, 0.8) = 1.76
+intensity_curve = 1.0 - abs(0.4 - 0.5) * 2.0 = 1.0 - 0.2 = 0.8
+light_energy = lerp(0.8, 2.0, 0.8) = 0.8 + (2.0 - 0.8) * 0.8 = 1.76
 ```
 
 ## Technical Notes
