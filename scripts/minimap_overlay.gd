@@ -5,12 +5,13 @@ class_name MinimapOverlay
 ## Positioned in the top-right corner with 20% transparency
 
 # Configuration
-const MAP_SIZE_RATIO: float = 0.2  # 1/5 of screen width
+const MAP_SIZE_RATIO: float = 0.15  # Reduced from 0.2 for better performance (smaller map)
 const MAP_OPACITY: float = 0.8  # 80% opacity (20% transparency)
 const MAP_MARGIN: float = 10.0  # Margin from screen edges
-const MAP_SCALE: float = 2.0  # How many world units per pixel
-const UPDATE_INTERVAL: float = 0.1  # Update map every 0.1 seconds (10 FPS)
-const POSITION_UPDATE_THRESHOLD: float = 2.0  # Only update if player moved this many units
+const MAP_SCALE: float = 4.0  # Increased from 2.0 - wider area coverage with less detail
+const UPDATE_INTERVAL: float = 0.2  # Increased from 0.1s - update every 0.2 seconds (5 FPS) for better performance
+const POSITION_UPDATE_THRESHOLD: float = 5.0  # Increased from 2.0 - only update if player moved significantly
+const PIXEL_SAMPLE_RATE: int = 2  # Only sample every Nth pixel for terrain (1=all pixels, 2=every other pixel, 3=every third)
 
 # Terrain color thresholds and colors
 const WATER_DEPTH_SHALLOW: float = 0.1
@@ -193,27 +194,34 @@ func _render_map() -> void:
 	var min_z = player_pos.z - half_world_width
 	var max_z = player_pos.z + half_world_width
 	
-	# Render each pixel of the map
-	for py in range(map_size):
-		for px in range(map_size):
+	# Render each pixel of the map with sampling optimization
+	# Only render visited chunks to save performance (fog of war approach)
+	for py in range(0, map_size, PIXEL_SAMPLE_RATE):
+		for px in range(0, map_size, PIXEL_SAMPLE_RATE):
 			# Convert pixel coordinates to world coordinates
 			var world_x = min_x + (px / float(map_size)) * (max_x - min_x)
 			var world_z = min_z + (py / float(map_size)) * (max_z - min_z)
 			var world_pos = Vector3(world_x, 0, world_z)
 			
-			# Get terrain color at this position
-			var color = _get_terrain_color(world_pos)
-			
-			# Check if this area has been visited (add slight highlight)
+			# Check if this area has been visited first (performance optimization)
 			var chunk_x = int(floor(world_x / world_manager.CHUNK_SIZE))
 			var chunk_z = int(floor(world_z / world_manager.CHUNK_SIZE))
 			var chunk_pos = Vector2i(chunk_x, chunk_z)
 			
+			# Only render visited chunks (fog of war)
 			if chunk_pos in visited_chunks:
+				# Get terrain color at this position (expensive operation)
+				var color = _get_terrain_color(world_pos)
 				# Brighten visited areas slightly
 				color = color.lightened(0.15)
-			
-			map_image.set_pixel(px, py, color)
+				
+				# Fill the sampled pixel block for smoother appearance
+				for dy in range(PIXEL_SAMPLE_RATE):
+					for dx in range(PIXEL_SAMPLE_RATE):
+						var set_px = px + dx
+						var set_py = py + dy
+						if set_px < map_size and set_py < map_size:
+							map_image.set_pixel(set_px, set_py, color)
 	
 	# Draw player position and direction
 	_draw_player_indicator()
