@@ -92,15 +92,11 @@ func _ready():
 	
 	# Take screenshot
 	print("Taking screenshot...")
-	var screenshot_helper = ScreenshotHelper.new()
-	add_child(screenshot_helper)
 	
 	await get_tree().process_frame
 	await get_tree().process_frame
 	
-	var screenshot_path = "test_fishing_boat_visual.png"
-	screenshot_helper.save_screenshot(screenshot_path)
-	print("Screenshot saved to: %s" % screenshot_path)
+	ScreenshotHelper.capture_screenshot("fishing_boat_visual", "coastal_chunks")
 	
 	# Wait a moment to ensure screenshot is saved
 	await get_tree().create_timer(0.5).timeout
