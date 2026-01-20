@@ -116,6 +116,7 @@ var placed_fishing_boat: MeshInstance3D = null  # Single fishing boat if placed
 var ambient_sound_player: AudioStreamPlayer3D = null  # For ambient sounds like woodpecker
 var woodpecker_timer: float = 0.0  # Timer for next woodpecker sound
 var woodpecker_interval: float = 0.0  # Random interval between sounds (set when chunk is generated)
+var woodpecker_rng: RandomNumberGenerator = null  # Reusable RNG for woodpecker sounds
 
 # Lake generation constants
 const WATER_LEVEL_SAMPLE_RADIUS = 2
@@ -1543,11 +1544,16 @@ func _setup_woodpecker_sound() -> void:
     
     add_child(ambient_sound_player)
     
+    # Initialize RNG for woodpecker timing (reused for efficiency)
+    woodpecker_rng = RandomNumberGenerator.new()
+    woodpecker_rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ 12121212  # Unique seed for woodpecker timing
+    
     # Set random initial interval (10-30 seconds between woodpecker sounds)
-    var rng = RandomNumberGenerator.new()
-    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ 12121212  # Unique seed for woodpecker timing
-    woodpecker_interval = rng.randf_range(10.0, 30.0)
-    woodpecker_timer = rng.randf_range(0.0, woodpecker_interval)  # Start at random offset
+    woodpecker_interval = woodpecker_rng.randf_range(10.0, 30.0)
+    woodpecker_timer = woodpecker_rng.randf_range(0.0, woodpecker_interval)  # Start at random offset
+    
+    # Enable processing only for chunks with ambient sounds (performance optimization)
+    set_process(true)
 
 ## Update ambient sounds (called from _process)
 func _process(delta: float) -> void:
@@ -1562,14 +1568,12 @@ func _update_woodpecker_sound(delta: float) -> void:
         woodpecker_timer = 0.0
         _play_woodpecker_sound()
         
-        # Set next random interval
-        var rng = RandomNumberGenerator.new()
-        rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ int(Time.get_ticks_msec())
-        woodpecker_interval = rng.randf_range(10.0, 30.0)
+        # Set next random interval using reusable RNG
+        woodpecker_interval = woodpecker_rng.randf_range(10.0, 30.0)
 
 ## Play a procedural woodpecker sound
 func _play_woodpecker_sound() -> void:
-    if not ambient_sound_player:
+    if not ambient_sound_player or not woodpecker_rng:
         return
     
     # Create a procedural woodpecker sound using AudioStreamGenerator
@@ -1581,6 +1585,14 @@ func _play_woodpecker_sound() -> void:
     ambient_sound_player.stream = generator
     ambient_sound_player.play()
     
+    # Schedule async audio generation to avoid blocking
+    _generate_woodpecker_audio.call_deferred()
+
+## Generate woodpecker audio frames (async to avoid blocking)
+func _generate_woodpecker_audio() -> void:
+    if not ambient_sound_player or not ambient_sound_player.playing:
+        return
+    
     # Wait one frame for the stream to initialize
     await get_tree().process_frame
     
@@ -1589,38 +1601,52 @@ func _play_woodpecker_sound() -> void:
     if not playback:
         return
     
-    var frames_available = playback.get_frames_available()
+    var generator = ambient_sound_player.stream as AudioStreamGenerator
+    if not generator:
+        return
+    
     var total_frames = roundi(generator.mix_rate * 1.5)
     
     # Woodpecker pattern: 4-6 rapid knocks
-    var rng = RandomNumberGenerator.new()
-    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ int(Time.get_ticks_msec())
-    var knock_count = rng.randi_range(4, 6)
+    var knock_count = woodpecker_rng.randi_range(4, 6)
     var knock_spacing = 0.12  # 120ms between knocks
     var knock_duration = 0.04  # Each knock is 40ms
     
-    # Generate audio frames
-    for i in range(min(total_frames, frames_available)):
-        var t = float(i) / generator.mix_rate
-        var sample = 0.0
+    # Generate all audio frames (ensure complete generation)
+    var frames_generated = 0
+    while frames_generated < total_frames:
+        var frames_available = playback.get_frames_available()
+        if frames_available == 0:
+            # Wait for buffer to have space
+            await get_tree().process_frame
+            continue
         
-        # Generate each knock
-        for knock_idx in range(knock_count):
-            var knock_start = knock_idx * knock_spacing
-            var knock_end = knock_start + knock_duration
+        var frames_to_generate = min(frames_available, total_frames - frames_generated)
+        
+        for i in range(frames_to_generate):
+            var frame_idx = frames_generated + i
+            var t = float(frame_idx) / generator.mix_rate
+            var sample = 0.0
             
-            if t >= knock_start and t < knock_end:
-                var knock_t = (t - knock_start) / knock_duration
-                # Each knock: sharp attack, quick decay
-                var envelope = exp(-knock_t * 20.0)
+            # Generate each knock
+            for knock_idx in range(knock_count):
+                var knock_start = knock_idx * knock_spacing
+                var knock_end = knock_start + knock_duration
                 
-                # Woodpecker knock = mix of high frequency tone and noise (wood impact sound)
-                var frequency = 800.0  # Bright, sharp tone
-                var tone = sin(2.0 * PI * frequency * knock_t) * 0.3
-                var noise = (rng.randf() * 2.0 - 1.0) * 0.7  # More noise for woody sound
-                
-                sample += (tone + noise) * envelope * 0.4
+                if t >= knock_start and t < knock_end:
+                    var knock_t = (t - knock_start) / knock_duration
+                    # Each knock: sharp attack, quick decay
+                    var envelope = exp(-knock_t * 20.0)
+                    
+                    # Woodpecker knock = mix of high frequency tone and noise (wood impact sound)
+                    var frequency = 800.0  # Bright, sharp tone
+                    var tone = sin(2.0 * PI * frequency * knock_t) * 0.3
+                    var noise = (woodpecker_rng.randf() * 2.0 - 1.0) * 0.7  # More noise for woody sound
+                    
+                    sample += (tone + noise) * envelope * 0.4
+            
+            playback.push_frame(Vector2(sample, sample))
         
-        playback.push_frame(Vector2(sample, sample))
+        frames_generated += frames_to_generate
 
 
