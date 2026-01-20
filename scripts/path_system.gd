@@ -86,6 +86,29 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 	else:
 		# Check for incoming paths from neighboring chunks
 		new_segments = _continue_paths_from_neighbors(chunk_pos, world_seed, rng)
+		
+		# If no paths from neighbors, create initial paths for chunks adjacent to origin
+		# This ensures the path system has seed paths to continue from
+		if new_segments.is_empty():
+			var distance_from_origin = abs(chunk_pos.x) + abs(chunk_pos.y)
+			
+			# Create initial paths in chunks directly adjacent to origin (distance = 1)
+			if distance_from_origin == 1:
+				var start_pos = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
+				
+				# Determine direction away from origin
+				var direction = Vector2(chunk_pos.x, chunk_pos.y).normalized()
+				
+				# Add some random variation
+				var angle_variation = rng.randf_range(-PI/8, PI/8)
+				direction = direction.rotated(angle_variation)
+				
+				# Create initial path segment with guaranteed visibility
+				var length = rng.randf_range(MIN_SEGMENT_LENGTH * MIN_STARTING_PATH_RATIO, MAX_SEGMENT_LENGTH)
+				var end_pos = start_pos + direction * length
+				
+				var initial_segment = _create_segment(chunk_pos, start_pos, end_pos, PathType.MAIN_PATH, rng)
+				new_segments.append(initial_segment)
 	
 	# Register segments
 	_register_segments(chunk_pos, new_segments)

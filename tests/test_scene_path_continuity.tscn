@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c7qv8j3m2b4xp"]
+
+[ext_resource type="Script" path="res://tests/test_path_continuity.gd" id="1"]
+
+[node name="TestPathContinuity" type="Node"]
+script = ExtResource("1")
