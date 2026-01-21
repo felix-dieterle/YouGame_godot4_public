@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dcs25waqk1sms"]
+
+[ext_resource type="Script" path="res://tests/test_campfire_system.gd" id="1"]
+
+[node name="TestCampfireSystem" type="Node"]
+script = ExtResource("1")
