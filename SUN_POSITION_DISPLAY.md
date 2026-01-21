@@ -25,7 +25,17 @@ func get_sun_position_degrees() -> float:
         return -1.0
     
     # Calculate time ratio (0.0 = sunrise, 0.5 = noon, 1.0 = sunset)
-    var time_ratio: float = current_time / DAY_CYCLE_DURATION
+    var time_ratio: float = 0.0
+    
+    if is_animating_sunrise:
+        # During sunrise animation, stay at 0° (sun at horizon)
+        time_ratio = 0.0
+    elif is_animating_sunset:
+        # During sunset animation, stay at 180° (sun at horizon)
+        time_ratio = 1.0
+    else:
+        # Normal day progression
+        time_ratio = current_time / DAY_CYCLE_DURATION
     
     # Map 0.0-1.0 ratio to 0-180 degrees
     return time_ratio * 180.0
