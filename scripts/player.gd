@@ -709,31 +709,31 @@ func _place_torch() -> void:
 
 ## Use flint stones to create a campfire at the player's current position
 func _use_flint_stones() -> void:
-	# Check if player has enough flint stones
-	if flint_stone_count < 2:
-		var ui_manager = get_tree().get_first_node_in_group("UIManager")
-		if ui_manager and ui_manager.has_method("show_message"):
-			ui_manager.show_message("Need 2 flint stones to create campfire! (%d/2)" % flint_stone_count, 2.0)
-		return
-	
-	# Deduct 2 flint stones from inventory
-	flint_stone_count -= 2
-	
-	# Create campfire at player position using CampfireSystem
-	var campfire = CampfireSystem.create_campfire_node(campfire_light_energy, campfire_light_range, campfire_light_attenuation)
-	campfire.global_position = global_position + Vector3(0, campfire_placement_offset, 0)
-	
-	# Add campfire to the world
-	get_parent().add_child(campfire)
-	
-	# Update UI
-	var ui_manager = get_tree().get_first_node_in_group("UIManager")
-	if ui_manager and ui_manager.has_method("update_flint_stone_count"):
-		ui_manager.update_flint_stone_count(flint_stone_count)
-	if ui_manager and ui_manager.has_method("show_message"):
-		ui_manager.show_message("Campfire created! (%d flint stones left)" % flint_stone_count, 2.0)
-	
-	print("Player: Created campfire at ", campfire.global_position, " - ", flint_stone_count, " flint stones remaining")
+    # Check if player has enough flint stones
+    if flint_stone_count < 2:
+        var ui_manager = get_tree().get_first_node_in_group("UIManager")
+        if ui_manager and ui_manager.has_method("show_message"):
+            ui_manager.show_message("Need 2 flint stones to create campfire! (%d/2)" % flint_stone_count, 2.0)
+        return
+    
+    # Deduct 2 flint stones from inventory
+    flint_stone_count -= 2
+    
+    # Create campfire at player position using CampfireSystem
+    var campfire = CampfireSystem.create_campfire_node(campfire_light_energy, campfire_light_range, campfire_light_attenuation)
+    campfire.global_position = global_position + Vector3(0, campfire_placement_offset, 0)
+    
+    # Add campfire to the world
+    get_parent().add_child(campfire)
+    
+    # Update UI
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_flint_stone_count"):
+        ui_manager.update_flint_stone_count(flint_stone_count)
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("Campfire created! (%d flint stones left)" % flint_stone_count, 2.0)
+    
+    print("Player: Created campfire at ", campfire.global_position, " - ", flint_stone_count, " flint stones remaining")
 
 ## Toggle inventory UI visibility
 func _toggle_inventory() -> void:
