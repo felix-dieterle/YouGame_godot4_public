@@ -172,6 +172,9 @@ func save_game() -> bool:
     config.set_value("player", "is_first_person", save_data["player"]["is_first_person"])
     config.set_value("player", "torch_count", save_data["player"]["torch_count"])
     config.set_value("player", "selected_item", save_data["player"]["selected_item"])
+    config.set_value("player", "flint_stone_count", save_data["player"]["flint_stone_count"])
+    config.set_value("player", "mushroom_count", save_data["player"]["mushroom_count"])
+    config.set_value("player", "bottle_fill_level", save_data["player"]["bottle_fill_level"])
     
     # Save inventory (convert dictionary to JSON string for easier storage)
     var inventory_json = JSON.stringify(save_data["player"]["inventory"])
@@ -185,6 +188,10 @@ func save_game() -> bool:
     # Save torch positions as JSON
     var torches_json = JSON.stringify(save_data["world"]["torches"])
     config.set_value("world", "torches", torches_json)
+    
+    # Save campfire positions as JSON
+    var campfires_json = JSON.stringify(save_data["world"]["campfires"])
+    config.set_value("world", "campfires", campfires_json)
     
     # Save day/night data
     config.set_value("day_night", "current_time", save_data["day_night"]["current_time"])
@@ -241,6 +248,9 @@ func load_game() -> bool:
     save_data["player"]["is_first_person"] = config.get_value("player", "is_first_person", false)
     save_data["player"]["torch_count"] = config.get_value("player", "torch_count", 100)
     save_data["player"]["selected_item"] = config.get_value("player", "selected_item", "torch")
+    save_data["player"]["flint_stone_count"] = config.get_value("player", "flint_stone_count", 2)
+    save_data["player"]["mushroom_count"] = config.get_value("player", "mushroom_count", 0)
+    save_data["player"]["bottle_fill_level"] = config.get_value("player", "bottle_fill_level", 100.0)
     
     # Load inventory (parse from JSON string)
     var inventory_json = config.get_value("player", "inventory", "{}")
@@ -265,6 +275,15 @@ func load_game() -> bool:
         save_data["world"]["torches"] = torches_parser.data
     else:
         save_data["world"]["torches"] = []
+    
+    # Load campfire positions (parse from JSON)
+    var campfires_json = config.get_value("world", "campfires", "[]")
+    var campfires_parser = JSON.new()
+    var campfires_parse_result = campfires_parser.parse(campfires_json)
+    if campfires_parse_result == OK:
+        save_data["world"]["campfires"] = campfires_parser.data
+    else:
+        save_data["world"]["campfires"] = []
     
     # Load day/night data
     save_data["day_night"]["current_time"] = config.get_value("day_night", "current_time", 0.0)
