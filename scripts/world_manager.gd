@@ -111,6 +111,7 @@ func _process(_delta) -> void:
         
         # Only update chunks when player moves to a new chunk (performance optimization)
         if new_player_chunk != player_chunk:
+            print("Chunk-Grenze überschritten: ", player_chunk, " -> ", new_player_chunk)
             player_chunk = new_player_chunk
             _update_chunks()
 
@@ -141,6 +142,7 @@ func _update_chunks() -> void:
             _load_chunk(chunk_pos)
 
 func _load_chunk(chunk_pos: Vector2i) -> void:
+    print("Neuer Chunk wird erzeugt: (", chunk_pos.x, ", ", chunk_pos.y, ")")
     var chunk = Chunk.new(chunk_pos.x, chunk_pos.y, WORLD_SEED)
     chunk.position = Vector3(chunk_pos.x * CHUNK_SIZE, 0, chunk_pos.y * CHUNK_SIZE)
     add_child(chunk)
