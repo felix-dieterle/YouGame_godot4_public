@@ -104,7 +104,9 @@ func _physics_process(delta) -> void:
     # Handle jetpack input - check both keyboard and mobile controls
     var jetpack_active = _is_jetpack_active()
     
-    # Apply jetpack upward movement (only add to vertical velocity, don't override)
+    # Apply jetpack upward movement
+    # Set velocity to jetpack speed for consistent ascent
+    # (Game uses terrain snapping instead of gravity, so direct velocity setting is appropriate)
     if jetpack_active:
         velocity.y = jetpack_speed
     

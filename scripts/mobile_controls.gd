@@ -660,6 +660,10 @@ func _update_button_position() -> void:
     
     DebugLogOverlay.add_log("Menu button positioned at (%.0f, %.0f), viewport: %.0fx%.0f" % [button_x, button_y, viewport_size.x, viewport_size.y], "cyan")
     
+    # Update jetpack button position if it exists
+    if jetpack_button:
+        _update_jetpack_button_position()
+    
     # Log absolute position after positioning
     if menu_button.is_inside_tree():
         var global_pos = menu_button.global_position
