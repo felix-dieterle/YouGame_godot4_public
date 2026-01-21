@@ -76,7 +76,7 @@ static var crystal_configs = {
 	CrystalType.AMETHYST: {
 		"name": "Amethyst",
 		"color": Color(0.6, 0.3, 0.8, 0.65),  # Purple with more transparency
-		"spawn_chance": 0.05,  # 5% chance (rare when spawning, but location-filtered)
+		"spawn_chance": 0.05,  # 5% chance (rare when spawning, appears in hidden locations)
 		"growth_frequency": 0.07,  # Reduced overall frequency
 		"shape": CrystalShape.CLUSTER,
 		"preferred_rock_colors": [0, 2]  # Light gray and brownish gray rocks

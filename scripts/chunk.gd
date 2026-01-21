@@ -980,11 +980,13 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
                 continue
         # In unique mountain caves, prefer rare crystals
         elif allow_rare_crystals and rng.randf() < 0.6:  # 60% chance to reroll for rare
-            # Try to select Ruby or Sapphire
-            if rng.randf() < 0.5:
+            # Try to select Ruby or Sapphire, respecting rock color preferences
+            # Ruby prefers rock colors [1, 3], Sapphire prefers [1, 2]
+            if rng.randf() < 0.5 and CrystalSystem.can_spawn_on_rock_color(CrystalSystem.CrystalType.RUBY, rock_color_index):
                 crystal_type = CrystalSystem.CrystalType.RUBY
-            else:
+            elif CrystalSystem.can_spawn_on_rock_color(CrystalSystem.CrystalType.SAPPHIRE, rock_color_index):
                 crystal_type = CrystalSystem.CrystalType.SAPPHIRE
+            # If neither can spawn on this rock color, keep the originally selected type
         
         # Random size variation
         var size_scale = rng.randf_range(0.8, 1.5)
