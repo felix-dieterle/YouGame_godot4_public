@@ -2,7 +2,7 @@ extends Node3D
 class_name DayNightCycle
 
 # Day/night cycle configuration
-const DAY_CYCLE_DURATION: float = 30.0 * 60.0  # 30 minutes in seconds
+const DAY_CYCLE_DURATION: float = 90.0 * 60.0  # 90 minutes in seconds (3x longer for player)
 const SUNRISE_DURATION: float = 60.0  # 1 minute sunrise animation
 const SUNSET_DURATION: float = 60.0  # 1 minute sunset animation
 const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
