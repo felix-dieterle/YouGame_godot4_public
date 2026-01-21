@@ -189,7 +189,17 @@ func _physics_process(delta) -> void:
         # Check slope along intended movement path
         var can_move = true
         
+        # Skip slope checking when flying more than 1m above terrain
+        var height_above_terrain = 0.0
         if world_manager:
+            var terrain_height = world_manager.get_height_at_position(global_position)
+            var water_depth = world_manager.get_water_depth_at_position(global_position)
+            var terrain_level = terrain_height + 1.0 - water_depth
+            height_above_terrain = global_position.y - terrain_level
+        
+        # Only check slopes if we're close to the ground (within 1m)
+        # When flying with jetpack or gliding high above terrain, skip slope checks
+        if world_manager and height_above_terrain <= 1.0:
             # Check multiple points along the movement path to catch steep edges
             # Use configurable lookahead distances to ensure consistent behavior
             var check_distances = [slope_check_near, slope_check_medium, slope_check_far]
