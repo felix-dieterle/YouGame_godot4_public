@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://testing_ocean_distance"]
+
+[ext_resource type="Script" path="res://tests/test_ocean_distance_verification.gd" id="1"]
+
+[node name="TestOceanDistance" type="Node"]
+script = ExtResource("1")

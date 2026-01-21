@@ -69,6 +69,7 @@ const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differenti
 
 # Ocean and lighthouse constants
 const OCEAN_LEVEL = -8.0  # Elevation threshold for ocean biome
+const OCEAN_START_DISTANCE = 160.0  # Distance from origin (0,0) where ocean begins (5 chunks = 160 units)
 const LIGHTHOUSE_SEED_OFFSET = 77777  # Offset for lighthouse placement seed
 const LIGHTHOUSE_SPACING = 80.0  # Distance between lighthouses along coastline
 
@@ -510,8 +511,15 @@ func _calculate_metadata() -> void:
     # More variance = less open (mountains/hills), less variance = more open (plains)
     openness = clamp(1.0 - (variance / 10.0), 0.0, 1.0)
     
-    # Determine biome and landmark type based on height and variance
-    if avg_height <= OCEAN_LEVEL:
+    # Calculate distance from origin to determine ocean zones
+    var chunk_world_center = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
+    var distance_from_origin = chunk_world_center.length()
+    
+    # Determine biome and landmark type based on height, variance, and distance
+    # Ocean biome is determined by either:
+    # 1. Natural low elevation (avg_height <= OCEAN_LEVEL)
+    # 2. Distance from origin (>= OCEAN_START_DISTANCE ensures ocean is discoverable)
+    if avg_height <= OCEAN_LEVEL or distance_from_origin >= OCEAN_START_DISTANCE:
         biome = "ocean"
         landmark_type = "ocean"
         is_ocean = true
@@ -1416,7 +1424,15 @@ func _place_lighthouses_if_coastal() -> void:
 
 ## Estimate average height of a chunk based on noise (without generating full chunk)
 func _get_estimated_chunk_height(chunk_pos: Vector2i) -> float:
-    # Sample a few points in the chunk to estimate average height
+    # Check if chunk should be ocean based on distance first
+    var chunk_world_center = Vector2(chunk_pos.x * CHUNK_SIZE, chunk_pos.y * CHUNK_SIZE)
+    var distance_from_origin = chunk_world_center.length()
+    
+    # If beyond OCEAN_START_DISTANCE, return a value below OCEAN_LEVEL to indicate ocean
+    if distance_from_origin >= OCEAN_START_DISTANCE:
+        return OCEAN_LEVEL - 1.0  # Guaranteed ocean
+    
+    # Otherwise, sample a few points in the chunk to estimate average height based on noise
     var samples = 5
     var total_height = 0.0
     
