@@ -1,12 +1,12 @@
 # Day/Night Cycle System
 
 ## Overview
-The day/night cycle system adds a time-based gameplay mechanic where players experience a 30-minute day cycle followed by a 4-hour real-time sleep period.
+The day/night cycle system adds a time-based gameplay mechanic where players experience a 90-minute day cycle followed by a 4-hour real-time sleep period.
 
 ## Features
 
-### Day Cycle (30 minutes)
-- Full day lasts 30 minutes of real-time gameplay
+### Day Cycle (90 minutes)
+- Full day lasts 90 minutes of real-time gameplay
 - Sun moves across the sky, changing lighting and atmosphere
 - Dynamic lighting adjusts throughout the day
 - Sun is brightest at noon, dimmer at sunrise/sunset
@@ -65,7 +65,7 @@ Save file location: `user://day_night_save.cfg`
 ### Debug Mode
 For testing purposes, the DayNightCycle node has two debug options:
 
-- **debug_mode**: When enabled, time runs 60x faster (30-minute day becomes 30 seconds)
+- **debug_mode**: When enabled, time runs 60x faster (90-minute day becomes 90 seconds)
 - **debug_skip_lockout**: When enabled, bypasses the 4-hour sleep lockout
 
 To enable debug mode:
@@ -91,7 +91,7 @@ The buttons are located in the bottom-right corner, next to the in-game clock. T
 All timing constants are defined in `scripts/day_night_cycle.gd`:
 
 ```gdscript
-const DAY_CYCLE_DURATION: float = 30.0 * 60.0  # 30 minutes
+const DAY_CYCLE_DURATION: float = 90.0 * 60.0  # 90 minutes
 const SUNRISE_DURATION: float = 60.0           # 1 minute
 const SUNSET_DURATION: float = 60.0            # 1 minute
 const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours
