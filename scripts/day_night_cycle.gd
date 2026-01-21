@@ -232,6 +232,10 @@ func _update_lighting() -> void:
     if ui_manager and ui_manager.has_method("update_game_time"):
         ui_manager.update_game_time(current_time, DAY_CYCLE_DURATION, sun_time_offset_hours)
     
+    # Update UI sun position display
+    if ui_manager and ui_manager.has_method("update_sun_position"):
+        ui_manager.update_sun_position(get_sun_position_degrees())
+    
     # Calculate sun angle based on current time
     # 0 = sunrise, DAY_CYCLE_DURATION/2 = noon, DAY_CYCLE_DURATION = sunset
     var time_ratio = current_time / DAY_CYCLE_DURATION
@@ -302,6 +306,10 @@ func _animate_sunrise(progress: float) -> void:
     
     # Update stars (they should be fading out during sunrise)
     _update_stars_visibility()
+    
+    # Update UI sun position display
+    if ui_manager and ui_manager.has_method("update_sun_position"):
+        ui_manager.update_sun_position(get_sun_position_degrees())
 
 func _animate_sunset(progress: float) -> void:
     if not directional_light:
@@ -332,6 +340,10 @@ func _animate_sunset(progress: float) -> void:
     
     # Update stars (they should be appearing during sunset)
     _update_stars_visibility()
+    
+    # Update UI sun position display
+    if ui_manager and ui_manager.has_method("update_sun_position"):
+        ui_manager.update_sun_position(get_sun_position_degrees())
 
 func _set_night_lighting() -> void:
     if not directional_light:
@@ -359,6 +371,10 @@ func _set_night_lighting() -> void:
     # Show stars during night
     if stars:
         stars.visible = true
+    
+    # Update UI sun position display (sun not visible during night)
+    if ui_manager and ui_manager.has_method("update_sun_position"):
+        ui_manager.update_sun_position(get_sun_position_degrees())
 
 func _show_warning(message: String) -> void:
     if ui_manager and ui_manager.has_method("show_message"):
@@ -482,6 +498,31 @@ func _calculate_current_sun_angle() -> float:
         # Offset only affects displayed time to prevent discontinuities
         var time_ratio = current_time / DAY_CYCLE_DURATION
         return lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
+
+# Get sun position in 0-180 degree range for display
+# 0° = sunrise, 90° = zenith/noon, 180° = sunset
+# Returns -1 during night when sun is not visible
+func get_sun_position_degrees() -> float:
+    # During night, return -1 to indicate sun is not visible
+    if is_night and not is_animating_sunrise:
+        return -1.0
+    
+    # Calculate time ratio (0.0 = sunrise, 0.5 = noon, 1.0 = sunset)
+    var time_ratio: float = 0.0
+    
+    if is_animating_sunrise:
+        # During sunrise animation, interpolate from start to 0
+        time_ratio = (sunrise_animation_time / SUNRISE_DURATION) * 0.0
+    elif is_animating_sunset:
+        # During sunset animation, stay near end
+        time_ratio = 1.0
+    else:
+        # Normal day progression
+        time_ratio = current_time / DAY_CYCLE_DURATION
+    
+    # Map 0.0-1.0 ratio to 0-180 degrees
+    # 0.0 (sunrise) -> 0°, 0.5 (noon) -> 90°, 1.0 (sunset) -> 180°
+    return time_ratio * 180.0
 
 # Update moon position based on time of day.
 func _update_moon_position() -> void:

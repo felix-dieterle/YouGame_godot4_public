@@ -7,6 +7,7 @@ var chunk_info_label: Label
 var version_label: Label
 var time_label: Label
 var time_speed_label: Label  # Shows current time speed multiplier
+var sun_position_label: Label  # Shows current sun position (0-180°)
 var time_minus_button: Button  # Slow down time
 var time_plus_button: Button  # Speed up time
 var night_overlay: ColorRect
@@ -37,6 +38,7 @@ const VERSION_LABEL_Z_INDEX: int = 50  # Above most UI elements but below debug 
 const TIME_LABEL_OFFSET_Y: float = -25.0  # Offset above version label
 const TIME_SPEED_LABEL_OFFSET_Y: float = -70.0  # Offset above time label (increased for larger buttons)
 const TIME_SPEED_LABEL_BUTTON_SPACE: float = -90.0  # Space reserved for buttons (increased for larger buttons)
+const SUN_POSITION_LABEL_OFFSET_Y: float = -95.0  # Offset above time speed label
 const TIME_BUTTON_WIDTH: float = 40.0  # Increased from 25.0 for better touch targets on Android
 const TIME_BUTTON_HEIGHT: float = 40.0  # Increased from 20.0 for better touch targets on Android
 const TIME_MINUS_BUTTON_OFFSET_X: float = -85.0  # Adjusted for larger button width
@@ -140,6 +142,24 @@ func _ready() -> void:
     time_speed_label.text = "1x"
     time_speed_label.visible = true
     add_child(time_speed_label)
+    
+    # Create sun position label (bottom right, above time speed label)
+    sun_position_label = Label.new()
+    sun_position_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    sun_position_label.anchor_left = 1.0
+    sun_position_label.anchor_top = 1.0
+    sun_position_label.anchor_right = 1.0
+    sun_position_label.anchor_bottom = 1.0
+    sun_position_label.offset_left = VERSION_LABEL_OFFSET_LEFT
+    sun_position_label.offset_top = VERSION_LABEL_OFFSET_TOP + SUN_POSITION_LABEL_OFFSET_Y
+    sun_position_label.offset_right = VERSION_LABEL_OFFSET_RIGHT
+    sun_position_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM + SUN_POSITION_LABEL_OFFSET_Y
+    sun_position_label.add_theme_font_size_override("font_size", 14)
+    sun_position_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5, 0.9))
+    sun_position_label.z_index = VERSION_LABEL_Z_INDEX
+    sun_position_label.text = "Sun: --°"
+    sun_position_label.visible = true
+    add_child(sun_position_label)
     
     # Create minus button (slow down time)
     time_minus_button = Button.new()
@@ -582,4 +602,17 @@ func update_time_scale(scale: float) -> void:
         time_speed_label.text = "%dx" % int(scale)
     else:
         time_speed_label.text = "%.2fx" % scale
+
+# Update sun position display
+# sun_degrees: 0-180 (0=sunrise, 90=noon, 180=sunset) or -1 for night
+func update_sun_position(sun_degrees: float) -> void:
+    if not sun_position_label:
+        return
+    
+    # During night, show "Night" instead of degrees
+    if sun_degrees < 0:
+        sun_position_label.text = "Sun: Night"
+    else:
+        # Display the sun position in degrees
+        sun_position_label.text = "Sun: %d°" % int(sun_degrees)
 
