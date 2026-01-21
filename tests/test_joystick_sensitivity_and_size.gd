@@ -9,6 +9,10 @@ var mobile_controls: Control
 var test_passed: int = 0
 var test_failed: int = 0
 
+# Test configuration constants
+const MOBILE_CONTROLS_SCRIPT_PATH = "res://scripts/mobile_controls.gd"
+const TEST_TOLERANCE = 0.05  # Tolerance for floating-point comparisons
+
 func _ready():
 	print("=== Starting Joystick Sensitivity and Size Tests ===")
 	
@@ -34,7 +38,7 @@ func test_joystick_constants():
 	print("\n--- Test: Joystick Constants ---")
 	
 	# Load the mobile controls script
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load(MOBILE_CONTROLS_SCRIPT_PATH)
 	if not mobile_controls_script:
 		assert_fail("Could not load MobileControls script")
 		return
@@ -104,14 +108,13 @@ func test_movement_joystick_sensitivity():
 	# Expected: X should be 0.8 * 0.5 = 0.4, Y should be 0.6
 	var expected_x = 0.4
 	var expected_y = 0.6
-	var tolerance = 0.05
 	
-	if abs(input_vector.x - expected_x) < tolerance:
+	if abs(input_vector.x - expected_x) < TEST_TOLERANCE:
 		assert_pass("Movement joystick X sensitivity is correct (%.2f ≈ %.2f)" % [input_vector.x, expected_x])
 	else:
 		assert_fail("Movement joystick X should be %.2f but got %.2f" % [expected_x, input_vector.x])
 	
-	if abs(input_vector.y - expected_y) < tolerance:
+	if abs(input_vector.y - expected_y) < TEST_TOLERANCE:
 		assert_pass("Movement joystick Y is unaffected (%.2f ≈ %.2f)" % [input_vector.y, expected_y])
 	else:
 		assert_fail("Movement joystick Y should be %.2f but got %.2f" % [expected_y, input_vector.y])
