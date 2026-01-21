@@ -511,10 +511,11 @@ func get_sun_position_degrees() -> float:
     var time_ratio: float = 0.0
     
     if is_animating_sunrise:
-        # During sunrise animation, interpolate from start to 0
-        time_ratio = (sunrise_animation_time / SUNRISE_DURATION) * 0.0
+        # During sunrise animation, interpolate from 0 to actual start
+        # Progress goes from 0 to 1 during sunrise, map to start of day (0)
+        time_ratio = 0.0
     elif is_animating_sunset:
-        # During sunset animation, stay near end
+        # During sunset animation, stay at end of day
         time_ratio = 1.0
     else:
         # Normal day progression
