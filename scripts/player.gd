@@ -38,6 +38,7 @@ var camera_rotation_y: float = 0.0  # Horizontal rotation (yaw)
 var footstep_player: AudioStreamPlayer
 var footstep_timer: float = 0.0
 var footstep_interval: float = 0.5  # Time between footsteps when moving
+@export var sprint_footstep_multiplier: float = 0.5  # Multiplier for footstep interval when sprinting
 var last_terrain_material: String = "grass"
 const FOOTSTEP_DURATION: float = 0.15  # Sound duration in seconds
 
@@ -433,7 +434,7 @@ func _update_footsteps(delta: float) -> void:
     footstep_timer += delta
     
     # Play footstep sound at regular intervals (faster when sprinting)
-    var current_interval = footstep_interval * (0.5 if is_sprinting else 1.0)
+    var current_interval = footstep_interval * (sprint_footstep_multiplier if is_sprinting else 1.0)
     if footstep_timer >= current_interval:
         footstep_timer = 0.0
         _play_footstep_sound()
