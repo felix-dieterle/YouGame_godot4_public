@@ -1887,8 +1887,8 @@ func _create_cave_mesh(chamber: Dictionary, rng: RandomNumberGenerator) -> void:
     # Add collision shape for cave interior
     var static_body = StaticBody3D.new()
     var collision_shape = CollisionShape3D.new()
-    var shape = ConcaveMeshShape3D.new()
-    shape.mesh = cave_mesh
+    # Use create_trimesh_shape() for Godot 4 compatibility
+    var shape = cave_mesh.create_trimesh_shape()
     collision_shape.shape = shape
     static_body.add_child(collision_shape)
     cave_node.add_child(static_body)
