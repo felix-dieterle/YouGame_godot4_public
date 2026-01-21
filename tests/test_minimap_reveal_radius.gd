@@ -1,11 +1,11 @@
 extends GutTest
 
 ## Test minimap reveal radius and cardinal direction changes
-## Tests the logic of the 10x reveal radius and 180° compass offset
+## Tests the logic of the 5x reveal radius and 180° compass offset
 
-func test_reveal_radius_covers_10_chunks():
-	# Test that a 10-chunk radius creates the expected circular coverage
-	var reveal_radius = 10
+func test_reveal_radius_covers_5_chunks():
+	# Test that a 5-chunk radius creates the expected circular coverage
+	var reveal_radius = 5
 	var radius_squared = reveal_radius * reveal_radius
 	var chunks_marked = 0
 	
@@ -14,13 +14,13 @@ func test_reveal_radius_covers_10_chunks():
 			if dx * dx + dz * dz <= radius_squared:
 				chunks_marked += 1
 	
-	# Expected: approximately π × 10² ≈ 314 chunks
+	# Expected: approximately π × 5² ≈ 79 chunks
 	# Allow some tolerance due to integer discretization
-	assert_true(chunks_marked >= 310 and chunks_marked <= 320, 
-		"Should mark approximately 314 chunks (π×10²), got %d" % chunks_marked)
+	assert_true(chunks_marked >= 75 and chunks_marked <= 83, 
+		"Should mark approximately 79 chunks (π×5²), got %d" % chunks_marked)
 	
 	# Log the actual count
-	print("Reveal radius test: %d chunks marked (expected ~314)" % chunks_marked)
+	print("Reveal radius test: %d chunks marked (expected ~79)" % chunks_marked)
 
 func test_compass_direction_north():
 	# Test that 0° rotation (facing +Z in Godot) should show South after 180° offset

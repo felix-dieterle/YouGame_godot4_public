@@ -130,7 +130,7 @@ func _process(delta: float) -> void:
 	if update_timer <= 0.0:
 		_update_positioning()
 	
-	# Track current chunk and surrounding chunks as visited (10-chunk radius for 10x larger reveal area)
+	# Track current chunk and surrounding chunks as visited (5-chunk radius for 5x larger reveal area)
 	var player_pos = player.global_position
 	var chunk_x = int(floor(player_pos.x / world_manager.CHUNK_SIZE))
 	var chunk_z = int(floor(player_pos.z / world_manager.CHUNK_SIZE))
@@ -140,9 +140,9 @@ func _process(delta: float) -> void:
 	if current_chunk != last_player_chunk:
 		last_player_chunk = current_chunk
 		
-		# Mark all chunks within a 10-chunk radius as visited
-		# This increases the reveal area 100x (area = π×r², so π×10² vs π×1²)
-		var reveal_radius = 10
+		# Mark all chunks within a 5-chunk radius as visited
+		# This increases the reveal area 25x (area = π×r², so π×5² vs π×1²)
+		var reveal_radius = 5
 		var radius_squared = reveal_radius * reveal_radius
 		for dx in range(-reveal_radius, reveal_radius + 1):
 			for dz in range(-reveal_radius, reveal_radius + 1):
