@@ -8,6 +8,7 @@ const CrystalSystem = preload("res://scripts/crystal_system.gd")
 @export var move_speed: float = 5.0
 @export var rotation_speed: float = 3.0
 @export var jetpack_speed: float = 3.0  # Upward speed when using jetpack
+@export var glide_speed: float = 0.5  # Slow descent speed when gliding after jetpack release
 @export var camera_distance: float = 10.0
 @export var camera_height: float = 5.0
 @export var max_slope_angle: float = 30.0  # Maximum walkable slope in degrees
@@ -55,6 +56,10 @@ var input_enabled: bool = true
 
 # Crystal inventory - tracks collected crystals by type (initialized in _ready)
 var crystal_inventory: Dictionary = {}
+
+# Glide state - tracks if player was using jetpack and should now glide
+var is_gliding: bool = false
+var was_jetpack_active: bool = false
 
 func _ready() -> void:
     # Add to Player group so other systems can find this node
@@ -104,11 +109,23 @@ func _physics_process(delta) -> void:
     # Handle jetpack input - check both keyboard and mobile controls
     var jetpack_active = _is_jetpack_active()
     
-    # Apply jetpack upward movement
+    # Update glide state based on jetpack transitions
+    if jetpack_active:
+        is_gliding = false
+        was_jetpack_active = true
+    elif was_jetpack_active:
+        # Jetpack was just released - start gliding
+        is_gliding = true
+        was_jetpack_active = false
+    
+    # Apply jetpack upward movement or gliding descent
     # Set velocity to jetpack speed for consistent ascent
     # (Game uses terrain snapping instead of gravity, so direct velocity setting is appropriate)
     if jetpack_active:
         velocity.y = jetpack_speed
+    elif is_gliding:
+        # Apply slow downward glide when jetpack is released
+        velocity.y = -glide_speed
     
     # Handle camera rotation from look joystick
     var look_input = Vector2.ZERO
@@ -237,15 +254,25 @@ func _physics_process(delta) -> void:
         var bob_offset = sin(head_bob_time) * head_bob_amplitude
         camera.position.y = first_person_height + bob_offset
     
-    # Snap to terrain (only when jetpack is not active)
+    # Snap to terrain (only when jetpack is not active and not gliding)
     if world_manager:
         var target_height = world_manager.get_height_at_position(global_position)
         var water_depth = world_manager.get_water_depth_at_position(global_position)
         
-        # Only snap to terrain when jetpack is not active
-        if not _is_jetpack_active():
+        # Calculate the terrain level (accounting for water depth)
+        var terrain_level = target_height + 1.0 - water_depth
+        
+        # Only snap to terrain when jetpack is not active and not gliding
+        if not _is_jetpack_active() and not is_gliding:
             # Sink into water (knee-deep means player height is reduced)
-            global_position.y = target_height + 1.0 - water_depth
+            global_position.y = terrain_level
+        elif is_gliding:
+            # Check if player has reached or gone below terrain level while gliding
+            if global_position.y <= terrain_level:
+                # Stop gliding and snap to terrain
+                is_gliding = false
+                global_position.y = terrain_level
+                velocity.y = 0.0
 
 func _input(event) -> void:
     # Camera view toggle
