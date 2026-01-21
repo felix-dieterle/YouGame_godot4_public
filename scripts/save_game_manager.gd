@@ -14,12 +14,16 @@ var save_data: Dictionary = {
         "is_first_person": false,
         "inventory": {},  # Crystal inventory
         "torch_count": 100,  # Number of torches in inventory
-        "selected_item": "torch"  # Currently selected item
+        "selected_item": "torch",  # Currently selected item
+        "flint_stone_count": 2,  # Number of flint stones in inventory
+        "mushroom_count": 0,  # Number of mushrooms in inventory
+        "bottle_fill_level": 100.0  # Drinking bottle fill level (0-100)
     },
     "world": {
         "seed": 12345,
         "player_chunk": Vector2i.ZERO,
-        "torches": []  # Placed torches in the world
+        "torches": [],  # Placed torches in the world
+        "campfires": []  # Placed campfires in the world
     },
     "day_night": {
         "current_time": 0.0,
@@ -76,13 +80,19 @@ func _auto_save_on_exit() -> void:
         var inventory = player.crystal_inventory if "crystal_inventory" in player else {}
         var torch_count = player.torch_count if "torch_count" in player else 100
         var selected_item = player.selected_item if "selected_item" in player else "torch"
+        var flint_stone_count = player.flint_stone_count if "flint_stone_count" in player else 2
+        var mushroom_count = player.mushroom_count if "mushroom_count" in player else 0
+        var bottle_fill_level = player.bottle_fill_level if "bottle_fill_level" in player else 100.0
         update_player_data(
             player.global_position,
             player.rotation.y,
             player.is_first_person if "is_first_person" in player else false,
             inventory,
             torch_count,
-            selected_item
+            selected_item,
+            flint_stone_count,
+            mushroom_count,
+            bottle_fill_level
         )
     
     # Collect all placed torches in the world
@@ -95,11 +105,22 @@ func _auto_save_on_exit() -> void:
             "z": torch.global_position.z
         })
     
+    # Collect all placed campfires in the world
+    var campfires = get_tree().get_nodes_in_group("Campfires")
+    var campfire_positions = []
+    for campfire in campfires:
+        campfire_positions.append({
+            "x": campfire.global_position.x,
+            "y": campfire.global_position.y,
+            "z": campfire.global_position.z
+        })
+    
     if world_manager:
         update_world_data(
             world_manager.WORLD_SEED,
             world_manager.player_chunk,
-            torch_positions
+            torch_positions,
+            campfire_positions
         )
     
     if day_night_cycle:
@@ -267,19 +288,23 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch") -> void:
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
     save_data["player"]["is_first_person"] = is_first_person
     save_data["player"]["inventory"] = inventory
     save_data["player"]["torch_count"] = torch_count
     save_data["player"]["selected_item"] = selected_item
+    save_data["player"]["flint_stone_count"] = flint_stone_count
+    save_data["player"]["mushroom_count"] = mushroom_count
+    save_data["player"]["bottle_fill_level"] = bottle_fill_level
 
 # Update world data for saving
-func update_world_data(seed: int, player_chunk: Vector2i, torches: Array = []) -> void:
+func update_world_data(seed: int, player_chunk: Vector2i, torches: Array = [], campfires: Array = []) -> void:
     save_data["world"]["seed"] = seed
     save_data["world"]["player_chunk"] = player_chunk
     save_data["world"]["torches"] = torches
+    save_data["world"]["campfires"] = campfires
 
 # Update day/night data for saving
 func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end_time: float, time_scale: float = 2.0, day_count: int = 1, night_start_time: float = 0.0) -> void:
