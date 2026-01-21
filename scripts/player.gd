@@ -7,6 +7,7 @@ const CrystalSystem = preload("res://scripts/crystal_system.gd")
 # Movement settings
 @export var move_speed: float = 5.0
 @export var rotation_speed: float = 3.0
+@export var jetpack_speed: float = 3.0  # Upward speed when using jetpack
 @export var camera_distance: float = 10.0
 @export var camera_height: float = 5.0
 @export var max_slope_angle: float = 30.0  # Maximum walkable slope in degrees
@@ -99,6 +100,17 @@ func _physics_process(delta) -> void:
     # Check if input is disabled (e.g., during night)
     if not input_enabled:
         return
+    
+    # Handle jetpack input - check both keyboard and mobile controls
+    var jetpack_active = Input.is_action_pressed("jetpack")
+    if mobile_controls and mobile_controls.has_method("is_jetpack_pressed"):
+        jetpack_active = jetpack_active or mobile_controls.is_jetpack_pressed()
+    
+    # Apply jetpack upward movement
+    if jetpack_active:
+        velocity.y = jetpack_speed
+    else:
+        velocity.y = 0.0
     
     # Handle camera rotation from look joystick
     var look_input = Vector2.ZERO
