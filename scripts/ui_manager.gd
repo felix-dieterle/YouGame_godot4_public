@@ -18,6 +18,9 @@ var crystal_labels: Dictionary = {}  # Maps CrystalType to Label
 var inventory_panel: PanelContainer  # Inventory UI panel
 var inventory_visible: bool = false  # Track inventory visibility
 var torch_count_label: Label  # Label for torch count
+var flint_stone_count_label: Label  # Label for flint stone count
+var mushroom_count_label: Label  # Label for mushroom count
+var bottle_fill_label: Label  # Label for bottle fill level
 var selected_item_label: Label  # Label for selected item
 
 # State
@@ -692,6 +695,60 @@ func _create_inventory_panel() -> void:
     
     vbox.add_child(torch_hbox)
     
+    # Flint stone count
+    var flint_hbox = HBoxContainer.new()
+    flint_hbox.add_theme_constant_override("separation", 10)
+    
+    var flint_icon = ColorRect.new()
+    flint_icon.custom_minimum_size = Vector2(32, 32)
+    flint_icon.color = Color(0.5, 0.5, 0.5)  # Gray color for flint
+    flint_hbox.add_child(flint_icon)
+    
+    flint_stone_count_label = Label.new()
+    flint_stone_count_label.text = "Flint Stones: 2"
+    flint_stone_count_label.add_theme_font_size_override("font_size", 20)
+    flint_stone_count_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    flint_stone_count_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    flint_hbox.add_child(flint_stone_count_label)
+    
+    vbox.add_child(flint_hbox)
+    
+    # Mushroom count
+    var mushroom_hbox = HBoxContainer.new()
+    mushroom_hbox.add_theme_constant_override("separation", 10)
+    
+    var mushroom_icon = ColorRect.new()
+    mushroom_icon.custom_minimum_size = Vector2(32, 32)
+    mushroom_icon.color = Color(0.8, 0.4, 0.3)  # Brown/red color for mushroom
+    mushroom_hbox.add_child(mushroom_icon)
+    
+    mushroom_count_label = Label.new()
+    mushroom_count_label.text = "Mushrooms: 0"
+    mushroom_count_label.add_theme_font_size_override("font_size", 20)
+    mushroom_count_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    mushroom_count_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    mushroom_hbox.add_child(mushroom_count_label)
+    
+    vbox.add_child(mushroom_hbox)
+    
+    # Drinking bottle
+    var bottle_hbox = HBoxContainer.new()
+    bottle_hbox.add_theme_constant_override("separation", 10)
+    
+    var bottle_icon = ColorRect.new()
+    bottle_icon.custom_minimum_size = Vector2(32, 32)
+    bottle_icon.color = Color(0.3, 0.5, 0.8)  # Blue color for water bottle
+    bottle_hbox.add_child(bottle_icon)
+    
+    bottle_fill_label = Label.new()
+    bottle_fill_label.text = "Water Bottle: 100%"
+    bottle_fill_label.add_theme_font_size_override("font_size", 20)
+    bottle_fill_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    bottle_fill_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    bottle_hbox.add_child(bottle_fill_label)
+    
+    vbox.add_child(bottle_hbox)
+    
     # Selected item
     var separator2 = HSeparator.new()
     vbox.add_child(separator2)
@@ -716,7 +773,7 @@ func _create_inventory_panel() -> void:
     
     # Instructions
     var instructions = Label.new()
-    instructions.text = "Press 'I' to close inventory\nPress 'F' to place selected item"
+    instructions.text = "Press 'I' to close inventory\nPress 'F' to place torch\nPress 'C' to use flint stones (create campfire)"
     instructions.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     instructions.add_theme_font_size_override("font_size", 14)
     instructions.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
@@ -724,10 +781,17 @@ func _create_inventory_panel() -> void:
     
     add_child(inventory_panel)
     
-    # Load initial torch count from player
+    # Load initial item counts from player
     var player = get_tree().get_first_node_in_group("Player")
-    if player and "torch_count" in player:
-        update_torch_count(player.torch_count)
+    if player:
+        if "torch_count" in player:
+            update_torch_count(player.torch_count)
+        if "flint_stone_count" in player:
+            update_flint_stone_count(player.flint_stone_count)
+        if "mushroom_count" in player:
+            update_mushroom_count(player.mushroom_count)
+        if "bottle_fill_level" in player:
+            update_bottle_fill_level(player.bottle_fill_level)
 
 ## Toggle inventory UI visibility
 func toggle_inventory_ui() -> void:
@@ -745,4 +809,20 @@ func toggle_inventory_ui() -> void:
 func update_torch_count(count: int) -> void:
     if torch_count_label:
         torch_count_label.text = "Torches: %d" % count
+
+## Update flint stone count display
+func update_flint_stone_count(count: int) -> void:
+    if flint_stone_count_label:
+        flint_stone_count_label.text = "Flint Stones: %d" % count
+
+## Update mushroom count display
+func update_mushroom_count(count: int) -> void:
+    if mushroom_count_label:
+        mushroom_count_label.text = "Mushrooms: %d" % count
+
+## Update bottle fill level display
+func update_bottle_fill_level(level: float) -> void:
+    if bottle_fill_label:
+        bottle_fill_label.text = "Water Bottle: %d%%" % int(level)
+
 
