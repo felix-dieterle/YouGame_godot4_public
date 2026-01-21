@@ -161,8 +161,9 @@ func _update_look_joystick_stick_position() -> void:
     # Yaw controls X position (left/right)
     # Pitch controls Y position (up/down)
     # Normalize to -1..1 range based on max angles
-    var normalized_x = yaw / max_yaw_rad if max_yaw_rad > 0 else 0.0
-    var normalized_y = pitch / max_pitch_rad if max_pitch_rad > 0 else 0.0
+    # Negate both axes to match the fix in _update_look_joystick (visual consistency)
+    var normalized_x = -yaw / max_yaw_rad if max_yaw_rad > 0 else 0.0
+    var normalized_y = -pitch / max_pitch_rad if max_pitch_rad > 0 else 0.0
     
     # Clamp to ensure we stay within -1..1 range
     normalized_x = clamp(normalized_x, -1.0, 1.0)
@@ -363,8 +364,9 @@ func _update_look_joystick(touch_pos: Vector2) -> void:
             max_pitch_deg = player.camera_max_pitch
     
     # Convert normalized position to target angles in radians
-    look_target_yaw = normalized.x * deg_to_rad(max_yaw_deg)
-    look_target_pitch = normalized.y * deg_to_rad(max_pitch_deg)
+    # Negate both axes to fix inverted behavior (moving right should rotate camera right, moving up should tilt camera up)
+    look_target_yaw = -normalized.x * deg_to_rad(max_yaw_deg)
+    look_target_pitch = -normalized.y * deg_to_rad(max_pitch_deg)
 
 func _create_styled_button_style(bg_color: Color, corner_radius: int) -> StyleBoxFlat:
     # Helper function to create a styled button with rounded corners
