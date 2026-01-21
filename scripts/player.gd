@@ -189,7 +189,13 @@ func _physics_process(delta) -> void:
         # Check slope along intended movement path
         var can_move = true
         
-        if world_manager:
+        # Skip slope checking when flying more than 1m above terrain
+        var terrain_level = _get_terrain_level()
+        var height_above_terrain = global_position.y - terrain_level
+        
+        # Only check slopes if we're close to the ground (within 1m)
+        # When flying with jetpack or gliding high above terrain, skip slope checks
+        if world_manager and height_above_terrain <= 1.0:
             # Check multiple points along the movement path to catch steep edges
             # Use configurable lookahead distances to ensure consistent behavior
             var check_distances = [slope_check_near, slope_check_medium, slope_check_far]
@@ -256,11 +262,7 @@ func _physics_process(delta) -> void:
     
     # Snap to terrain (only when jetpack is not active and not gliding)
     if world_manager:
-        var target_height = world_manager.get_height_at_position(global_position)
-        var water_depth = world_manager.get_water_depth_at_position(global_position)
-        
-        # Calculate the terrain level (accounting for water depth)
-        var terrain_level = target_height + 1.0 - water_depth
+        var terrain_level = _get_terrain_level()
         
         # Only snap to terrain when jetpack is not active and not gliding
         if not _is_jetpack_active() and not is_gliding:
@@ -520,6 +522,15 @@ func _play_footstep_sound() -> void:
 
 func set_input_enabled(enabled: bool) -> void:
     input_enabled = enabled
+
+## Get the terrain level at the player's current position (accounting for water depth)
+func _get_terrain_level() -> float:
+    if not world_manager:
+        return 0.0
+    
+    var terrain_height = world_manager.get_height_at_position(global_position)
+    var water_depth = world_manager.get_water_depth_at_position(global_position)
+    return terrain_height + 1.0 - water_depth
 
 ## Check if jetpack is currently active from any input source
 func _is_jetpack_active() -> bool:
