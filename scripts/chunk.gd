@@ -65,6 +65,8 @@ const CRYSTAL_SPAWN_CHANCE_HIDDEN = 0.08  # 8% in hidden valleys - still rare
 const CRYSTAL_SPAWN_CHANCE_CAVE = 0.30  # 30% in mountain caves for rare crystals
 const CRYSTALS_PER_ROCK_MIN = 1
 const CRYSTALS_PER_ROCK_MAX = 1  # Only 1 crystal per rock for rarity
+const CRYSTAL_RARE_PREFERENCE_CHANCE = 0.6  # 60% chance to prefer rare crystals in unique mountain caves
+const CRYSTAL_FILTER_MAX_ATTEMPTS = 10  # Max attempts to filter out rare crystals before skipping
 
 # Path bush placement constants
 const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differentiation
@@ -969,9 +971,8 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
         
         # Filter out rare crystals if not in unique mountain cave
         if not allow_rare_crystals:
-            var max_attempts = 10  # Prevent infinite loop
             var attempts = 0
-            while (crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE) and attempts < max_attempts:
+            while (crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE) and attempts < CRYSTAL_FILTER_MAX_ATTEMPTS:
                 crystal_type = CrystalSystem.select_random_crystal_type(rng, rock_color_index)
                 attempts += 1
             
@@ -979,7 +980,7 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
             if crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE:
                 continue
         # In unique mountain caves, prefer rare crystals
-        elif allow_rare_crystals and rng.randf() < 0.6:  # 60% chance to reroll for rare
+        elif allow_rare_crystals and rng.randf() < CRYSTAL_RARE_PREFERENCE_CHANCE:
             # Try to select Ruby or Sapphire, respecting rock color preferences
             # Ruby prefers rock colors [1, 3], Sapphire prefers [1, 2]
             var can_spawn_ruby = CrystalSystem.can_spawn_on_rock_color(CrystalSystem.CrystalType.RUBY, rock_color_index)
