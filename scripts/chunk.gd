@@ -69,6 +69,7 @@ const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differenti
 
 # Ocean and lighthouse constants
 const OCEAN_LEVEL = -8.0  # Elevation threshold for ocean biome
+const OCEAN_START_DISTANCE = 160.0  # Distance from origin (0,0) where ocean begins (5 chunks = 160 units)
 const LIGHTHOUSE_SEED_OFFSET = 77777  # Offset for lighthouse placement seed
 const LIGHTHOUSE_SPACING = 80.0  # Distance between lighthouses along coastline
 
@@ -423,8 +424,13 @@ func _calculate_metadata() -> void:
     # More variance = less open (mountains/hills), less variance = more open (plains)
     openness = clamp(1.0 - (variance / 10.0), 0.0, 1.0)
     
+    # Calculate distance from origin to determine ocean zones
+    var chunk_world_center = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
+    var distance_from_origin = chunk_world_center.length()
+    
     # Determine biome and landmark type based on height and variance
-    if avg_height <= OCEAN_LEVEL:
+    # Force ocean for chunks beyond OCEAN_START_DISTANCE
+    if avg_height <= OCEAN_LEVEL or distance_from_origin >= OCEAN_START_DISTANCE:
         biome = "ocean"
         landmark_type = "ocean"
         is_ocean = true
