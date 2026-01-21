@@ -88,6 +88,9 @@ func _ready() -> void:
     if starting_location:
         starting_location.adjust_to_terrain(self)
     
+    # Load placed torches from save file
+    _load_placed_torches()
+    
     # Mark initial loading as complete after a short delay
     initial_loading_timer.start(0.5)
 
@@ -202,3 +205,39 @@ func get_slope_gradient_at_position(world_pos: Vector3) -> Vector3:
     if chunk:
         return chunk.get_slope_gradient_at_world_pos(world_pos.x, world_pos.z)
     return Vector3.ZERO
+
+## Load placed torches from save file
+func _load_placed_torches() -> void:
+    if not SaveGameManager.has_save_file():
+        return
+    
+    var world_data = SaveGameManager.get_world_data()
+    if not "torches" in world_data:
+        return
+    
+    var torch_positions = world_data["torches"]
+    if not torch_positions is Array:
+        return
+    
+    # Create a reference to player for torch creation (reuse player's method)
+    if not player:
+        return
+    
+    # Create torches at saved positions
+    for torch_data in torch_positions:
+        if not torch_data is Dictionary:
+            continue
+        
+        var pos = Vector3(
+            torch_data.get("x", 0.0),
+            torch_data.get("y", 0.0),
+            torch_data.get("z", 0.0)
+        )
+        
+        # Create torch using player's method
+        if player.has_method("_create_torch_node"):
+            var torch = player._create_torch_node()
+            torch.global_position = pos
+            add_child(torch)
+    
+    print("WorldManager: Loaded ", torch_positions.size(), " torches from save file")

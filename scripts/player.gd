@@ -57,6 +57,10 @@ var input_enabled: bool = true
 # Crystal inventory - tracks collected crystals by type (initialized in _ready)
 var crystal_inventory: Dictionary = {}
 
+# Torch inventory
+var torch_count: int = 100  # Player starts with 100 torches
+var selected_item: String = "torch"  # Currently selected item
+
 # Glide state - tracks if player was using jetpack and should now glide
 var is_gliding: bool = false
 var was_jetpack_active: bool = false
@@ -280,6 +284,14 @@ func _input(event) -> void:
     # Camera view toggle
     if event.is_action_pressed("toggle_camera_view"):
         _toggle_camera_view()
+    
+    # Torch placement
+    if event.is_action_pressed("place_torch"):
+        _place_torch()
+    
+    # Toggle inventory (show/hide)
+    if event.is_action_pressed("toggle_inventory"):
+        _toggle_inventory()
     
     # Camera zoom (only in third-person)
     if not is_first_person and event is InputEventMouseButton:
@@ -624,4 +636,94 @@ func _load_saved_state():
             if ui_manager and ui_manager.has_method("update_crystal_count"):
                 ui_manager.update_crystal_count(crystal_inventory)
         
+        # Restore torch count
+        if "torch_count" in player_data:
+            torch_count = player_data["torch_count"]
+        
+        # Restore selected item
+        if "selected_item" in player_data:
+            selected_item = player_data["selected_item"]
+        
         print("Player: Loaded saved position: ", global_position)
+
+## Place a torch at the player's current position
+func _place_torch() -> void:
+    # Check if player has torches
+    if torch_count <= 0:
+        var ui_manager = get_tree().get_first_node_in_group("UIManager")
+        if ui_manager and ui_manager.has_method("show_message"):
+            ui_manager.show_message("No torches left!", 2.0)
+        return
+    
+    # Deduct one torch from inventory
+    torch_count -= 1
+    
+    # Create torch at player position
+    var torch = _create_torch_node()
+    torch.global_position = global_position + Vector3(0, 0.5, 0)  # Place slightly above ground
+    
+    # Add torch to the world
+    get_parent().add_child(torch)
+    
+    # Update UI
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_torch_count"):
+        ui_manager.update_torch_count(torch_count)
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("Torch placed! (%d left)" % torch_count, 1.5)
+    
+    print("Player: Placed torch at ", torch.global_position, " - ", torch_count, " torches remaining")
+
+## Create a torch node with light
+func _create_torch_node() -> Node3D:
+    var torch = Node3D.new()
+    torch.name = "Torch"
+    torch.add_to_group("Torches")  # Add to group for save/load
+    
+    # Create visual torch (simple stick with flame)
+    var stick = MeshInstance3D.new()
+    var stick_mesh = CylinderMesh.new()
+    stick_mesh.height = 1.0
+    stick_mesh.top_radius = 0.05
+    stick_mesh.bottom_radius = 0.05
+    stick.mesh = stick_mesh
+    stick.position = Vector3(0, 0.5, 0)
+    
+    var stick_material = StandardMaterial3D.new()
+    stick_material.albedo_color = Color(0.3, 0.2, 0.1)  # Brown wood
+    stick.set_surface_override_material(0, stick_material)
+    torch.add_child(stick)
+    
+    # Create flame (glowing sphere)
+    var flame = MeshInstance3D.new()
+    var flame_mesh = SphereMesh.new()
+    flame_mesh.radius = 0.2
+    flame_mesh.height = 0.4
+    flame.mesh = flame_mesh
+    flame.position = Vector3(0, 1.2, 0)
+    
+    var flame_material = StandardMaterial3D.new()
+    flame_material.albedo_color = Color(1.0, 0.6, 0.1)  # Orange flame
+    flame_material.emission_enabled = true
+    flame_material.emission = Color(1.0, 0.5, 0.0)
+    flame_material.emission_energy_multiplier = 3.0
+    flame.set_surface_override_material(0, flame_material)
+    torch.add_child(flame)
+    
+    # Create bright omni light
+    var light = OmniLight3D.new()
+    light.light_color = Color(1.0, 0.7, 0.3)  # Warm orange light
+    light.light_energy = 5.0  # Very bright
+    light.omni_range = 30.0  # Shines very far
+    light.omni_attenuation = 0.5  # Slower falloff for wider reach
+    light.shadow_enabled = true
+    light.position = Vector3(0, 1.2, 0)
+    torch.add_child(light)
+    
+    return torch
+
+## Toggle inventory UI visibility
+func _toggle_inventory() -> void:
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("toggle_inventory_ui"):
+        ui_manager.toggle_inventory_ui()

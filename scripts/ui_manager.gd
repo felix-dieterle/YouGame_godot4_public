@@ -15,6 +15,10 @@ var night_label: Label
 var countdown_timer: Timer
 var crystal_counter_panel: PanelContainer  # Container for crystal counters
 var crystal_labels: Dictionary = {}  # Maps CrystalType to Label
+var inventory_panel: PanelContainer  # Inventory UI panel
+var inventory_visible: bool = false  # Track inventory visibility
+var torch_count_label: Label  # Label for torch count
+var selected_item_label: Label  # Label for selected item
 
 # State
 var initial_loading_complete: bool = false
@@ -239,6 +243,9 @@ func _ready() -> void:
     
     # Create crystal counter panel (top-right)
     _create_crystal_counter_panel()
+    
+    # Create inventory panel (initially hidden)
+    _create_inventory_panel()
     
     # Create and show start menu if save file exists
     _create_start_menu()
@@ -615,4 +622,127 @@ func update_sun_position(sun_degrees: float) -> void:
     else:
         # Display the sun position in degrees
         sun_position_label.text = "Sun: %d°" % int(sun_degrees)
+
+## Create inventory panel
+func _create_inventory_panel() -> void:
+    # Create panel container
+    inventory_panel = PanelContainer.new()
+    inventory_panel.anchor_left = 0.5
+    inventory_panel.anchor_top = 0.5
+    inventory_panel.anchor_right = 0.5
+    inventory_panel.anchor_bottom = 0.5
+    inventory_panel.offset_left = -250
+    inventory_panel.offset_top = -200
+    inventory_panel.offset_right = 250
+    inventory_panel.offset_bottom = 200
+    inventory_panel.z_index = 100
+    inventory_panel.visible = false  # Initially hidden
+    
+    # Style the panel
+    var panel_style = StyleBoxFlat.new()
+    panel_style.bg_color = Color(0.1, 0.1, 0.15, 0.95)
+    panel_style.corner_radius_top_left = 10
+    panel_style.corner_radius_top_right = 10
+    panel_style.corner_radius_bottom_left = 10
+    panel_style.corner_radius_bottom_right = 10
+    panel_style.border_color = Color(0.5, 0.5, 0.6, 1.0)
+    panel_style.border_width_left = 3
+    panel_style.border_width_right = 3
+    panel_style.border_width_top = 3
+    panel_style.border_width_bottom = 3
+    inventory_panel.add_theme_stylebox_override("panel", panel_style)
+    
+    # Create VBoxContainer
+    var vbox = VBoxContainer.new()
+    vbox.add_theme_constant_override("separation", 15)
+    vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+    vbox.offset_left = 20
+    vbox.offset_top = 20
+    vbox.offset_right = -20
+    vbox.offset_bottom = -20
+    inventory_panel.add_child(vbox)
+    
+    # Title
+    var title = Label.new()
+    title.text = "Inventory"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 28)
+    title.add_theme_color_override("font_color", Color(1, 1, 1))
+    vbox.add_child(title)
+    
+    # Separator
+    var separator1 = HSeparator.new()
+    vbox.add_child(separator1)
+    
+    # Torch count
+    var torch_hbox = HBoxContainer.new()
+    torch_hbox.add_theme_constant_override("separation", 10)
+    
+    var torch_icon = ColorRect.new()
+    torch_icon.custom_minimum_size = Vector2(32, 32)
+    torch_icon.color = Color(1.0, 0.6, 0.1)  # Orange color for torch
+    torch_hbox.add_child(torch_icon)
+    
+    torch_count_label = Label.new()
+    torch_count_label.text = "Torches: 100"
+    torch_count_label.add_theme_font_size_override("font_size", 20)
+    torch_count_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    torch_count_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    torch_hbox.add_child(torch_count_label)
+    
+    vbox.add_child(torch_hbox)
+    
+    # Selected item
+    var separator2 = HSeparator.new()
+    vbox.add_child(separator2)
+    
+    var selected_label_title = Label.new()
+    selected_label_title.text = "Selected Item:"
+    selected_label_title.add_theme_font_size_override("font_size", 18)
+    selected_label_title.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
+    vbox.add_child(selected_label_title)
+    
+    selected_item_label = Label.new()
+    selected_item_label.text = "Torch"
+    selected_item_label.add_theme_font_size_override("font_size", 24)
+    selected_item_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3))
+    selected_item_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    vbox.add_child(selected_item_label)
+    
+    # Spacer
+    var spacer = Control.new()
+    spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    vbox.add_child(spacer)
+    
+    # Instructions
+    var instructions = Label.new()
+    instructions.text = "Press 'I' to close inventory\nPress 'F' to place selected item"
+    instructions.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    instructions.add_theme_font_size_override("font_size", 14)
+    instructions.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+    vbox.add_child(instructions)
+    
+    add_child(inventory_panel)
+    
+    # Load initial torch count from player
+    var player = get_tree().get_first_node_in_group("Player")
+    if player and "torch_count" in player:
+        update_torch_count(player.torch_count)
+
+## Toggle inventory UI visibility
+func toggle_inventory_ui() -> void:
+    inventory_visible = not inventory_visible
+    if inventory_panel:
+        inventory_panel.visible = inventory_visible
+    
+    # Log state change
+    if inventory_visible:
+        print("UIManager: Inventory opened")
+    else:
+        print("UIManager: Inventory closed")
+
+## Update torch count display
+func update_torch_count(count: int) -> void:
+    if torch_count_label:
+        torch_count_label.text = "Torches: %d" % count
 
