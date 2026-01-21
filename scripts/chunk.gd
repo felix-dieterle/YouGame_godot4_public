@@ -87,6 +87,20 @@ const WOODPECKER_INTERVAL_MIN = 10.0  # Minimum seconds between woodpecker sound
 const WOODPECKER_INTERVAL_MAX = 30.0  # Maximum seconds between woodpecker sounds
 const WOODPECKER_FOREST_DENSITY_THRESHOLD = 0.5  # Minimum forest density for woodpecker sounds
 
+# Unique high mountain chunk constants
+const UNIQUE_MOUNTAIN_CHUNK_MODULO = 73  # Hash modulo for unique mountain selection
+const UNIQUE_MOUNTAIN_CHUNK_VALUE = 42  # Target value for unique mountain chunk
+const MOUNTAIN_PLACEMENT_RADIUS = 900.0  # Maximum distance from spawn (~28 chunks = 900 units)
+const MOUNTAIN_RANGE_RADIUS = 11  # Mountain effect extends 11 chunks in all directions (23x23 chunks = ~700x700m)
+const MOUNTAIN_HEIGHT_MULTIPLIER = 40.0  # Extra tall mountains
+const MOUNTAIN_HEIGHT_OFFSET = 20.0  # High base elevation
+const CAVE_COUNT_MIN = 3  # Minimum number of caves
+const CAVE_COUNT_MAX = 5  # Maximum number of caves
+const CAVE_CHAMBER_RADIUS_MIN = 3.0  # Min radius of cave chambers
+const CAVE_CHAMBER_RADIUS_MAX = 6.0  # Max radius of cave chambers
+const MOUNTAIN_PATH_WIDTH = 1.5  # Narrower paths for mountain trails
+const CAVE_ENTRANCE_THRESHOLD = 0.3  # Dot product threshold for entrance opening
+
 # ============================================================================
 # STATE VARIABLES
 # ============================================================================
@@ -124,6 +138,17 @@ var placed_lighthouses: Array = []  # Array of lighthouse MeshInstance3D
 
 # Fishing boat data
 var placed_fishing_boat: MeshInstance3D = null  # Single fishing boat if placed
+
+# Unique mountain chunk data
+var is_unique_mountain: bool = false  # True if this is the unique high mountain chunk
+var is_mountain_center: bool = false  # True if this is the center chunk of the mountain range
+var mountain_influence: float = 0.0  # How much mountain effect this chunk has (0.0 to 1.0)
+var cave_data: Array = []  # Array of cave chamber data (position, radius, entrance direction)
+var cave_mesh_instances: Array = []  # Array of cave interior MeshInstance3D
+
+# Static variables to store mountain center chunk coordinates (shared across all chunks)
+static var mountain_center_chunk_x: int = 999999  # Invalid position marker
+static var mountain_center_chunk_z: int = 999999  # Invalid position marker
 
 # Ambient sound data
 var ambient_sound_player: AudioStreamPlayer3D = null  # For ambient sounds like woodpecker
@@ -163,8 +188,9 @@ func _init(x: int, z: int, world_seed: int):
 
 ## Generates all terrain data and visuals for this chunk
 ## This is the main entry point called after chunk creation
-## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → lighthouses → fishing boat → ambient sounds
+## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → caves → lighthouses → fishing boat → ambient sounds
 func generate() -> void:
+    _detect_unique_mountain()  # Check if this is the unique mountain chunk
     _setup_noise()
     _generate_heightmap()
     _calculate_walkability()
@@ -177,6 +203,7 @@ func generate() -> void:
     _place_rocks()  # Add rocks to terrain
     _place_cluster_objects()
     _generate_paths()
+    _generate_caves_if_unique_mountain()  # Generate caves for unique mountain
     _place_lighthouses_if_coastal()
     _place_fishing_boat_if_coastal()
     _setup_ambient_sounds()  # Setup ambient sounds for dense forests
@@ -184,6 +211,53 @@ func generate() -> void:
 # ============================================================================
 # TERRAIN GENERATION
 # ============================================================================
+
+## Detect if this chunk is part of the unique high mountain range
+func _detect_unique_mountain() -> void:
+    # First, find the mountain center chunk if not already found
+    if mountain_center_chunk_x == 999999:
+        _find_mountain_center_chunk()
+    
+    # Check if this chunk is the center of the mountain
+    if chunk_x == mountain_center_chunk_x and chunk_z == mountain_center_chunk_z:
+        is_mountain_center = true
+        is_unique_mountain = true
+        mountain_influence = 1.0
+        return
+    
+    # Check if this chunk is within the mountain range radius
+    var dx = chunk_x - mountain_center_chunk_x
+    var dz = chunk_z - mountain_center_chunk_z
+    var distance_to_center = sqrt(dx * dx + dz * dz)
+    if distance_to_center <= MOUNTAIN_RANGE_RADIUS:
+        is_unique_mountain = true
+        # Calculate influence based on distance (1.0 at center, 0.0 at edge)
+        mountain_influence = 1.0 - (distance_to_center / (MOUNTAIN_RANGE_RADIUS + 1.0))
+    else:
+        is_unique_mountain = false
+        mountain_influence = 0.0
+
+## Find the center chunk of the mountain range (called once globally)
+func _find_mountain_center_chunk() -> void:
+    # Search for a suitable chunk within MOUNTAIN_PLACEMENT_RADIUS from spawn
+    var max_search_chunks = int(MOUNTAIN_PLACEMENT_RADIUS / CHUNK_SIZE)
+    
+    # Use deterministic search based on world seed
+    for x in range(-max_search_chunks, max_search_chunks + 1):
+        for z in range(-max_search_chunks, max_search_chunks + 1):
+            var chunk_hash = hash(Vector2i(x, z))
+            
+            # Check if this chunk matches our mountain selection criteria
+            if (chunk_hash % UNIQUE_MOUNTAIN_CHUNK_MODULO) == UNIQUE_MOUNTAIN_CHUNK_VALUE:
+                # Found the mountain center!
+                mountain_center_chunk_x = x
+                mountain_center_chunk_z = z
+                return
+    
+    # Fallback: if no chunk found within radius, use closest matching chunk
+    # This shouldn't happen with modulo 73 and radius 28 chunks
+    mountain_center_chunk_x = 0
+    mountain_center_chunk_z = 0
 
 func _setup_noise() -> void:
     noise = FastNoiseLite.new()
@@ -216,7 +290,20 @@ func _generate_heightmap() -> void:
             var height_multiplier = 10.0
             var height_offset = 0.0
             
-            if biome_value > 0.3:
+            # Special handling for unique mountain range - make it VERY tall
+            # Apply effect gradually based on distance from mountain center
+            if is_unique_mountain and mountain_influence > 0.0:
+                # Interpolate between normal and mountain values based on influence
+                var mountain_multiplier = MOUNTAIN_HEIGHT_MULTIPLIER
+                var mountain_offset = MOUNTAIN_HEIGHT_OFFSET
+                
+                # Blend with normal mountain biome values
+                var base_multiplier = 20.0 if biome_value > 0.3 else 10.0
+                var base_offset = 10.0 if biome_value > 0.3 else 0.0
+                
+                height_multiplier = lerp(base_multiplier, mountain_multiplier, mountain_influence)
+                height_offset = lerp(base_offset, mountain_offset, mountain_influence)
+            elif biome_value > 0.3:
                 # Mountain region - higher elevation and more variation
                 height_multiplier = 20.0
                 height_offset = 10.0
@@ -1027,6 +1114,10 @@ func _generate_paths() -> void:
     var chunk_pos = Vector2i(chunk_x, chunk_z)
     path_segments = PathSystem.get_path_segments_for_chunk(chunk_pos, seed_value)
     
+    # For unique mountain chunk, add special mountain trails to caves
+    if is_unique_mountain and not cave_data.is_empty():
+        _add_mountain_paths_to_caves()
+    
     if path_segments.is_empty():
         return
     
@@ -1690,4 +1781,235 @@ func _generate_woodpecker_audio() -> void:
         
         frames_generated += frames_to_generate
 
+# ============================================================================
+# UNIQUE MOUNTAIN CAVE GENERATION
+# ============================================================================
+
+## Generate walkable caves for the unique high mountain chunk
+func _generate_caves_if_unique_mountain() -> void:
+    # Only generate caves in the center chunk of the mountain range
+    if not is_mountain_center:
+        return
+    
+    # Create RNG for cave generation
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ 999999
+    
+    # Determine number of caves
+    var cave_count = rng.randi_range(CAVE_COUNT_MIN, CAVE_COUNT_MAX)
+    
+    # Generate cave chambers at different elevations on the mountain
+    for cave_idx in range(cave_count):
+        var cave_chamber = _create_cave_chamber(rng, cave_idx, cave_count)
+        if cave_chamber:
+            cave_data.append(cave_chamber)
+            _create_cave_mesh(cave_chamber, rng)
+            _add_cave_narrative_marker(cave_chamber)
+
+## Create data for a single cave chamber
+func _create_cave_chamber(rng: RandomNumberGenerator, cave_idx: int, total_caves: int) -> Dictionary:
+    # Position caves at different heights up the mountain
+    # Start from mid-height and go up
+    var elevation_ratio = (cave_idx + 1.0) / (total_caves + 1.0)
+    var min_height = 15.0  # Start caves partway up the mountain
+    var max_height = 35.0  # Place caves up to near the peak
+    var target_height = min_height + (max_height - min_height) * elevation_ratio
+    
+    # Find a suitable position on the mountainside at this height
+    var best_pos = Vector3.ZERO
+    var best_height_diff = 999999.0
+    
+    # Sample positions around the chunk
+    for attempt in range(20):
+        var local_x = rng.randf_range(5.0, CHUNK_SIZE - 5.0)
+        var local_z = rng.randf_range(5.0, CHUNK_SIZE - 5.0)
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var terrain_height = get_height_at_world_pos(world_x, world_z)
+        var height_diff = abs(terrain_height - target_height)
+        
+        if height_diff < best_height_diff:
+            best_height_diff = height_diff
+            best_pos = Vector3(local_x, terrain_height, local_z)
+    
+    # Create cave chamber data
+    var chamber = {
+        "position": best_pos,
+        "radius": rng.randf_range(CAVE_CHAMBER_RADIUS_MIN, CAVE_CHAMBER_RADIUS_MAX),
+        "entrance_direction": Vector3(rng.randf_range(-1.0, 1.0), 0, rng.randf_range(-1.0, 1.0)).normalized(),
+        "cave_index": cave_idx
+    }
+    
+    return chamber
+
+## Create the 3D mesh for a cave chamber
+func _create_cave_mesh(chamber: Dictionary, rng: RandomNumberGenerator) -> void:
+    var cave_node = Node3D.new()
+    cave_node.name = "Cave_%d" % chamber["cave_index"]
+    cave_node.position = chamber["position"]
+    
+    # Create cave interior mesh (hollow sphere with entrance)
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    var radius = chamber["radius"]
+    var segments = 12
+    var rings = 8
+    var entrance_dir = chamber["entrance_direction"]
+    
+    # Generate cave interior (inverted sphere for walls) with proper triangulation
+    for ring in range(rings):
+        for segment in range(segments):
+            var phi1 = PI * ring / rings
+            var phi2 = PI * (ring + 1) / rings
+            var theta1 = 2.0 * PI * segment / segments
+            var theta2 = 2.0 * PI * (segment + 1) / segments
+            
+            # Calculate four vertices of the quad
+            var v1 = Vector3(sin(phi1) * cos(theta1), cos(phi1), sin(phi1) * sin(theta1))
+            var v2 = Vector3(sin(phi1) * cos(theta2), cos(phi1), sin(phi1) * sin(theta2))
+            var v3 = Vector3(sin(phi2) * cos(theta2), cos(phi2), sin(phi2) * sin(theta2))
+            var v4 = Vector3(sin(phi2) * cos(theta1), cos(phi2), sin(phi2) * sin(theta1))
+            
+            # Skip quads that form the entrance opening
+            var avg_dir = (v1 + v2 + v3 + v4).normalized()
+            if avg_dir.dot(entrance_dir) > CAVE_ENTRANCE_THRESHOLD:
+                continue
+            
+            # Scale vertices to radius
+            v1 *= radius
+            v2 *= radius
+            v3 *= radius
+            v4 *= radius
+            
+            # First triangle (v1, v2, v3) - reversed winding for inverted normals
+            surface_tool.set_normal(-v1.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v1)
+            
+            surface_tool.set_normal(-v3.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v3)
+            
+            surface_tool.set_normal(-v2.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v2)
+            
+            # Second triangle (v1, v3, v4) - reversed winding for inverted normals
+            surface_tool.set_normal(-v1.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v1)
+            
+            surface_tool.set_normal(-v4.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v4)
+            
+            surface_tool.set_normal(-v3.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v3)
+    
+    # Add floor to cave
+    var floor_y = -radius * 0.8  # Flat floor slightly below center
+    var floor_segments = 8
+    for i in range(floor_segments):
+        var angle1 = 2.0 * PI * i / floor_segments
+        var angle2 = 2.0 * PI * (i + 1) / floor_segments
+        
+        var floor_radius = radius * 0.9
+        var x1 = floor_radius * cos(angle1)
+        var z1 = floor_radius * sin(angle1)
+        var x2 = floor_radius * cos(angle2)
+        var z2 = floor_radius * sin(angle2)
+        
+        # Floor triangle
+        surface_tool.set_normal(Vector3.UP)
+        surface_tool.set_color(Color(0.25, 0.2, 0.15))
+        surface_tool.add_vertex(Vector3(0, floor_y, 0))
+        surface_tool.add_vertex(Vector3(x1, floor_y, z1))
+        surface_tool.add_vertex(Vector3(x2, floor_y, z2))
+    
+    # Commit mesh
+    var cave_mesh = surface_tool.commit()
+    
+    # Create mesh instance
+    var cave_instance = MeshInstance3D.new()
+    cave_instance.mesh = cave_mesh
+    
+    # Create simple material for cave
+    var cave_material = StandardMaterial3D.new()
+    cave_material.albedo_color = Color(0.3, 0.25, 0.2)
+    cave_material.roughness = 0.9
+    cave_material.metallic = 0.1
+    cave_instance.material_override = cave_material
+    
+    # Enable shadows
+    cave_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+    
+    # Add collision shape for cave interior
+    var static_body = StaticBody3D.new()
+    var collision_shape = CollisionShape3D.new()
+    # Use create_trimesh_shape() for Godot 4 compatibility
+    var shape = cave_mesh.create_trimesh_shape()
+    collision_shape.shape = shape
+    static_body.add_child(collision_shape)
+    cave_node.add_child(static_body)
+    
+    cave_node.add_child(cave_instance)
+    add_child(cave_node)
+    cave_mesh_instances.append(cave_instance)
+
+## Add narrative marker for cave chamber (for quests/crystals)
+func _add_cave_narrative_marker(chamber: Dictionary) -> void:
+    var pos = chamber["position"]
+    var marker_id = "cave_chamber_%d_%d_%d" % [chunk_x, chunk_z, chamber["cave_index"]]
+    var chunk_pos = Vector2i(chunk_x, chunk_z)
+    var world_pos = Vector3(chunk_x * CHUNK_SIZE + pos.x, pos.y, chunk_z * CHUNK_SIZE + pos.z)
+    var marker = NarrativeMarker.new(marker_id, chunk_pos, world_pos, "cave_chamber")
+    marker.metadata = {
+        "biome": "mountain_cave",
+        "cave_index": chamber["cave_index"],
+        "radius": chamber["radius"]
+    }
+    narrative_markers.append(marker)
+    add_child(marker)
+
+## Add mountain paths leading to cave entrances
+func _add_mountain_paths_to_caves() -> void:
+    # Create winding paths from chunk edges/base to each cave entrance
+    for cave in cave_data:
+        var cave_pos_2d = Vector2(cave["position"].x, cave["position"].z)
+        
+        # Create a winding path leading to this cave
+        # Start from a lower elevation point (base of mountain)
+        var start_pos = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
+        
+        # Create multiple segments for a winding path
+        var current_pos = start_pos
+        var target_pos = cave_pos_2d
+        var num_segments = 3  # Number of path segments to create winding effect
+        
+        for i in range(num_segments):
+            var progress = (i + 1.0) / num_segments
+            var next_pos = start_pos.lerp(target_pos, progress)
+            
+            # Add some lateral deviation for winding effect
+            var perpendicular = (target_pos - start_pos).orthogonal().normalized()
+            var deviation = sin(progress * PI * 2.0) * 3.0  # Sine wave for natural curves
+            next_pos += perpendicular * deviation
+            
+            # Clamp to chunk boundaries
+            next_pos.x = clamp(next_pos.x, 1.0, CHUNK_SIZE - 1.0)
+            next_pos.y = clamp(next_pos.y, 1.0, CHUNK_SIZE - 1.0)
+            
+            # Create path segment manually (not through PathSystem as these are local mountain trails)
+            # Use dictionary with required properties since we can't instantiate PathSegment from outside
+            var segment = {
+                "start_pos": current_pos,
+                "end_pos": next_pos,
+                "width": MOUNTAIN_PATH_WIDTH,
+                "path_type": PathSystem.PathType.BRANCH
+            }
+            
+            path_segments.append(segment)
+            current_pos = next_pos
 
