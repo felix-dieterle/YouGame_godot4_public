@@ -1996,15 +1996,13 @@ func _add_mountain_paths_to_caves() -> void:
             next_pos.y = clamp(next_pos.y, 1.0, CHUNK_SIZE - 1.0)
             
             # Create path segment manually (not through PathSystem as these are local mountain trails)
-            var segment = PathSystem.PathSegment.new(
-                PathSystem.next_segment_id,
-                Vector2i(chunk_x, chunk_z),
-                current_pos,
-                next_pos,
-                PathSystem.PathType.BRANCH,
-                MOUNTAIN_PATH_WIDTH
-            )
-            PathSystem.next_segment_id += 1
+            # Use dictionary with required properties since we can't instantiate PathSegment from outside
+            var segment = {
+                "start_pos": current_pos,
+                "end_pos": next_pos,
+                "width": MOUNTAIN_PATH_WIDTH,
+                "path_type": PathSystem.PathType.BRANCH
+            }
             
             path_segments.append(segment)
             current_pos = next_pos
