@@ -21,6 +21,7 @@ class_name WorldManager
 # Preload dependencies
 const Chunk = preload("res://scripts/chunk.gd")
 const StartingLocation = preload("res://scripts/starting_location.gd")
+const TorchSystem = preload("res://scripts/torch_system.gd")
 
 # ============================================================================
 # CONFIGURATION
@@ -219,11 +220,7 @@ func _load_placed_torches() -> void:
     if not torch_positions is Array:
         return
     
-    # Create a reference to player for torch creation (reuse player's method)
-    if not player:
-        return
-    
-    # Create torches at saved positions
+    # Create torches at saved positions using TorchSystem
     for torch_data in torch_positions:
         if not torch_data is Dictionary:
             continue
@@ -234,10 +231,9 @@ func _load_placed_torches() -> void:
             torch_data.get("z", 0.0)
         )
         
-        # Create torch using player's method
-        if player.has_method("_create_torch_node"):
-            var torch = player._create_torch_node()
-            torch.global_position = pos
-            add_child(torch)
+        # Create torch using TorchSystem
+        var torch = TorchSystem.create_torch_node()
+        torch.global_position = pos
+        add_child(torch)
     
     print("WorldManager: Loaded ", torch_positions.size(), " torches from save file")

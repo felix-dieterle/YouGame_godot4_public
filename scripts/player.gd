@@ -3,6 +3,13 @@ class_name Player
 
 # Preload dependencies
 const CrystalSystem = preload("res://scripts/crystal_system.gd")
+const TorchSystem = preload("res://scripts/torch_system.gd")
+
+# Torch placement settings
+@export var torch_placement_offset: float = 0.5  # Height offset when placing torch
+@export var torch_light_energy: float = 5.0  # Brightness of torch light
+@export var torch_light_range: float = 30.0  # How far torch light reaches
+@export var torch_light_attenuation: float = 0.5  # Light falloff rate
 
 # Movement settings
 @export var move_speed: float = 5.0
@@ -658,9 +665,9 @@ func _place_torch() -> void:
     # Deduct one torch from inventory
     torch_count -= 1
     
-    # Create torch at player position
-    var torch = _create_torch_node()
-    torch.global_position = global_position + Vector3(0, 0.5, 0)  # Place slightly above ground
+    # Create torch at player position using TorchSystem
+    var torch = TorchSystem.create_torch_node(torch_light_energy, torch_light_range, torch_light_attenuation)
+    torch.global_position = global_position + Vector3(0, torch_placement_offset, 0)
     
     # Add torch to the world
     get_parent().add_child(torch)
@@ -673,54 +680,6 @@ func _place_torch() -> void:
         ui_manager.show_message("Torch placed! (%d left)" % torch_count, 1.5)
     
     print("Player: Placed torch at ", torch.global_position, " - ", torch_count, " torches remaining")
-
-## Create a torch node with light
-func _create_torch_node() -> Node3D:
-    var torch = Node3D.new()
-    torch.name = "Torch"
-    torch.add_to_group("Torches")  # Add to group for save/load
-    
-    # Create visual torch (simple stick with flame)
-    var stick = MeshInstance3D.new()
-    var stick_mesh = CylinderMesh.new()
-    stick_mesh.height = 1.0
-    stick_mesh.top_radius = 0.05
-    stick_mesh.bottom_radius = 0.05
-    stick.mesh = stick_mesh
-    stick.position = Vector3(0, 0.5, 0)
-    
-    var stick_material = StandardMaterial3D.new()
-    stick_material.albedo_color = Color(0.3, 0.2, 0.1)  # Brown wood
-    stick.set_surface_override_material(0, stick_material)
-    torch.add_child(stick)
-    
-    # Create flame (glowing sphere)
-    var flame = MeshInstance3D.new()
-    var flame_mesh = SphereMesh.new()
-    flame_mesh.radius = 0.2
-    flame_mesh.height = 0.4
-    flame.mesh = flame_mesh
-    flame.position = Vector3(0, 1.2, 0)
-    
-    var flame_material = StandardMaterial3D.new()
-    flame_material.albedo_color = Color(1.0, 0.6, 0.1)  # Orange flame
-    flame_material.emission_enabled = true
-    flame_material.emission = Color(1.0, 0.5, 0.0)
-    flame_material.emission_energy_multiplier = 3.0
-    flame.set_surface_override_material(0, flame_material)
-    torch.add_child(flame)
-    
-    # Create bright omni light
-    var light = OmniLight3D.new()
-    light.light_color = Color(1.0, 0.7, 0.3)  # Warm orange light
-    light.light_energy = 5.0  # Very bright
-    light.omni_range = 30.0  # Shines very far
-    light.omni_attenuation = 0.5  # Slower falloff for wider reach
-    light.shadow_enabled = true
-    light.position = Vector3(0, 1.2, 0)
-    torch.add_child(light)
-    
-    return torch
 
 ## Toggle inventory UI visibility
 func _toggle_inventory() -> void:

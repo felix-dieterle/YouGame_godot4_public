@@ -5,12 +5,15 @@ var test_results: Array = []
 var test_count: int = 0
 var passed_count: int = 0
 
+# Preload TorchSystem for testing
+const TorchSystem = preload("res://scripts/torch_system.gd")
+
 func _ready() -> void:
     print("\n=== TORCH SYSTEM TEST ===")
     
     # Run tests
     test_player_initial_torch_count()
-    test_torch_placement()
+    test_torch_creation()
     test_inventory_save_load()
     
     # Print summary
@@ -43,38 +46,28 @@ func test_player_initial_torch_count() -> void:
     
     player.queue_free()
 
-func test_torch_placement() -> void:
+func test_torch_creation() -> void:
     test_count += 1
-    var test_name = "Torch can be placed"
+    var test_name = "Torch can be created with TorchSystem"
     
-    var player = Player.new()
-    add_child(player)
+    var torch = TorchSystem.create_torch_node()
     
-    # Check if player has the torch placement method
-    if player.has_method("_create_torch_node"):
-        var initial_count = player.torch_count if "torch_count" in player else 100
-        var torch = player._create_torch_node()
+    if torch != null:
+        # Check if torch has a light
+        var light_found = false
+        for child in torch.get_children():
+            if child is OmniLight3D:
+                light_found = true
+                break
         
-        if torch != null:
-            # Check if torch has a light
-            var light_found = false
-            for child in torch.get_children():
-                if child is OmniLight3D:
-                    light_found = true
-                    break
-            
-            if light_found:
-                pass_test(test_name)
-            else:
-                fail_test(test_name, "Torch missing OmniLight3D")
-            
-            torch.queue_free()
+        if light_found:
+            pass_test(test_name)
         else:
-            fail_test(test_name, "Failed to create torch node")
+            fail_test(test_name, "Torch missing OmniLight3D")
+        
+        torch.queue_free()
     else:
-        fail_test(test_name, "Player missing _create_torch_node method")
-    
-    player.queue_free()
+        fail_test(test_name, "Failed to create torch node")
 
 func test_inventory_save_load() -> void:
     test_count += 1
