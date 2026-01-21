@@ -61,6 +61,8 @@ const MIN_STARTING_PATH_RATIO = 0.7  # Starting path is at least 70% of max leng
 const BOUNDARY_DETECTION_THRESHOLD = 2.0  # Distance from edge to consider path exiting chunk
 
 # Ocean-related constants (must match Chunk constants)
+# NOTE: These values MUST stay synchronized with Chunk.OCEAN_LEVEL and Chunk.OCEAN_START_DISTANCE
+# to ensure consistent ocean detection across the path and chunk systems
 const OCEAN_LEVEL = -8.0  # Must match Chunk.OCEAN_LEVEL
 const OCEAN_START_DISTANCE = 160.0  # Must match Chunk.OCEAN_START_DISTANCE
 const OCEAN_PROXIMITY_THRESHOLD = 8.0  # Distance to consider "near" ocean for endpoint detection

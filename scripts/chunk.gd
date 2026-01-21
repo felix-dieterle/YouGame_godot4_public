@@ -81,6 +81,7 @@ const OCEAN_START_DISTANCE = 160.0  # Distance from origin (0,0) where ocean beg
 const LIGHTHOUSE_SEED_OFFSET = 77777  # Offset for lighthouse placement seed
 const LIGHTHOUSE_SPACING = 80.0  # Distance between lighthouses along coastline
 const MIN_LARGE_OCEAN_SIZE = 3  # Minimum number of connected ocean chunks to be considered "large ocean"
+const MAX_OCEAN_SEARCH_CHUNKS = 20  # Maximum number of chunks to search when detecting large ocean (performance limit)
 
 # Fishing boat constants
 const FISHING_BOAT_SEED_OFFSET = 88888  # Offset for fishing boat placement seed
@@ -1617,9 +1618,8 @@ func _is_part_of_large_ocean(ocean_chunk_pos: Vector2i) -> bool:
     var visited: Dictionary = {}
     var to_visit: Array[Vector2i] = [ocean_chunk_pos]
     var ocean_count = 0
-    var max_search = 20  # Limit search to avoid performance issues
     
-    while to_visit.size() > 0 and ocean_count < max_search:
+    while to_visit.size() > 0 and ocean_count < MAX_OCEAN_SEARCH_CHUNKS:
         var current_pos = to_visit.pop_front()
         
         # Skip if already visited
