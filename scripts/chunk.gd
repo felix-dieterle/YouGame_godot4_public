@@ -229,10 +229,16 @@ func _generate_heightmap() -> void:
             var height = noise.get_noise_2d(world_x, world_z) * height_multiplier + height_offset
             
             # Add subtle directional gradient
-            var gradient_offset = (world_x * GRADIENT_DIRECTION.x + world_z * GRADIENT_DIRECTION.y) * GRADIENT_STRENGTH
-            height += gradient_offset
+            height += _calculate_gradient_offset(world_x, world_z)
             
             heightmap[z * (RESOLUTION + 1) + x] = height
+
+## Calculate the directional gradient offset for a given world position
+## Uses dot product to allow flexible gradient direction configuration
+func _calculate_gradient_offset(world_x: float, world_z: float) -> float:
+    # Note: Could be simplified to `world_z * GRADIENT_STRENGTH` with current GRADIENT_DIRECTION=(0,1)
+    # However, preserving dot product form allows easy reconfiguration of gradient direction
+    return (world_x * GRADIENT_DIRECTION.x + world_z * GRADIENT_DIRECTION.y) * GRADIENT_STRENGTH
 
 func _calculate_walkability() -> void:
     # Initialize walkability map - 1D array indexed by [z * RESOLUTION + x]
@@ -1343,8 +1349,7 @@ func _get_estimated_chunk_height(chunk_pos: Vector2i) -> float:
             var height = noise.get_noise_2d(world_x, world_z) * height_multiplier + height_offset
             
             # Add subtle directional gradient (same as in _generate_heightmap)
-            var gradient_offset = (world_x * GRADIENT_DIRECTION.x + world_z * GRADIENT_DIRECTION.y) * GRADIENT_STRENGTH
-            height += gradient_offset
+            height += _calculate_gradient_offset(world_x, world_z)
             
             total_height += height
     
