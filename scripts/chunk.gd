@@ -1331,7 +1331,15 @@ func _place_lighthouses_if_coastal() -> void:
 
 ## Estimate average height of a chunk based on noise (without generating full chunk)
 func _get_estimated_chunk_height(chunk_pos: Vector2i) -> float:
-    # Sample a few points in the chunk to estimate average height
+    # Check if chunk should be ocean based on distance first
+    var chunk_world_center = Vector2(chunk_pos.x * CHUNK_SIZE, chunk_pos.y * CHUNK_SIZE)
+    var distance_from_origin = chunk_world_center.length()
+    
+    # If beyond OCEAN_START_DISTANCE, return a value below OCEAN_LEVEL to indicate ocean
+    if distance_from_origin >= OCEAN_START_DISTANCE:
+        return OCEAN_LEVEL - 1.0  # Guaranteed ocean
+    
+    # Otherwise, sample a few points in the chunk to estimate average height based on noise
     var samples = 5
     var total_height = 0.0
     
