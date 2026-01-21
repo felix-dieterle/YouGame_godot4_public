@@ -6,6 +6,7 @@ const CrystalSystem = preload("res://scripts/crystal_system.gd")
 
 # Movement settings
 @export var move_speed: float = 5.0
+@export var sprint_speed: float = 10.0
 @export var rotation_speed: float = 3.0
 @export var camera_distance: float = 10.0
 @export var camera_height: float = 5.0
@@ -51,6 +52,9 @@ var robot_parts: Array[Node3D] = []
 
 # Input control
 var input_enabled: bool = true
+
+# Sprint state
+var is_sprinting: bool = false
 
 # Crystal inventory - tracks collected crystals by type (initialized in _ready)
 var crystal_inventory: Dictionary = {}
@@ -191,8 +195,10 @@ func _physics_process(delta) -> void:
                             break  # Stop checking once we find a blocking slope
         
         if can_move:
-            velocity.x = direction.x * move_speed
-            velocity.z = direction.z * move_speed
+            # Use sprint speed if sprinting, otherwise use normal move speed
+            var current_speed = sprint_speed if is_sprinting else move_speed
+            velocity.x = direction.x * current_speed
+            velocity.z = direction.z * current_speed
             
             # Rotate towards movement direction (in both first and third person)
             # This allows turning with joystick in first-person mode
@@ -236,6 +242,11 @@ func _physics_process(delta) -> void:
         global_position.y = target_height + 1.0 - water_depth
 
 func _input(event) -> void:
+    # Sprint toggle
+    if event.is_action_pressed("toggle_sprint"):
+        is_sprinting = not is_sprinting
+        DebugLogOverlay.add_log("Sprint toggled: %s" % ("ON" if is_sprinting else "OFF"), "cyan")
+    
     # Camera view toggle
     if event.is_action_pressed("toggle_camera_view"):
         _toggle_camera_view()
@@ -421,8 +432,9 @@ func _update_footsteps(delta: float) -> void:
     # Update footstep timer
     footstep_timer += delta
     
-    # Play footstep sound at regular intervals
-    if footstep_timer >= footstep_interval:
+    # Play footstep sound at regular intervals (faster when sprinting)
+    var current_interval = footstep_interval * (0.5 if is_sprinting else 1.0)
+    if footstep_timer >= current_interval:
         footstep_timer = 0.0
         _play_footstep_sound()
 
