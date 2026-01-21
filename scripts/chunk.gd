@@ -1959,10 +1959,10 @@ func _create_cave_mesh(chamber: Dictionary, rng: RandomNumberGenerator) -> void:
 ## Add narrative marker for cave chamber (for quests/crystals)
 func _add_cave_narrative_marker(chamber: Dictionary) -> void:
     var pos = chamber["position"]
-    var marker = NarrativeMarker.new()
-    marker.marker_id = "cave_chamber_%d_%d_%d" % [chunk_x, chunk_z, chamber["cave_index"]]
-    marker.landmark_type = "cave_chamber"
-    marker.position = pos
+    var marker_id = "cave_chamber_%d_%d_%d" % [chunk_x, chunk_z, chamber["cave_index"]]
+    var chunk_pos = Vector2i(chunk_x, chunk_z)
+    var world_pos = Vector3(chunk_x * CHUNK_SIZE + pos.x, pos.y, chunk_z * CHUNK_SIZE + pos.z)
+    var marker = NarrativeMarker.new(marker_id, chunk_pos, world_pos, "cave_chamber")
     marker.metadata = {
         "biome": "mountain_cave",
         "cave_index": chamber["cave_index"],
