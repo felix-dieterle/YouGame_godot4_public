@@ -40,6 +40,10 @@ const HEIGHT_RANGE = 10.0  # Maximum height variation from noise (±10 units)
 const HEIGHT_COLOR_DIVISOR = HEIGHT_RANGE * 4.0  # Normalizes height to color range
 const PATH_ELEVATION_OFFSET = 0.01  # Minimal offset to prevent z-fighting, path as ground texture
 
+# Directional gradient constants
+const GRADIENT_DIRECTION = Vector2(0, 1)  # Direction of terrain slope (Z-axis / north)
+const GRADIENT_STRENGTH = 0.015  # Subtle gradient: 0.015 units per world unit = ~0.86° slope
+
 # Path colors - subtle earth tones as ground texture variation
 const BRANCH_PATH_COLOR = Color(0.52, 0.48, 0.38)  # Subtle dirt path
 const MAIN_PATH_COLOR = Color(0.55, 0.50, 0.40)  # Slightly worn earth
@@ -221,8 +225,20 @@ func _generate_heightmap() -> void:
                 height_multiplier = 5.0
                 height_offset = -3.0
             
+            # Calculate base height from noise
             var height = noise.get_noise_2d(world_x, world_z) * height_multiplier + height_offset
+            
+            # Add subtle directional gradient
+            height += _calculate_gradient_offset(world_x, world_z)
+            
             heightmap[z * (RESOLUTION + 1) + x] = height
+
+## Calculate the directional gradient offset for a given world position
+## Uses dot product to allow flexible gradient direction configuration
+func _calculate_gradient_offset(world_x: float, world_z: float) -> float:
+    # Note: Could be simplified to `world_z * GRADIENT_STRENGTH` with current GRADIENT_DIRECTION=(0,1)
+    # However, preserving dot product form allows easy reconfiguration of gradient direction
+    return (world_x * GRADIENT_DIRECTION.x + world_z * GRADIENT_DIRECTION.y) * GRADIENT_STRENGTH
 
 func _calculate_walkability() -> void:
     # Initialize walkability map - 1D array indexed by [z * RESOLUTION + x]
@@ -1329,7 +1345,12 @@ func _get_estimated_chunk_height(chunk_pos: Vector2i) -> float:
                 height_multiplier = 5.0
                 height_offset = -3.0
             
+            # Calculate base height from noise
             var height = noise.get_noise_2d(world_x, world_z) * height_multiplier + height_offset
+            
+            # Add subtle directional gradient (same as in _generate_heightmap)
+            height += _calculate_gradient_offset(world_x, world_z)
+            
             total_height += height
     
     return total_height / (samples * samples)
