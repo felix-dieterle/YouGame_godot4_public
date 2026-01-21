@@ -14,7 +14,9 @@ var save_data: Dictionary = {
         "is_first_person": false,
         "inventory": {},  # Crystal inventory
         "torch_count": 100,  # Number of torches in inventory
-        "selected_item": "torch"  # Currently selected item
+        "selected_item": "torch",  # Currently selected item
+        "current_air": 100.0,  # Current air level
+        "current_health": 100.0  # Current health
     },
     "world": {
         "seed": 12345,
@@ -76,13 +78,17 @@ func _auto_save_on_exit() -> void:
         var inventory = player.crystal_inventory if "crystal_inventory" in player else {}
         var torch_count = player.torch_count if "torch_count" in player else 100
         var selected_item = player.selected_item if "selected_item" in player else "torch"
+        var current_air = player.current_air if "current_air" in player else 100.0
+        var current_health = player.current_health if "current_health" in player else 100.0
         update_player_data(
             player.global_position,
             player.rotation.y,
             player.is_first_person if "is_first_person" in player else false,
             inventory,
             torch_count,
-            selected_item
+            selected_item,
+            current_air,
+            current_health
         )
     
     # Collect all placed torches in the world
@@ -151,6 +157,8 @@ func save_game() -> bool:
     config.set_value("player", "is_first_person", save_data["player"]["is_first_person"])
     config.set_value("player", "torch_count", save_data["player"]["torch_count"])
     config.set_value("player", "selected_item", save_data["player"]["selected_item"])
+    config.set_value("player", "current_air", save_data["player"]["current_air"])
+    config.set_value("player", "current_health", save_data["player"]["current_health"])
     
     # Save inventory (convert dictionary to JSON string for easier storage)
     var inventory_json = JSON.stringify(save_data["player"]["inventory"])
@@ -220,6 +228,8 @@ func load_game() -> bool:
     save_data["player"]["is_first_person"] = config.get_value("player", "is_first_person", false)
     save_data["player"]["torch_count"] = config.get_value("player", "torch_count", 100)
     save_data["player"]["selected_item"] = config.get_value("player", "selected_item", "torch")
+    save_data["player"]["current_air"] = config.get_value("player", "current_air", 100.0)
+    save_data["player"]["current_health"] = config.get_value("player", "current_health", 100.0)
     
     # Load inventory (parse from JSON string)
     var inventory_json = config.get_value("player", "inventory", "{}")
@@ -267,13 +277,15 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch") -> void:
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
     save_data["player"]["is_first_person"] = is_first_person
     save_data["player"]["inventory"] = inventory
     save_data["player"]["torch_count"] = torch_count
     save_data["player"]["selected_item"] = selected_item
+    save_data["player"]["current_air"] = current_air
+    save_data["player"]["current_health"] = current_health
 
 # Update world data for saving
 func update_world_data(seed: int, player_chunk: Vector2i, torches: Array = []) -> void:

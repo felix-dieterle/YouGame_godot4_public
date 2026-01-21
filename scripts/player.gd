@@ -72,6 +72,15 @@ var selected_item: String = "torch"  # Currently selected item
 var is_gliding: bool = false
 var was_jetpack_active: bool = false
 
+# Air and health bar system
+@export var max_air: float = 100.0  # Maximum air capacity
+@export var max_health: float = 100.0  # Maximum health
+@export var air_depletion_rate: float = 10.0  # Air lost per second when underwater
+@export var health_depletion_rate: float = 5.0  # Health lost per second when air is empty underwater
+var current_air: float = 100.0  # Current air level
+var current_health: float = 100.0  # Current health
+var is_underwater: bool = false  # Track if player is currently underwater
+
 func _ready() -> void:
     # Add to Player group so other systems can find this node
     add_to_group("Player")
@@ -286,6 +295,9 @@ func _physics_process(delta) -> void:
                 is_gliding = false
                 global_position.y = terrain_level
                 velocity.y = 0.0
+    
+    # Update air and health bars
+    _update_air_and_health(delta)
 
 func _input(event) -> void:
     # Camera view toggle
@@ -542,6 +554,49 @@ func _play_footstep_sound() -> void:
 func set_input_enabled(enabled: bool) -> void:
     input_enabled = enabled
 
+## Update air and health bars based on underwater status
+func _update_air_and_health(delta: float) -> void:
+    if not world_manager:
+        return
+    
+    # Check if player is underwater
+    var water_depth = world_manager.get_water_depth_at_position(global_position)
+    is_underwater = water_depth > 0.5  # Player is underwater if water depth is more than 0.5 units
+    
+    if is_underwater:
+        # Deplete air when underwater
+        current_air = max(0.0, current_air - air_depletion_rate * delta)
+        
+        # If air is empty, deplete health
+        if current_air <= 0.0:
+            current_health = max(0.0, current_health - health_depletion_rate * delta)
+            
+            # Check for game over
+            if current_health <= 0.0:
+                _trigger_game_over()
+    else:
+        # Refill air immediately when above water
+        current_air = max_air
+    
+    # Update UI
+    _update_air_health_ui()
+
+## Trigger game over when health reaches zero
+func _trigger_game_over() -> void:
+    # Disable player input
+    set_input_enabled(false)
+    
+    # Show game over message
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("show_game_over"):
+        ui_manager.show_game_over()
+
+## Update air and health UI elements
+func _update_air_health_ui() -> void:
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_air_health_bars"):
+        ui_manager.update_air_health_bars(current_air, max_air, current_health, max_health)
+
 ## Get the terrain level at the player's current position (accounting for water depth)
 func _get_terrain_level() -> float:
     if not world_manager:
@@ -650,6 +705,17 @@ func _load_saved_state():
         # Restore selected item
         if "selected_item" in player_data:
             selected_item = player_data["selected_item"]
+        
+        # Restore air and health
+        if "current_air" in player_data:
+            current_air = player_data["current_air"]
+        else:
+            current_air = max_air  # Default to full if not in save
+        
+        if "current_health" in player_data:
+            current_health = player_data["current_health"]
+        else:
+            current_health = max_health  # Default to full if not in save
         
         print("Player: Loaded saved position: ", global_position)
 
