@@ -758,6 +758,7 @@ func _create_jetpack_button() -> void:
     
     jetpack_button = Button.new()
     jetpack_button.text = "🚀"  # Rocket emoji for jetpack
+    jetpack_button.tooltip_text = "Jetpack - Hold to ascend"  # Accessibility support
     jetpack_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
     jetpack_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
     jetpack_button.add_theme_font_size_override("font_size", 35)

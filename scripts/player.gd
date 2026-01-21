@@ -102,15 +102,11 @@ func _physics_process(delta) -> void:
         return
     
     # Handle jetpack input - check both keyboard and mobile controls
-    var jetpack_active = Input.is_action_pressed("jetpack")
-    if mobile_controls and mobile_controls.has_method("is_jetpack_pressed"):
-        jetpack_active = jetpack_active or mobile_controls.is_jetpack_pressed()
+    var jetpack_active = _is_jetpack_active()
     
-    # Apply jetpack upward movement
+    # Apply jetpack upward movement (only add to vertical velocity, don't override)
     if jetpack_active:
         velocity.y = jetpack_speed
-    else:
-        velocity.y = 0.0
     
     # Handle camera rotation from look joystick
     var look_input = Vector2.ZERO
@@ -244,13 +240,8 @@ func _physics_process(delta) -> void:
         var target_height = world_manager.get_height_at_position(global_position)
         var water_depth = world_manager.get_water_depth_at_position(global_position)
         
-        # Check if jetpack is active
-        var jetpack_active = Input.is_action_pressed("jetpack")
-        if mobile_controls and mobile_controls.has_method("is_jetpack_pressed"):
-            jetpack_active = jetpack_active or mobile_controls.is_jetpack_pressed()
-        
         # Only snap to terrain when jetpack is not active
-        if not jetpack_active:
+        if not _is_jetpack_active():
             # Sink into water (knee-deep means player height is reduced)
             global_position.y = target_height + 1.0 - water_depth
 
@@ -500,6 +491,13 @@ func _play_footstep_sound() -> void:
 
 func set_input_enabled(enabled: bool) -> void:
     input_enabled = enabled
+
+## Check if jetpack is currently active from any input source
+func _is_jetpack_active() -> bool:
+    var active = Input.is_action_pressed("jetpack")
+    if mobile_controls and mobile_controls.has_method("is_jetpack_pressed"):
+        active = active or mobile_controls.is_jetpack_pressed()
+    return active
 
 ## Try to collect a crystal at the screen position
 func _try_collect_crystal(screen_pos: Vector2) -> void:
