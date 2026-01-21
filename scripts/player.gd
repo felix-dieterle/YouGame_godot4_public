@@ -3,6 +3,13 @@ class_name Player
 
 # Preload dependencies
 const CrystalSystem = preload("res://scripts/crystal_system.gd")
+const TorchSystem = preload("res://scripts/torch_system.gd")
+
+# Torch placement settings
+@export var torch_placement_offset: float = 0.5  # Height offset when placing torch
+@export var torch_light_energy: float = 5.0  # Brightness of torch light
+@export var torch_light_range: float = 30.0  # How far torch light reaches
+@export var torch_light_attenuation: float = 0.5  # Light falloff rate
 
 # Movement settings
 @export var move_speed: float = 5.0
@@ -56,6 +63,10 @@ var input_enabled: bool = true
 
 # Crystal inventory - tracks collected crystals by type (initialized in _ready)
 var crystal_inventory: Dictionary = {}
+
+# Torch inventory
+var torch_count: int = 100  # Player starts with 100 torches
+var selected_item: String = "torch"  # Currently selected item
 
 # Glide state - tracks if player was using jetpack and should now glide
 var is_gliding: bool = false
@@ -280,6 +291,14 @@ func _input(event) -> void:
     # Camera view toggle
     if event.is_action_pressed("toggle_camera_view"):
         _toggle_camera_view()
+    
+    # Torch placement
+    if event.is_action_pressed("place_torch"):
+        _place_torch()
+    
+    # Toggle inventory (show/hide)
+    if event.is_action_pressed("toggle_inventory"):
+        _toggle_inventory()
     
     # Camera zoom (only in third-person)
     if not is_first_person and event is InputEventMouseButton:
@@ -624,4 +643,46 @@ func _load_saved_state():
             if ui_manager and ui_manager.has_method("update_crystal_count"):
                 ui_manager.update_crystal_count(crystal_inventory)
         
+        # Restore torch count
+        if "torch_count" in player_data:
+            torch_count = player_data["torch_count"]
+        
+        # Restore selected item
+        if "selected_item" in player_data:
+            selected_item = player_data["selected_item"]
+        
         print("Player: Loaded saved position: ", global_position)
+
+## Place a torch at the player's current position
+func _place_torch() -> void:
+    # Check if player has torches
+    if torch_count <= 0:
+        var ui_manager = get_tree().get_first_node_in_group("UIManager")
+        if ui_manager and ui_manager.has_method("show_message"):
+            ui_manager.show_message("No torches left!", 2.0)
+        return
+    
+    # Deduct one torch from inventory
+    torch_count -= 1
+    
+    # Create torch at player position using TorchSystem
+    var torch = TorchSystem.create_torch_node(torch_light_energy, torch_light_range, torch_light_attenuation)
+    torch.global_position = global_position + Vector3(0, torch_placement_offset, 0)
+    
+    # Add torch to the world
+    get_parent().add_child(torch)
+    
+    # Update UI
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_torch_count"):
+        ui_manager.update_torch_count(torch_count)
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("Torch placed! (%d left)" % torch_count, 1.5)
+    
+    print("Player: Placed torch at ", torch.global_position, " - ", torch_count, " torches remaining")
+
+## Toggle inventory UI visibility
+func _toggle_inventory() -> void:
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("toggle_inventory_ui"):
+        ui_manager.toggle_inventory_ui()
