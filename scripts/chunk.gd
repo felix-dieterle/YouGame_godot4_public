@@ -1232,6 +1232,8 @@ func _create_ocean_mesh() -> void:
     if not is_ocean:
         return
     
+    print("Meer wird erzeugt bei Chunk (", chunk_x, ", ", chunk_z, ")")
+    
     var surface_tool = SurfaceTool.new()
     surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
     
