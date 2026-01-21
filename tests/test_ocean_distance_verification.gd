@@ -7,12 +7,9 @@ extends Node
 
 const Chunk = preload("res://scripts/chunk.gd")
 
-const CHUNK_SIZE = 32
-const OCEAN_START_DISTANCE = 160.0
-
 func _ready():
 	print("=== Ocean Distance Verification ===")
-	print("OCEAN_START_DISTANCE = %.1f units (%.1f chunks)" % [OCEAN_START_DISTANCE, OCEAN_START_DISTANCE / CHUNK_SIZE])
+	print("OCEAN_START_DISTANCE = %.1f units (%.1f chunks)" % [Chunk.OCEAN_START_DISTANCE, Chunk.OCEAN_START_DISTANCE / Chunk.CHUNK_SIZE])
 	print("")
 	
 	# Test chunks in a grid pattern
@@ -39,7 +36,7 @@ func _ready():
 		
 		await get_tree().process_frame
 		
-		var chunk_world_center = Vector2(pos.x * CHUNK_SIZE, pos.y * CHUNK_SIZE)
+		var chunk_world_center = Vector2(pos.x * Chunk.CHUNK_SIZE, pos.y * Chunk.CHUNK_SIZE)
 		var distance = chunk_world_center.length()
 		
 		print("(%2d, %2d)       | %8.1f        | %-9s | %s" % [
@@ -49,14 +46,14 @@ func _ready():
 		])
 		
 		# Verify chunks beyond OCEAN_START_DISTANCE are ocean
-		if distance >= OCEAN_START_DISTANCE:
+		if distance >= Chunk.OCEAN_START_DISTANCE:
 			assert(chunk.is_ocean, "Chunk at distance %.1f should be ocean" % distance)
 		
 		chunk.queue_free()
 	
 	print("")
 	print("=== Verification Complete ===")
-	print("✓ All chunks beyond %.1f units are correctly marked as ocean" % OCEAN_START_DISTANCE)
+	print("✓ All chunks beyond %.1f units are correctly marked as ocean" % Chunk.OCEAN_START_DISTANCE)
 	print("✓ Ocean is now discoverable by traveling ~5 chunks from spawn")
 	
 	get_tree().quit()

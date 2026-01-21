@@ -428,8 +428,10 @@ func _calculate_metadata() -> void:
     var chunk_world_center = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
     var distance_from_origin = chunk_world_center.length()
     
-    # Determine biome and landmark type based on height and variance
-    # Force ocean for chunks beyond OCEAN_START_DISTANCE
+    # Determine biome and landmark type based on height, variance, and distance
+    # Ocean biome is determined by either:
+    # 1. Natural low elevation (avg_height <= OCEAN_LEVEL)
+    # 2. Distance from origin (>= OCEAN_START_DISTANCE ensures ocean is discoverable)
     if avg_height <= OCEAN_LEVEL or distance_from_origin >= OCEAN_START_DISTANCE:
         biome = "ocean"
         landmark_type = "ocean"
