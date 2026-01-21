@@ -90,6 +90,8 @@ const WOODPECKER_FOREST_DENSITY_THRESHOLD = 0.5  # Minimum forest density for wo
 # Unique high mountain chunk constants
 const UNIQUE_MOUNTAIN_CHUNK_MODULO = 73  # Hash modulo for unique mountain selection
 const UNIQUE_MOUNTAIN_CHUNK_VALUE = 42  # Target value for unique mountain chunk
+const MOUNTAIN_PLACEMENT_RADIUS = 320.0  # Maximum distance from spawn (10 chunks = 320 units)
+const MOUNTAIN_RANGE_RADIUS = 2  # Mountain effect extends 2 chunks in all directions from center
 const MOUNTAIN_HEIGHT_MULTIPLIER = 40.0  # Extra tall mountains
 const MOUNTAIN_HEIGHT_OFFSET = 20.0  # High base elevation
 const CAVE_COUNT_MIN = 3  # Minimum number of caves
@@ -139,8 +141,13 @@ var placed_fishing_boat: MeshInstance3D = null  # Single fishing boat if placed
 
 # Unique mountain chunk data
 var is_unique_mountain: bool = false  # True if this is the unique high mountain chunk
+var is_mountain_center: bool = false  # True if this is the center chunk of the mountain range
+var mountain_influence: float = 0.0  # How much mountain effect this chunk has (0.0 to 1.0)
 var cave_data: Array = []  # Array of cave chamber data (position, radius, entrance direction)
 var cave_mesh_instances: Array = []  # Array of cave interior MeshInstance3D
+
+# Static variable to store mountain center chunk coordinates (shared across all chunks)
+static var mountain_center_chunk: Vector2i = Vector2i(999999, 999999)  # Initialize to invalid position
 
 # Ambient sound data
 var ambient_sound_player: AudioStreamPlayer3D = null  # For ambient sounds like woodpecker
@@ -204,11 +211,49 @@ func generate() -> void:
 # TERRAIN GENERATION
 # ============================================================================
 
-## Detect if this chunk is the unique high mountain chunk
+## Detect if this chunk is part of the unique high mountain range
 func _detect_unique_mountain() -> void:
-    # Use hash-based selection similar to fishing boat
-    var mountain_chunk_hash = hash(Vector2i(chunk_x, chunk_z))
-    is_unique_mountain = (mountain_chunk_hash % UNIQUE_MOUNTAIN_CHUNK_MODULO) == UNIQUE_MOUNTAIN_CHUNK_VALUE
+    # First, find the mountain center chunk if not already found
+    if mountain_center_chunk == Vector2i(999999, 999999):
+        _find_mountain_center_chunk()
+    
+    # Check if this chunk is the center of the mountain
+    if Vector2i(chunk_x, chunk_z) == mountain_center_chunk:
+        is_mountain_center = true
+        is_unique_mountain = true
+        mountain_influence = 1.0
+        return
+    
+    # Check if this chunk is within the mountain range radius
+    var distance_to_center = Vector2i(chunk_x, chunk_z).distance_to(mountain_center_chunk)
+    if distance_to_center <= MOUNTAIN_RANGE_RADIUS:
+        is_unique_mountain = true
+        # Calculate influence based on distance (1.0 at center, 0.0 at edge)
+        mountain_influence = 1.0 - (distance_to_center / (MOUNTAIN_RANGE_RADIUS + 1.0))
+    else:
+        is_unique_mountain = false
+        mountain_influence = 0.0
+
+## Find the center chunk of the mountain range (called once globally)
+func _find_mountain_center_chunk() -> void:
+    # Search for a suitable chunk within MOUNTAIN_PLACEMENT_RADIUS from spawn
+    var max_search_chunks = int(MOUNTAIN_PLACEMENT_RADIUS / CHUNK_SIZE)
+    
+    # Use deterministic search based on world seed
+    for x in range(-max_search_chunks, max_search_chunks + 1):
+        for z in range(-max_search_chunks, max_search_chunks + 1):
+            var test_chunk = Vector2i(x, z)
+            var chunk_hash = hash(test_chunk)
+            
+            # Check if this chunk matches our mountain selection criteria
+            if (chunk_hash % UNIQUE_MOUNTAIN_CHUNK_MODULO) == UNIQUE_MOUNTAIN_CHUNK_VALUE:
+                # Found the mountain center!
+                mountain_center_chunk = test_chunk
+                return
+    
+    # Fallback: if no chunk found within radius, use closest matching chunk
+    # This shouldn't happen with modulo 73 and radius 10 chunks
+    mountain_center_chunk = Vector2i(0, 0)
 
 func _setup_noise() -> void:
     noise = FastNoiseLite.new()
@@ -241,10 +286,19 @@ func _generate_heightmap() -> void:
             var height_multiplier = 10.0
             var height_offset = 0.0
             
-            # Special handling for unique mountain chunk - make it VERY tall
-            if is_unique_mountain:
-                height_multiplier = MOUNTAIN_HEIGHT_MULTIPLIER
-                height_offset = MOUNTAIN_HEIGHT_OFFSET
+            # Special handling for unique mountain range - make it VERY tall
+            # Apply effect gradually based on distance from mountain center
+            if is_unique_mountain and mountain_influence > 0.0:
+                # Interpolate between normal and mountain values based on influence
+                var mountain_multiplier = MOUNTAIN_HEIGHT_MULTIPLIER
+                var mountain_offset = MOUNTAIN_HEIGHT_OFFSET
+                
+                # Blend with normal mountain biome values
+                var base_multiplier = 20.0 if biome_value > 0.3 else 10.0
+                var base_offset = 10.0 if biome_value > 0.3 else 0.0
+                
+                height_multiplier = lerp(base_multiplier, mountain_multiplier, mountain_influence)
+                height_offset = lerp(base_offset, mountain_offset, mountain_influence)
             elif biome_value > 0.3:
                 # Mountain region - higher elevation and more variation
                 height_multiplier = 20.0
@@ -1727,7 +1781,8 @@ func _generate_woodpecker_audio() -> void:
 
 ## Generate walkable caves for the unique high mountain chunk
 func _generate_caves_if_unique_mountain() -> void:
-    if not is_unique_mountain:
+    # Only generate caves in the center chunk of the mountain range
+    if not is_mountain_center:
         return
     
     # Create RNG for cave generation

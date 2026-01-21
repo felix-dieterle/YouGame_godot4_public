@@ -20,22 +20,38 @@ This implementation adds a unique, very high mountain chunk to the game that app
 
 **File:** `scripts/chunk.gd`
 
-The system uses a hash-based selection mechanism (similar to the fishing boat feature) to ensure the mountain chunk appears exactly once in the game world:
+The system uses a hash-based selection mechanism with distance limiting to ensure the mountain range appears exactly once and is always findable:
 
 ```gdscript
-const UNIQUE_MOUNTAIN_CHUNK_MODULO = 73  # Hash modulo for unique mountain selection
-const UNIQUE_MOUNTAIN_CHUNK_VALUE = 42  # Target value for unique mountain chunk
+const UNIQUE_MOUNTAIN_CHUNK_MODULO = 73      # Hash modulo for unique mountain selection
+const UNIQUE_MOUNTAIN_CHUNK_VALUE = 42       # Target value for unique mountain chunk
+const MOUNTAIN_PLACEMENT_RADIUS = 320.0      # Maximum 10 chunks from spawn
+const MOUNTAIN_RANGE_RADIUS = 2              # Mountain spans 5x5 chunks (2 chunks in each direction)
 
 func _detect_unique_mountain() -> void:
-    var mountain_chunk_hash = hash(Vector2i(chunk_x, chunk_z))
-    is_unique_mountain = (mountain_chunk_hash % UNIQUE_MOUNTAIN_CHUNK_MODULO) == UNIQUE_MOUNTAIN_CHUNK_VALUE
+    # First, find mountain center within placement radius
+    if mountain_center_chunk == Vector2i(999999, 999999):
+        _find_mountain_center_chunk()  # Searches within 320m of spawn
+    
+    # Check if this chunk is within the mountain range
+    var distance_to_center = Vector2i(chunk_x, chunk_z).distance_to(mountain_center_chunk)
+    if distance_to_center <= MOUNTAIN_RANGE_RADIUS:
+        is_unique_mountain = true
+        mountain_influence = 1.0 - (distance_to_center / (MOUNTAIN_RANGE_RADIUS + 1.0))
 ```
 
 **How it works:**
-- Every chunk's coordinates are hashed
-- The hash is taken modulo 73
-- Only the chunk where the result equals 42 becomes the unique mountain
-- This ensures deterministic, single placement across the entire world
+- Searches for suitable chunk within 320 meters (10 chunks) of spawn
+- Uses hash-based selection to find deterministic center chunk
+- Mountain effect spans 5x5 chunks (160x160 meters) - proper mountain range
+- Height gradually blends from maximum at center to normal at edges
+- **Guarantees mountain is always findable** - not in unexplored distant areas
+
+**Mountain Range Size:**
+- **Center chunk**: Full mountain effect, contains all caves
+- **Adjacent chunks** (radius 1): ~50-67% mountain effect
+- **Outer chunks** (radius 2): ~33% mountain effect, blending to normal
+- **Total area**: 5x5 chunks = 160x160 meters
 
 ### 2. Extreme Height Generation
 
@@ -46,7 +62,17 @@ const MOUNTAIN_HEIGHT_OFFSET = 20.0      # High base elevation (normal: 10.0)
 ```
 
 **Implementation:**
-When `is_unique_mountain` is true, the heightmap generation applies these special values, creating mountains approximately **2x taller** than normal mountain biomes.
+The heightmap generation applies mountain values with gradual blending based on `mountain_influence`:
+```gdscript
+if is_unique_mountain and mountain_influence > 0.0:
+    height_multiplier = lerp(base_multiplier, MOUNTAIN_HEIGHT_MULTIPLIER, mountain_influence)
+    height_offset = lerp(base_offset, MOUNTAIN_HEIGHT_OFFSET, mountain_influence)
+```
+
+This creates:
+- **2x taller peaks** at mountain center
+- **Smooth transition** to surrounding terrain
+- **Natural-looking mountain range** across multiple chunks
 
 ### 3. Cave System
 
