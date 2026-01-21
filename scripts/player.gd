@@ -15,6 +15,7 @@ const TorchSystem = preload("res://scripts/torch_system.gd")
 @export var move_speed: float = 5.0
 @export var rotation_speed: float = 3.0
 @export var jetpack_speed: float = 3.0  # Upward speed when using jetpack
+@export var jetpack_move_speed_multiplier: float = 4.0  # Horizontal speed multiplier when jetpack is active
 @export var glide_speed: float = 0.5  # Slow descent speed when gliding after jetpack release
 @export var camera_distance: float = 10.0
 @export var camera_height: float = 5.0
@@ -235,8 +236,13 @@ func _physics_process(delta) -> void:
                             break  # Stop checking once we find a blocking slope
         
         if can_move:
-            velocity.x = direction.x * move_speed
-            velocity.z = direction.z * move_speed
+            # Apply jetpack speed multiplier when jetpack is active
+            var current_move_speed = move_speed
+            if jetpack_active:
+                current_move_speed = move_speed * jetpack_move_speed_multiplier
+            
+            velocity.x = direction.x * current_move_speed
+            velocity.z = direction.z * current_move_speed
             
             # Rotate towards movement direction (in both first and third person)
             # This allows turning with joystick in first-person mode
