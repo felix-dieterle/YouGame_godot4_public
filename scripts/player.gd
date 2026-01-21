@@ -239,13 +239,20 @@ func _physics_process(delta) -> void:
         var bob_offset = sin(head_bob_time) * head_bob_amplitude
         camera.position.y = first_person_height + bob_offset
     
-    # Snap to terrain
+    # Snap to terrain (only when jetpack is not active)
     if world_manager:
         var target_height = world_manager.get_height_at_position(global_position)
         var water_depth = world_manager.get_water_depth_at_position(global_position)
         
-        # Sink into water (knee-deep means player height is reduced)
-        global_position.y = target_height + 1.0 - water_depth
+        # Check if jetpack is active
+        var jetpack_active = Input.is_action_pressed("jetpack")
+        if mobile_controls and mobile_controls.has_method("is_jetpack_pressed"):
+            jetpack_active = jetpack_active or mobile_controls.is_jetpack_pressed()
+        
+        # Only snap to terrain when jetpack is not active
+        if not jetpack_active:
+            # Sink into water (knee-deep means player height is reduced)
+            global_position.y = target_height + 1.0 - water_depth
 
 func _input(event) -> void:
     # Camera view toggle
