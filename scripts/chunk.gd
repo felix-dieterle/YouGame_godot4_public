@@ -96,9 +96,8 @@ const CAVE_COUNT_MIN = 3  # Minimum number of caves
 const CAVE_COUNT_MAX = 5  # Maximum number of caves
 const CAVE_CHAMBER_RADIUS_MIN = 3.0  # Min radius of cave chambers
 const CAVE_CHAMBER_RADIUS_MAX = 6.0  # Max radius of cave chambers
-const CAVE_DEPTH = 5.0  # How deep caves go into mountain
-const CAVE_ENTRANCE_WIDTH = 2.5  # Width of cave entrance
 const MOUNTAIN_PATH_WIDTH = 1.5  # Narrower paths for mountain trails
+const CAVE_ENTRANCE_THRESHOLD = 0.3  # Dot product threshold for entrance opening
 
 # ============================================================================
 # STATE VARIABLES
@@ -1763,7 +1762,9 @@ func _create_cave_chamber(rng: RandomNumberGenerator, cave_idx: int, total_caves
     for attempt in range(20):
         var local_x = rng.randf_range(5.0, CHUNK_SIZE - 5.0)
         var local_z = rng.randf_range(5.0, CHUNK_SIZE - 5.0)
-        var terrain_height = get_height_at_local_pos(local_x, local_z)
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var terrain_height = get_height_at_world_pos(world_x, world_z)
         var height_diff = abs(terrain_height - target_height)
         
         if height_diff < best_height_diff:
@@ -1793,35 +1794,58 @@ func _create_cave_mesh(chamber: Dictionary, rng: RandomNumberGenerator) -> void:
     var radius = chamber["radius"]
     var segments = 12
     var rings = 8
+    var entrance_dir = chamber["entrance_direction"]
     
-    # Generate cave interior (inverted sphere for walls)
-    for ring in range(rings + 1):
-        var phi = PI * ring / rings
-        for segment in range(segments + 1):
-            var theta = 2.0 * PI * segment / segments
+    # Generate cave interior (inverted sphere for walls) with proper triangulation
+    for ring in range(rings):
+        for segment in range(segments):
+            var phi1 = PI * ring / rings
+            var phi2 = PI * (ring + 1) / rings
+            var theta1 = 2.0 * PI * segment / segments
+            var theta2 = 2.0 * PI * (segment + 1) / segments
             
-            # Skip front section for cave entrance
-            var entrance_dir = chamber["entrance_direction"]
-            var point_dir = Vector3(sin(phi) * cos(theta), cos(phi), sin(phi) * sin(theta))
+            # Calculate four vertices of the quad
+            var v1 = Vector3(sin(phi1) * cos(theta1), cos(phi1), sin(phi1) * sin(theta1))
+            var v2 = Vector3(sin(phi1) * cos(theta2), cos(phi1), sin(phi1) * sin(theta2))
+            var v3 = Vector3(sin(phi2) * cos(theta2), cos(phi2), sin(phi2) * sin(theta2))
+            var v4 = Vector3(sin(phi2) * cos(theta1), cos(phi2), sin(phi2) * sin(theta1))
             
-            # Create entrance opening (skip vertices facing entrance direction)
-            if point_dir.dot(entrance_dir) > 0.3:
+            # Skip quads that form the entrance opening
+            var avg_dir = (v1 + v2 + v3 + v4).normalized()
+            if avg_dir.dot(entrance_dir) > CAVE_ENTRANCE_THRESHOLD:
                 continue
             
-            # Vertex position (inverted normals for interior)
-            var x = radius * sin(phi) * cos(theta)
-            var y = radius * cos(phi)
-            var z = radius * sin(phi) * sin(theta)
+            # Scale vertices to radius
+            v1 *= radius
+            v2 *= radius
+            v3 *= radius
+            v4 *= radius
             
-            # Set normal (pointing inward for cave interior)
-            surface_tool.set_normal(-point_dir)
+            # First triangle (v1, v2, v3) - reversed winding for inverted normals
+            surface_tool.set_normal(-v1.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v1)
             
-            # Set color (dark rock)
-            var rock_color = Color(0.3, 0.25, 0.2)
-            surface_tool.set_color(rock_color)
+            surface_tool.set_normal(-v3.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v3)
             
-            # Add vertex
-            surface_tool.add_vertex(Vector3(x, y, z))
+            surface_tool.set_normal(-v2.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v2)
+            
+            # Second triangle (v1, v3, v4) - reversed winding for inverted normals
+            surface_tool.set_normal(-v1.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v1)
+            
+            surface_tool.set_normal(-v4.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v4)
+            
+            surface_tool.set_normal(-v3.normalized())
+            surface_tool.set_color(Color(0.3, 0.25, 0.2))
+            surface_tool.add_vertex(v3)
     
     # Add floor to cave
     var floor_y = -radius * 0.8  # Flat floor slightly below center
