@@ -60,9 +60,13 @@ const ROCK_COUNT_GRASSLAND_MAX = 5
 
 # Crystal placement constants
 const CRYSTAL_SEED_OFFSET = 54321  # Offset for crystal placement seed
-const CRYSTAL_SPAWN_CHANCE = 0.20  # 20% chance a rock will have crystals (reduced from 35%)
+const CRYSTAL_SPAWN_CHANCE = 0.05  # 5% base chance - very rare
+const CRYSTAL_SPAWN_CHANCE_HIDDEN = 0.08  # 8% in hidden valleys - still rare
+const CRYSTAL_SPAWN_CHANCE_CAVE = 0.30  # 30% in mountain caves for rare crystals
 const CRYSTALS_PER_ROCK_MIN = 1
-const CRYSTALS_PER_ROCK_MAX = 2  # Reduced from 3 for rarer crystals
+const CRYSTALS_PER_ROCK_MAX = 1  # Only 1 crystal per rock for rarity
+const CRYSTAL_RARE_PREFERENCE_CHANCE = 0.6  # 60% chance to prefer rare crystals in unique mountain caves
+const CRYSTAL_FILTER_MAX_ATTEMPTS = 10  # Max attempts to filter out rare crystals before skipping
 
 # Path bush placement constants
 const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differentiation
@@ -906,12 +910,46 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
             sample_count += 1
     avg_height /= sample_count
     
-    # Increase spawn chance for rocks in lower/hidden locations
-    var spawn_chance = CRYSTAL_SPAWN_CHANCE
-    if rock_height < avg_height - 2.0:  # Rock is in a valley or lower area
-        spawn_chance *= 1.8  # 80% increase in spawn chance for hidden spots
-    elif rock_height < avg_height:  # Slightly below average
-        spawn_chance *= 1.3  # 30% increase
+    # Determine if this is a hidden location (valley or cave)
+    var is_in_valley = rock_height < avg_height - 2.0  # Rock is in a deep valley
+    var is_slightly_hidden = rock_height < avg_height  # Slightly below average
+    var is_in_cave = false
+    var is_unique_mountain_cave = false
+    
+    # Check if rock is inside any cave chamber
+    for chamber in cave_data:
+        var distance_to_chamber = rock_instance.position.distance_to(chamber["position"])
+        if distance_to_chamber < chamber["radius"]:
+            is_in_cave = true
+            # Check if this is the unique mountain chunk cave
+            if is_unique_mountain:
+                is_unique_mountain_cave = true
+            break
+    
+    # Common crystals (Mountain Crystal, Emerald, Garnet, Amethyst) only spawn in hidden locations
+    # Don't spawn on exposed rocks at all
+    var spawn_chance = 0.0
+    var allow_rare_crystals = false
+    
+    if is_unique_mountain_cave:
+        # In unique mountain caves: high chance and rare crystals allowed
+        spawn_chance = CRYSTAL_SPAWN_CHANCE_CAVE
+        allow_rare_crystals = true
+    elif is_in_cave:
+        # In other caves: moderate chance, only common crystals
+        spawn_chance = CRYSTAL_SPAWN_CHANCE_HIDDEN
+        allow_rare_crystals = false
+    elif is_in_valley:
+        # In deep valleys: lower chance, only common crystals
+        spawn_chance = CRYSTAL_SPAWN_CHANCE_HIDDEN
+        allow_rare_crystals = false
+    elif is_slightly_hidden:
+        # Slightly hidden: very low chance, only common crystals
+        spawn_chance = CRYSTAL_SPAWN_CHANCE
+        allow_rare_crystals = false
+    else:
+        # Exposed rocks: no crystals at all
+        return
     
     # Check if this rock should have crystals
     if rng.randf() > spawn_chance:
@@ -930,6 +968,32 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
     for i in range(crystal_count):
         # Select random crystal type based on rock color
         var crystal_type = CrystalSystem.select_random_crystal_type(rng, rock_color_index)
+        
+        # Filter out rare crystals if not in unique mountain cave
+        if not allow_rare_crystals:
+            var attempts = 0
+            while (crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE) and attempts < CRYSTAL_FILTER_MAX_ATTEMPTS:
+                crystal_type = CrystalSystem.select_random_crystal_type(rng, rock_color_index)
+                attempts += 1
+            
+            # If still a rare crystal after max attempts, skip this crystal placement
+            if crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE:
+                continue
+        # In unique mountain caves, prefer rare crystals
+        elif allow_rare_crystals and rng.randf() < CRYSTAL_RARE_PREFERENCE_CHANCE:
+            # Try to select Ruby or Sapphire, respecting rock color preferences
+            # Ruby prefers rock colors [1, 3], Sapphire prefers [1, 2]
+            var can_spawn_ruby = CrystalSystem.can_spawn_on_rock_color(CrystalSystem.CrystalType.RUBY, rock_color_index)
+            var can_spawn_sapphire = CrystalSystem.can_spawn_on_rock_color(CrystalSystem.CrystalType.SAPPHIRE, rock_color_index)
+            
+            if can_spawn_ruby and can_spawn_sapphire:
+                # Both can spawn, choose randomly with equal probability
+                crystal_type = CrystalSystem.CrystalType.RUBY if rng.randf() < 0.5 else CrystalSystem.CrystalType.SAPPHIRE
+            elif can_spawn_ruby:
+                crystal_type = CrystalSystem.CrystalType.RUBY
+            elif can_spawn_sapphire:
+                crystal_type = CrystalSystem.CrystalType.SAPPHIRE
+            # If neither can spawn on this rock color, keep the originally selected type
         
         # Random size variation
         var size_scale = rng.randf_range(0.8, 1.5)
