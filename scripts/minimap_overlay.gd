@@ -130,7 +130,7 @@ func _process(delta: float) -> void:
 	if update_timer <= 0.0:
 		_update_positioning()
 	
-	# Track current chunk and surrounding chunks as visited (5-chunk radius for 5x larger reveal area)
+	# Track current chunk and surrounding chunks as visited (5-chunk radius for 25x larger reveal area)
 	var player_pos = player.global_position
 	var chunk_x = int(floor(player_pos.x / world_manager.CHUNK_SIZE))
 	var chunk_z = int(floor(player_pos.z / world_manager.CHUNK_SIZE))
