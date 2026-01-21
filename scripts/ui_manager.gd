@@ -62,6 +62,10 @@ const DAY_DURATION_HOURS: float = 10.0  # 10-hour day cycle from 7:00 AM to 5:00
 const NIGHT_OVERLAY_COLOR: Color = Color(0.0, 0.0, 0.1, 0.9)  # Very dark blue
 const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
 
+# Game over constants
+const GAME_OVER_MESSAGE: String = "GAME OVER\n\nYou drowned!"
+const GAME_OVER_INSTRUCTION: String = "Restart the game to continue"
+
 # Game version
 var game_version: String = ""
 
@@ -869,7 +873,7 @@ func show_game_over() -> void:
         game_over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
         game_over_label.add_theme_font_size_override("font_size", 48)
         game_over_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
-        game_over_label.text = "GAME OVER\n\nYou drowned!"
+        game_over_label.text = GAME_OVER_MESSAGE
         game_over_overlay.add_child(game_over_label)
         
         # Add instruction
@@ -885,7 +889,7 @@ func show_game_over() -> void:
         instruction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
         instruction_label.add_theme_font_size_override("font_size", 18)
         instruction_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-        instruction_label.text = "Restart the game to continue"
+        instruction_label.text = GAME_OVER_INSTRUCTION
         game_over_overlay.add_child(instruction_label)
     
     game_over_overlay.visible = true

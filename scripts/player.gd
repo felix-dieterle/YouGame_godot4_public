@@ -77,6 +77,7 @@ var was_jetpack_active: bool = false
 @export var max_health: float = 100.0  # Maximum health
 @export var air_depletion_rate: float = 10.0  # Air lost per second when underwater
 @export var health_depletion_rate: float = 5.0  # Health lost per second when air is empty underwater
+@export var underwater_threshold: float = 0.5  # Water depth threshold to be considered underwater
 var current_air: float = 100.0  # Current air level
 var current_health: float = 100.0  # Current health
 var is_underwater: bool = false  # Track if player is currently underwater
@@ -561,7 +562,7 @@ func _update_air_and_health(delta: float) -> void:
     
     # Check if player is underwater
     var water_depth = world_manager.get_water_depth_at_position(global_position)
-    is_underwater = water_depth > 0.5  # Player is underwater if water depth is more than 0.5 units
+    is_underwater = water_depth > underwater_threshold
     
     if is_underwater:
         # Deplete air when underwater
