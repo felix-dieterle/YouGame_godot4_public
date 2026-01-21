@@ -23,6 +23,10 @@ var menu_button: Button
 var settings_panel: Panel
 var settings_visible: bool = false
 
+# Jetpack button
+var jetpack_button: Button
+var jetpack_pressed: bool = false
+
 # Configuration
 const JOYSTICK_RADIUS: float = 80.0
 const STICK_RADIUS: float = 30.0
@@ -111,6 +115,9 @@ func _ready() -> void:
     
     # Create look joystick (bottom right)
     _create_look_joystick()
+    
+    # Create jetpack button (middle right)
+    _create_jetpack_button()
     
     # Create menu button (bottom right)
     _create_menu_button()
@@ -653,6 +660,10 @@ func _update_button_position() -> void:
     
     DebugLogOverlay.add_log("Menu button positioned at (%.0f, %.0f), viewport: %.0fx%.0f" % [button_x, button_y, viewport_size.x, viewport_size.y], "cyan")
     
+    # Update jetpack button position if it exists
+    if jetpack_button:
+        _update_jetpack_button_position()
+    
     # Log absolute position after positioning
     if menu_button.is_inside_tree():
         var global_pos = menu_button.global_position
@@ -745,3 +756,63 @@ func _log_control_info() -> void:
         
         # Log visibility checks using helper
         _log_button_bounds_check(bounds_check)
+
+func _create_jetpack_button() -> void:
+    DebugLogOverlay.add_log("Creating jetpack button...", "cyan")
+    
+    jetpack_button = Button.new()
+    jetpack_button.text = "🚀"  # Rocket emoji for jetpack
+    jetpack_button.tooltip_text = "Jetpack - Hold to ascend"  # Accessibility support
+    jetpack_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    jetpack_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    jetpack_button.add_theme_font_size_override("font_size", 35)
+    
+    # Set focus mode to prevent focus issues on mobile
+    jetpack_button.focus_mode = Control.FOCUS_NONE
+    
+    # Ensure button is above other UI elements and can receive touch events
+    jetpack_button.z_index = 101
+    jetpack_button.mouse_filter = Control.MOUSE_FILTER_STOP
+    
+    # Style the button states with a blue/cyan color for jetpack
+    jetpack_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.2, 0.4, 0.6, 0.7), int(BUTTON_SIZE / 2)))
+    jetpack_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.3, 0.5, 0.7, 0.8), int(BUTTON_SIZE / 2)))
+    jetpack_button.add_theme_stylebox_override("pressed", _create_styled_button_style(Color(0.4, 0.6, 0.8, 0.9), int(BUTTON_SIZE / 2)))
+    
+    # Connect button press/release signals
+    jetpack_button.button_down.connect(_on_jetpack_button_down)
+    jetpack_button.button_up.connect(_on_jetpack_button_up)
+    
+    # Ensure button is visible
+    jetpack_button.visible = true
+    
+    add_child(jetpack_button)
+    DebugLogOverlay.add_log("Jetpack button added to scene tree, visible=%s" % str(jetpack_button.visible), "green")
+    
+    # Defer positioning to ensure viewport size is ready
+    call_deferred("_update_jetpack_button_position")
+
+func _update_jetpack_button_position() -> void:
+    # Position jetpack button on the right side, above the look joystick
+    var viewport_size = get_viewport_rect().size
+    var right_margin = look_joystick_margin_x
+    var vertical_center = viewport_size.y / 2
+    
+    # Place the button at vertical center on the right side
+    jetpack_button.position = Vector2(
+        viewport_size.x - right_margin - BUTTON_SIZE,
+        vertical_center - BUTTON_SIZE / 2
+    )
+    
+    DebugLogOverlay.add_log("Jetpack button positioned at: (%.0f, %.0f)" % [jetpack_button.position.x, jetpack_button.position.y], "cyan")
+
+func _on_jetpack_button_down() -> void:
+    jetpack_pressed = true
+    DebugLogOverlay.add_log("Jetpack button pressed", "green")
+
+func _on_jetpack_button_up() -> void:
+    jetpack_pressed = false
+    DebugLogOverlay.add_log("Jetpack button released", "yellow")
+
+func is_jetpack_pressed() -> bool:
+    return jetpack_pressed
