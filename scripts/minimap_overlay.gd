@@ -141,11 +141,13 @@ func _process(delta: float) -> void:
 		last_player_chunk = current_chunk
 		
 		# Mark all chunks within a 10-chunk radius as visited
-		var reveal_radius = 10  # 10 chunks in each direction (10x larger than before)
+		# This increases the reveal area 100x (area = π×r², so π×10² vs π×1²)
+		var reveal_radius = 10
+		var radius_squared = reveal_radius * reveal_radius
 		for dx in range(-reveal_radius, reveal_radius + 1):
 			for dz in range(-reveal_radius, reveal_radius + 1):
 				# Only mark chunks within circular radius (not square)
-				if dx * dx + dz * dz <= reveal_radius * reveal_radius:
+				if dx * dx + dz * dz <= radius_squared:
 					var chunk_pos = Vector2i(chunk_x + dx, chunk_z + dz)
 					visited_chunks[chunk_pos] = true
 	
