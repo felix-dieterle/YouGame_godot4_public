@@ -969,8 +969,15 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
         
         # Filter out rare crystals if not in unique mountain cave
         if not allow_rare_crystals:
-            while crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE:
+            var max_attempts = 10  # Prevent infinite loop
+            var attempts = 0
+            while (crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE) and attempts < max_attempts:
                 crystal_type = CrystalSystem.select_random_crystal_type(rng, rock_color_index)
+                attempts += 1
+            
+            # If still a rare crystal after max attempts, skip this crystal placement
+            if crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE:
+                continue
         # In unique mountain caves, prefer rare crystals
         elif allow_rare_crystals and rng.randf() < 0.6:  # 60% chance to reroll for rare
             # Try to select Ruby or Sapphire
