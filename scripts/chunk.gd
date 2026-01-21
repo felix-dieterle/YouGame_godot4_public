@@ -146,8 +146,9 @@ var mountain_influence: float = 0.0  # How much mountain effect this chunk has (
 var cave_data: Array = []  # Array of cave chamber data (position, radius, entrance direction)
 var cave_mesh_instances: Array = []  # Array of cave interior MeshInstance3D
 
-# Static variable to store mountain center chunk coordinates (shared across all chunks)
-static var mountain_center_chunk: Vector2i = Vector2i(999999, 999999)  # Initialize to invalid position
+# Static variables to store mountain center chunk coordinates (shared across all chunks)
+static var mountain_center_chunk_x: int = 999999  # Invalid position marker
+static var mountain_center_chunk_z: int = 999999  # Invalid position marker
 
 # Ambient sound data
 var ambient_sound_player: AudioStreamPlayer3D = null  # For ambient sounds like woodpecker
@@ -214,18 +215,20 @@ func generate() -> void:
 ## Detect if this chunk is part of the unique high mountain range
 func _detect_unique_mountain() -> void:
     # First, find the mountain center chunk if not already found
-    if mountain_center_chunk == Vector2i(999999, 999999):
+    if mountain_center_chunk_x == 999999:
         _find_mountain_center_chunk()
     
     # Check if this chunk is the center of the mountain
-    if Vector2i(chunk_x, chunk_z) == mountain_center_chunk:
+    if chunk_x == mountain_center_chunk_x and chunk_z == mountain_center_chunk_z:
         is_mountain_center = true
         is_unique_mountain = true
         mountain_influence = 1.0
         return
     
     # Check if this chunk is within the mountain range radius
-    var distance_to_center = Vector2i(chunk_x, chunk_z).distance_to(mountain_center_chunk)
+    var dx = chunk_x - mountain_center_chunk_x
+    var dz = chunk_z - mountain_center_chunk_z
+    var distance_to_center = sqrt(dx * dx + dz * dz)
     if distance_to_center <= MOUNTAIN_RANGE_RADIUS:
         is_unique_mountain = true
         # Calculate influence based on distance (1.0 at center, 0.0 at edge)
@@ -242,18 +245,19 @@ func _find_mountain_center_chunk() -> void:
     # Use deterministic search based on world seed
     for x in range(-max_search_chunks, max_search_chunks + 1):
         for z in range(-max_search_chunks, max_search_chunks + 1):
-            var test_chunk = Vector2i(x, z)
-            var chunk_hash = hash(test_chunk)
+            var chunk_hash = hash(Vector2i(x, z))
             
             # Check if this chunk matches our mountain selection criteria
             if (chunk_hash % UNIQUE_MOUNTAIN_CHUNK_MODULO) == UNIQUE_MOUNTAIN_CHUNK_VALUE:
                 # Found the mountain center!
-                mountain_center_chunk = test_chunk
+                mountain_center_chunk_x = x
+                mountain_center_chunk_z = z
                 return
     
     # Fallback: if no chunk found within radius, use closest matching chunk
-    # This shouldn't happen with modulo 73 and radius 10 chunks
-    mountain_center_chunk = Vector2i(0, 0)
+    # This shouldn't happen with modulo 73 and radius 28 chunks
+    mountain_center_chunk_x = 0
+    mountain_center_chunk_z = 0
 
 func _setup_noise() -> void:
     noise = FastNoiseLite.new()
