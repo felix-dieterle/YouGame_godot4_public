@@ -38,11 +38,13 @@ enum CrystalShape {
 }
 
 # Crystal type configurations
+# NOTE: spawn_chance values represent the probability distribution when a crystal spawns
+# and must sum to 1.0 for proper weighted random selection
 static var crystal_configs = {
 	CrystalType.MOUNTAIN_CRYSTAL: {
 		"name": "Mountain Crystal",
 		"color": Color(0.9, 0.95, 1.0, 0.6),  # Clear/white with higher transparency
-		"spawn_chance": 0.35,  # 35% chance when crystal spawns (rebalanced for common)
+		"spawn_chance": 0.35,  # 35% chance when crystal spawns (common)
 		"growth_frequency": 0.15,  # Reduced overall frequency
 		"shape": CrystalShape.HEXAGONAL_PRISM,
 		"preferred_rock_colors": [0, 1]  # Light and medium gray rocks
@@ -50,7 +52,7 @@ static var crystal_configs = {
 	CrystalType.EMERALD: {
 		"name": "Emerald",
 		"color": Color(0.2, 0.8, 0.3, 0.65),  # Green with more transparency
-		"spawn_chance": 0.30,  # 30% chance (rebalanced for uncommon)
+		"spawn_chance": 0.30,  # 30% chance (uncommon)
 		"growth_frequency": 0.10,  # Reduced overall frequency
 		"shape": CrystalShape.ELONGATED_PRISM,
 		"preferred_rock_colors": [2]  # Brownish gray rocks
@@ -58,7 +60,7 @@ static var crystal_configs = {
 	CrystalType.GARNET: {
 		"name": "Garnet",
 		"color": Color(0.7, 0.2, 0.2, 0.7),  # Dark red with more transparency
-		"spawn_chance": 0.20,  # 20% chance (rebalanced for uncommon)
+		"spawn_chance": 0.20,  # 20% chance (uncommon)
 		"growth_frequency": 0.08,  # Reduced overall frequency
 		"shape": CrystalShape.CUBIC,
 		"preferred_rock_colors": [3]  # Dark brownish rocks
@@ -74,7 +76,7 @@ static var crystal_configs = {
 	CrystalType.AMETHYST: {
 		"name": "Amethyst",
 		"color": Color(0.6, 0.3, 0.8, 0.65),  # Purple with more transparency
-		"spawn_chance": 0.05,  # 5% chance (rebalanced for uncommon)
+		"spawn_chance": 0.05,  # 5% chance (rare when spawning, but location-filtered)
 		"growth_frequency": 0.07,  # Reduced overall frequency
 		"shape": CrystalShape.CLUSTER,
 		"preferred_rock_colors": [0, 2]  # Light gray and brownish gray rocks
