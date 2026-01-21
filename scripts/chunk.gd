@@ -1057,6 +1057,10 @@ func _generate_paths() -> void:
     var chunk_pos = Vector2i(chunk_x, chunk_z)
     path_segments = PathSystem.get_path_segments_for_chunk(chunk_pos, seed_value)
     
+    # For unique mountain chunk, add special mountain trails to caves
+    if is_unique_mountain and not cave_data.is_empty():
+        _add_mountain_paths_to_caves()
+    
     if path_segments.is_empty():
         return
     
@@ -1883,4 +1887,46 @@ func _add_cave_narrative_marker(chamber: Dictionary) -> void:
     }
     narrative_markers.append(marker)
     add_child(marker)
+
+## Add mountain paths leading to cave entrances
+func _add_mountain_paths_to_caves() -> void:
+    # Create winding paths from chunk edges/base to each cave entrance
+    for cave in cave_data:
+        var cave_pos_2d = Vector2(cave["position"].x, cave["position"].z)
+        
+        # Create a winding path leading to this cave
+        # Start from a lower elevation point (base of mountain)
+        var start_pos = Vector2(CHUNK_SIZE / 2.0, CHUNK_SIZE / 2.0)
+        
+        # Create multiple segments for a winding path
+        var current_pos = start_pos
+        var target_pos = cave_pos_2d
+        var num_segments = 3  # Number of path segments to create winding effect
+        
+        for i in range(num_segments):
+            var progress = (i + 1.0) / num_segments
+            var next_pos = start_pos.lerp(target_pos, progress)
+            
+            # Add some lateral deviation for winding effect
+            var perpendicular = (target_pos - start_pos).orthogonal().normalized()
+            var deviation = sin(progress * PI * 2.0) * 3.0  # Sine wave for natural curves
+            next_pos += perpendicular * deviation
+            
+            # Clamp to chunk boundaries
+            next_pos.x = clamp(next_pos.x, 1.0, CHUNK_SIZE - 1.0)
+            next_pos.y = clamp(next_pos.y, 1.0, CHUNK_SIZE - 1.0)
+            
+            # Create path segment manually (not through PathSystem as these are local mountain trails)
+            var segment = PathSystem.PathSegment.new(
+                PathSystem.next_segment_id,
+                Vector2i(chunk_x, chunk_z),
+                current_pos,
+                next_pos,
+                PathSystem.PathType.BRANCH,
+                MOUNTAIN_PATH_WIDTH
+            )
+            PathSystem.next_segment_id += 1
+            
+            path_segments.append(segment)
+            current_pos = next_pos
 
