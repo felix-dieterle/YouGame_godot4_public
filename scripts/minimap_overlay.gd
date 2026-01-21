@@ -45,6 +45,7 @@ var visited_chunks: Dictionary = {}
 # Performance optimization
 var update_timer: float = 0.0
 var last_player_position: Vector3 = Vector3.ZERO
+var last_player_chunk: Vector2i = Vector2i(-999999, -999999)  # Track last chunk to avoid redundant updates
 
 # UI elements
 var map_panel: PanelContainer
@@ -133,15 +134,20 @@ func _process(delta: float) -> void:
 	var player_pos = player.global_position
 	var chunk_x = int(floor(player_pos.x / world_manager.CHUNK_SIZE))
 	var chunk_z = int(floor(player_pos.z / world_manager.CHUNK_SIZE))
+	var current_chunk = Vector2i(chunk_x, chunk_z)
 	
-	# Mark all chunks within a 10-chunk radius as visited
-	var reveal_radius = 10  # 10 chunks in each direction (10x larger than before)
-	for dx in range(-reveal_radius, reveal_radius + 1):
-		for dz in range(-reveal_radius, reveal_radius + 1):
-			# Only mark chunks within circular radius (not square)
-			if dx * dx + dz * dz <= reveal_radius * reveal_radius:
-				var chunk_pos = Vector2i(chunk_x + dx, chunk_z + dz)
-				visited_chunks[chunk_pos] = true
+	# Only update visited chunks if player moved to a new chunk (performance optimization)
+	if current_chunk != last_player_chunk:
+		last_player_chunk = current_chunk
+		
+		# Mark all chunks within a 10-chunk radius as visited
+		var reveal_radius = 10  # 10 chunks in each direction (10x larger than before)
+		for dx in range(-reveal_radius, reveal_radius + 1):
+			for dz in range(-reveal_radius, reveal_radius + 1):
+				# Only mark chunks within circular radius (not square)
+				if dx * dx + dz * dz <= reveal_radius * reveal_radius:
+					var chunk_pos = Vector2i(chunk_x + dx, chunk_z + dz)
+					visited_chunks[chunk_pos] = true
 	
 	# Update compass direction (cheap operation)
 	_update_compass()
