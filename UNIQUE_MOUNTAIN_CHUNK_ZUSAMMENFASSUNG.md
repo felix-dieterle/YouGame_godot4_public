@@ -25,13 +25,13 @@ The system uses a hash-based selection mechanism with distance limiting to ensur
 ```gdscript
 const UNIQUE_MOUNTAIN_CHUNK_MODULO = 73      # Hash modulo for unique mountain selection
 const UNIQUE_MOUNTAIN_CHUNK_VALUE = 42       # Target value for unique mountain chunk
-const MOUNTAIN_PLACEMENT_RADIUS = 320.0      # Maximum 10 chunks from spawn
-const MOUNTAIN_RANGE_RADIUS = 2              # Mountain spans 5x5 chunks (2 chunks in each direction)
+const MOUNTAIN_PLACEMENT_RADIUS = 900.0      # Maximum ~28 chunks from spawn
+const MOUNTAIN_RANGE_RADIUS = 11             # Mountain spans 23x23 chunks (11 chunks in each direction)
 
 func _detect_unique_mountain() -> void:
     # First, find mountain center within placement radius
     if mountain_center_chunk == Vector2i(999999, 999999):
-        _find_mountain_center_chunk()  # Searches within 320m of spawn
+        _find_mountain_center_chunk()  # Searches within 900m of spawn
     
     # Check if this chunk is within the mountain range
     var distance_to_center = Vector2i(chunk_x, chunk_z).distance_to(mountain_center_chunk)
@@ -41,17 +41,18 @@ func _detect_unique_mountain() -> void:
 ```
 
 **How it works:**
-- Searches for suitable chunk within 320 meters (10 chunks) of spawn
+- Searches for suitable chunk within 900 meters (~28 chunks) of spawn
 - Uses hash-based selection to find deterministic center chunk
-- Mountain effect spans 5x5 chunks (160x160 meters) - proper mountain range
+- Mountain effect spans 23x23 chunks (~736x736 meters) - massive mountain range
 - Height gradually blends from maximum at center to normal at edges
-- **Guarantees mountain is always findable** - not in unexplored distant areas
+- **Guarantees mountain is always findable** - within exploration range
 
 **Mountain Range Size:**
 - **Center chunk**: Full mountain effect, contains all caves
-- **Adjacent chunks** (radius 1): ~50-67% mountain effect
-- **Outer chunks** (radius 2): ~33% mountain effect, blending to normal
-- **Total area**: 5x5 chunks = 160x160 meters
+- **Inner chunks** (radius 1-3): Strong mountain effect (75-92%)
+- **Middle chunks** (radius 4-7): Moderate mountain effect (42-67%)
+- **Outer chunks** (radius 8-11): Gradual blending (8-33%)
+- **Total area**: 23x23 chunks = ~736x736 meters
 
 ### 2. Extreme Height Generation
 

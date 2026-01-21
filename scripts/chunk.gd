@@ -90,8 +90,8 @@ const WOODPECKER_FOREST_DENSITY_THRESHOLD = 0.5  # Minimum forest density for wo
 # Unique high mountain chunk constants
 const UNIQUE_MOUNTAIN_CHUNK_MODULO = 73  # Hash modulo for unique mountain selection
 const UNIQUE_MOUNTAIN_CHUNK_VALUE = 42  # Target value for unique mountain chunk
-const MOUNTAIN_PLACEMENT_RADIUS = 320.0  # Maximum distance from spawn (10 chunks = 320 units)
-const MOUNTAIN_RANGE_RADIUS = 2  # Mountain effect extends 2 chunks in all directions from center
+const MOUNTAIN_PLACEMENT_RADIUS = 900.0  # Maximum distance from spawn (~28 chunks = 900 units)
+const MOUNTAIN_RANGE_RADIUS = 11  # Mountain effect extends 11 chunks in all directions (23x23 chunks = ~700x700m)
 const MOUNTAIN_HEIGHT_MULTIPLIER = 40.0  # Extra tall mountains
 const MOUNTAIN_HEIGHT_OFFSET = 20.0  # High base elevation
 const CAVE_COUNT_MIN = 3  # Minimum number of caves
