@@ -42,48 +42,48 @@ static var crystal_configs = {
 	CrystalType.MOUNTAIN_CRYSTAL: {
 		"name": "Mountain Crystal",
 		"color": Color(0.9, 0.95, 1.0, 0.6),  # Clear/white with higher transparency
-		"spawn_chance": 0.35,  # 35% chance when crystal spawns
-		"growth_frequency": 0.4,  # How often this type grows on rocks
+		"spawn_chance": 0.40,  # 40% chance when crystal spawns (rebalanced for common)
+		"growth_frequency": 0.15,  # Reduced overall frequency
 		"shape": CrystalShape.HEXAGONAL_PRISM,
 		"preferred_rock_colors": [0, 1]  # Light and medium gray rocks
 	},
 	CrystalType.EMERALD: {
 		"name": "Emerald",
 		"color": Color(0.2, 0.8, 0.3, 0.65),  # Green with more transparency
-		"spawn_chance": 0.25,  # 25% chance
-		"growth_frequency": 0.25,
+		"spawn_chance": 0.30,  # 30% chance (rebalanced for uncommon)
+		"growth_frequency": 0.10,  # Reduced overall frequency
 		"shape": CrystalShape.ELONGATED_PRISM,
 		"preferred_rock_colors": [2]  # Brownish gray rocks
 	},
 	CrystalType.GARNET: {
 		"name": "Garnet",
 		"color": Color(0.7, 0.2, 0.2, 0.7),  # Dark red with more transparency
-		"spawn_chance": 0.20,  # 20% chance
-		"growth_frequency": 0.20,
+		"spawn_chance": 0.20,  # 20% chance (rebalanced for uncommon)
+		"growth_frequency": 0.08,  # Reduced overall frequency
 		"shape": CrystalShape.CUBIC,
 		"preferred_rock_colors": [3]  # Dark brownish rocks
 	},
 	CrystalType.RUBY: {
 		"name": "Ruby",
 		"color": Color(0.9, 0.1, 0.15, 0.7),  # Bright red with more transparency
-		"spawn_chance": 0.08,  # 8% chance (rare)
-		"growth_frequency": 0.05,
+		"spawn_chance": 0.05,  # 5% chance (very rare, cave-only)
+		"growth_frequency": 0.005,  # Extremely rare - only in mountain caves
 		"shape": CrystalShape.HEXAGONAL_PRISM,
 		"preferred_rock_colors": [1, 3]  # Medium gray and dark brownish rocks
 	},
 	CrystalType.AMETHYST: {
 		"name": "Amethyst",
 		"color": Color(0.6, 0.3, 0.8, 0.65),  # Purple with more transparency
-		"spawn_chance": 0.20,  # 20% chance
-		"growth_frequency": 0.18,
+		"spawn_chance": 0.15,  # 15% chance (rebalanced for uncommon)
+		"growth_frequency": 0.07,  # Reduced overall frequency
 		"shape": CrystalShape.CLUSTER,
 		"preferred_rock_colors": [0, 2]  # Light gray and brownish gray rocks
 	},
 	CrystalType.SAPPHIRE: {
 		"name": "Sapphire",
 		"color": Color(0.15, 0.3, 0.85, 0.7),  # Deep blue with more transparency
-		"spawn_chance": 0.07,  # 7% chance (rare)
-		"growth_frequency": 0.07,
+		"spawn_chance": 0.05,  # 5% chance (very rare, cave-only)
+		"growth_frequency": 0.005,  # Extremely rare - only in mountain caves
 		"shape": CrystalShape.ELONGATED_PRISM,
 		"preferred_rock_colors": [1, 2]  # Medium gray and brownish gray rocks
 	}
