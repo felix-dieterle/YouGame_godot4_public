@@ -183,6 +183,8 @@ func _get_logs_internal(log_type: LogType) -> Array[String]:
 
 # Helper function to add an error log entry
 static func add_error(message: String) -> void:
+	if message.strip_edges().is_empty():
+		return
 	add_log(LogType.ERROR_LOGS, message)
 
 # Export all logs as a ZIP file
