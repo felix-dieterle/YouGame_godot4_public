@@ -71,11 +71,17 @@ const CRYSTAL_FILTER_MAX_ATTEMPTS = 10  # Max attempts to filter out rare crysta
 # Path bush placement constants
 const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differentiation
 
+# Fence post placement constants
+const FENCE_POST_SEED_OFFSET = 111111  # Offset for fence post placement seed
+const FENCE_POST_SPACING = 4.0  # Distance between fence posts along ocean paths
+
 # Ocean and lighthouse constants
 const OCEAN_LEVEL = -8.0  # Elevation threshold for ocean biome
 const OCEAN_START_DISTANCE = 160.0  # Distance from origin (0,0) where ocean begins (5 chunks = 160 units)
 const LIGHTHOUSE_SEED_OFFSET = 77777  # Offset for lighthouse placement seed
 const LIGHTHOUSE_SPACING = 80.0  # Distance between lighthouses along coastline
+const MIN_LARGE_OCEAN_SIZE = 3  # Minimum number of connected ocean chunks to be considered "large ocean"
+const MAX_OCEAN_SEARCH_CHUNKS = 20  # Maximum number of chunks to search when detecting large ocean (performance limit)
 
 # Fishing boat constants
 const FISHING_BOAT_SEED_OFFSET = 88888  # Offset for fishing boat placement seed
@@ -1217,6 +1223,9 @@ func _generate_paths() -> void:
     
     # Place bushes along path edges
     _place_path_bushes()
+    
+    # Place fence posts along ocean-directed paths
+    _place_fence_posts_on_ocean_paths()
 
 ## Create visual mesh for paths
 func _create_path_mesh() -> void:
@@ -1400,6 +1409,75 @@ func _place_path_bushes() -> void:
                 add_child(bush_instance)
                 placed_objects.append(bush_instance)
 
+## Place fence posts along ocean-directed paths (paths that end at the ocean)
+func _place_fence_posts_on_ocean_paths() -> void:
+    if path_segments.is_empty():
+        return
+    
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ FENCE_POST_SEED_OFFSET
+    
+    # Only place fence posts on path segments that are endpoints near ocean
+    for segment in path_segments:
+        # Check if this segment is an endpoint
+        if not segment.is_endpoint:
+            continue
+        
+        # Check if the endpoint is near ocean (use world position)
+        var world_end_x = chunk_x * CHUNK_SIZE + segment.end_pos.x
+        var world_end_z = chunk_z * CHUNK_SIZE + segment.end_pos.y
+        var world_end_pos = Vector2(world_end_x, world_end_z)
+        
+        # Simple ocean check: distance from origin or check neighboring chunks
+        var distance_from_origin = world_end_pos.length()
+        var near_ocean = distance_from_origin >= OCEAN_START_DISTANCE
+        
+        # If not obviously near ocean by distance, skip
+        if not near_ocean:
+            continue
+        
+        # Place posts along this path segment
+        var start = segment.start_pos
+        var end = segment.end_pos
+        var segment_length = start.distance_to(end)
+        var direction = (end - start).normalized()
+        
+        # Calculate number of posts along segment
+        var num_posts = int(segment_length / FENCE_POST_SPACING)
+        
+        for i in range(num_posts + 1):  # +1 to include endpoint
+            # Position along the segment
+            var t = float(i) / float(max(num_posts, 1))
+            var post_pos_2d = start.lerp(end, t)
+            
+            # Check if position is within chunk bounds
+            if post_pos_2d.x < 0 or post_pos_2d.x >= CHUNK_SIZE or post_pos_2d.y < 0 or post_pos_2d.y >= CHUNK_SIZE:
+                continue
+            
+            # Get terrain height
+            var world_x = chunk_x * CHUNK_SIZE + post_pos_2d.x
+            var world_z = chunk_z * CHUNK_SIZE + post_pos_2d.y
+            var height = get_height_at_world_pos(world_x, world_z)
+            
+            # Skip if in lake
+            if has_lake:
+                var dist_to_lake = Vector2(post_pos_2d.x, post_pos_2d.y).distance_to(lake_center)
+                if dist_to_lake < lake_radius:
+                    continue
+            
+            # Create fence post instance
+            var post_instance = MeshInstance3D.new()
+            post_instance.mesh = ProceduralModels.create_fence_post_mesh(rng.randi())
+            post_instance.material_override = ProceduralModels.create_fence_post_material()
+            post_instance.position = Vector3(post_pos_2d.x, height, post_pos_2d.y)
+            
+            # Slight random rotation for natural look (mainly y-axis)
+            post_instance.rotation.y = rng.randf_range(-0.1, 0.1)
+            post_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+            
+            add_child(post_instance)
+            placed_objects.append(post_instance)
+
 ## Generate ocean water for low-elevation chunks
 func _generate_ocean_if_low() -> void:
     # Ocean chunks are identified during metadata calculation
@@ -1489,14 +1567,20 @@ func _place_lighthouses_if_coastal() -> void:
     ]
     
     var has_ocean_neighbor = false
+    var ocean_neighbor_pos: Vector2i = Vector2i.ZERO
     for neighbor_pos in neighbors_to_check:
         # Simple heuristic: check if neighbor would be ocean based on noise
         var neighbor_height = _get_estimated_chunk_height(neighbor_pos)
         if neighbor_height <= OCEAN_LEVEL:
             has_ocean_neighbor = true
+            ocean_neighbor_pos = neighbor_pos
             break
     
     if not has_ocean_neighbor:
+        return
+    
+    # Check if the ocean neighbor is part of a "large ocean" (at least MIN_LARGE_OCEAN_SIZE connected ocean chunks)
+    if not _is_part_of_large_ocean(ocean_neighbor_pos):
         return
     
     # Find suitable location for lighthouse near chunk edge facing ocean
@@ -1546,6 +1630,47 @@ func _get_estimated_chunk_height(chunk_pos: Vector2i) -> float:
             total_height += height
     
     return total_height / (samples * samples)
+
+## Check if an ocean chunk is part of a "large ocean" (at least MIN_LARGE_OCEAN_SIZE connected ocean chunks)
+func _is_part_of_large_ocean(ocean_chunk_pos: Vector2i) -> bool:
+    # Use flood fill to count connected ocean chunks (limited search to avoid performance issues)
+    var visited: Dictionary = {}
+    var to_visit: Array[Vector2i] = [ocean_chunk_pos]
+    var ocean_count = 0
+    
+    while to_visit.size() > 0 and ocean_count < MAX_OCEAN_SEARCH_CHUNKS:
+        var current_pos = to_visit.pop_front()
+        
+        # Skip if already visited
+        if visited.has(current_pos):
+            continue
+        
+        visited[current_pos] = true
+        
+        # Check if this chunk is ocean
+        var chunk_height = _get_estimated_chunk_height(current_pos)
+        if chunk_height > OCEAN_LEVEL:
+            continue
+        
+        ocean_count += 1
+        
+        # If we've found enough ocean chunks, it's a large ocean
+        if ocean_count >= MIN_LARGE_OCEAN_SIZE:
+            return true
+        
+        # Add neighbors to visit
+        var neighbors = [
+            Vector2i(current_pos.x - 1, current_pos.y),
+            Vector2i(current_pos.x + 1, current_pos.y),
+            Vector2i(current_pos.x, current_pos.y - 1),
+            Vector2i(current_pos.x, current_pos.y + 1)
+        ]
+        
+        for neighbor in neighbors:
+            if not visited.has(neighbor):
+                to_visit.append(neighbor)
+    
+    return ocean_count >= MIN_LARGE_OCEAN_SIZE
 
 ## Find a suitable coastal position for lighthouse
 func _find_coastal_position(rng: RandomNumberGenerator) -> Vector3:

@@ -70,6 +70,10 @@ const GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MIN = 0.4
 const GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MAX = 0.8
 const GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MIN = 0.8
 const GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MAX = 1.2
+# Fence post generation constants
+const FENCE_POST_HEIGHT = 1.5  # Height of wooden fence post
+const FENCE_POST_RADIUS = 0.1  # Radius of fence post
+const FENCE_POST_SEGMENTS = 6  # Number of segments (hexagonal shape)
 
 # Tree type enum
 enum TreeType {
@@ -859,10 +863,33 @@ static func create_gravel_pebble_mesh(seed_val: int = 0) -> ArrayMesh:
 
 ## Create a material for gravel/pebbles
 static func create_gravel_material() -> StandardMaterial3D:
+## Create a simple wooden fence post mesh
+static func create_fence_post_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Slight variation in height for natural look
+    var height = FENCE_POST_HEIGHT * rng.randf_range(0.9, 1.1)
+    var radius = FENCE_POST_RADIUS * rng.randf_range(0.9, 1.1)
+    
+    # Weathered wood color (grayish brown)
+    var wood_color = Color(0.45, 0.35, 0.25)
+    
+    # Create a simple cylinder for the post
+    _add_cylinder(surface_tool, Vector3.ZERO, height, radius, FENCE_POST_SEGMENTS, wood_color)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create material for fence posts
+static func create_fence_post_material() -> StandardMaterial3D:
     var material = StandardMaterial3D.new()
     material.vertex_color_use_as_albedo = true
     material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
     material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-    material.roughness = 0.85
+    material.roughness = 0.9  # Very rough, weathered wood
     material.cull_mode = BaseMaterial3D.CULL_BACK
     return material
