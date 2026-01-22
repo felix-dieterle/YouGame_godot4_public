@@ -231,6 +231,7 @@ func _ready() -> void:
     night_overlay.color = NIGHT_OVERLAY_COLOR
     night_overlay.z_index = NIGHT_OVERLAY_Z_INDEX
     night_overlay.visible = false
+    night_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Allow clicks through to UI above (e.g., start menu)
     add_child(night_overlay)
     
     # Create night label
