@@ -14,6 +14,7 @@ From left to right:
 3. **📄 (Document)** - Copy debug logs to clipboard
 4. **☀ (Sun)** - Export Sun Lighting Issue logs to file
 5. **🌙 (Moon)** - Export Sleep State Issue logs to file
+6. **📦 (Package)** - Export ALL logs to a ZIP file (recommended)
 
 ### Exporting Sun Lighting Logs
 
@@ -34,6 +35,25 @@ From left to right:
 2. Exit and reload the game
 3. Click the **🌙 (Moon)** button to export sleep state logs
 4. The logs will show all the sleep state data captured during the load process
+
+### Exporting All Logs to ZIP (Recommended)
+
+**This is the easiest way to export all debug information at once:**
+
+1. Click the **📦 (Package)** button in the top-left corner
+2. A ZIP file will be created containing:
+   - `0_metadata.txt` - System information and log summary
+   - `1_sun_lighting_issue.log` - Sun/brightness problem logs
+   - `2_sleep_state_issue.log` - Sleep state debugging logs
+   - `3_error_logs.log` - Error messages and exceptions
+3. The ZIP file location will be displayed in the debug overlay
+4. Find the file in the same location as individual logs (see above)
+
+**The ZIP export is recommended because:**
+- Contains all debugging information in one file
+- Easy to share with developers
+- Includes system information for better debugging
+- Files are numbered for easy navigation
 
 ### Understanding the Log Files
 
@@ -85,8 +105,14 @@ LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, "Your debu
 # Sleep state issue
 LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, "Your debug message")
 
+# Error logs (also automatically captured from push_error)
+LogExportManager.add_error("Your error message")
+
 # General debug
 LogExportManager.add_log(LogExportManager.LogType.GENERAL_DEBUG, "Your debug message")
+
+# Export all logs to a ZIP file
+var zip_path = LogExportManager.export_all_logs_as_zip()
 ```
 
 See `LOG_EXPORT_SYSTEM.md` for full API documentation.
