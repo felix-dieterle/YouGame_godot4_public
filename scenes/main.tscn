@@ -15,7 +15,7 @@
 
 [sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_1"]
 rayleigh_coefficient = 12.0
-rayleigh_color = Color(0.26, 0.55, 1.0, 1)
+rayleigh_color = Color(0.3, 0.6, 1.0, 1)
 mie_coefficient = 0.002
 mie_eccentricity = 0.8
 mie_color = Color(0.69, 0.729, 0.812, 1)
