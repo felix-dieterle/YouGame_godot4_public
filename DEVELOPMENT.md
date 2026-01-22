@@ -133,6 +133,14 @@ godot --headless res://tests/test_scene.tscn
 
 The project is configured to build signed APKs that can be installed on Android devices.
 
+**Android Build Template Required:**
+The widget feature requires the Android build template to be installed. Before building:
+
+1. Open the project in Godot Editor
+2. Go to **Project → Install Android Build Template**
+3. This creates the `android/build/` directory structure
+4. Then run the build script
+
 ```bash
 ./build.sh
 ```
@@ -144,10 +152,12 @@ The APK will be created in `export/YouGame.apk`
 - Debug builds are suitable for testing and development
 - For production/Play Store releases, configure a release keystore (see QUICKSTART.md)
 - All APKs must be signed to install on Android devices
+- **Widget feature:** Gradle build is enabled to include the Android widget plugin
 
 **Configuration:**
 - Architecture: arm64-v8a
 - Package signing: Enabled (APKs are signed with debug keystore automatically)
+- Gradle build: Enabled (required for Android widget)
 
 ## Testing
 
