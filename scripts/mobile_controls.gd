@@ -29,9 +29,12 @@ var jetpack_pressed: bool = false
 
 # Configuration
 const JOYSTICK_RADIUS: float = 80.0
+const LOOK_JOYSTICK_RADIUS: float = 120.0  # 1.5x larger than movement joystick
 const STICK_RADIUS: float = 30.0
+const LOOK_STICK_RADIUS: float = 45.0  # Proportionally larger for look joystick (1.5x)
 const DEADZONE: float = 0.2
 const JOYSTICK_DETECTION_MULTIPLIER: float = 1.5  # Multiplier for joystick detection radius
+const MOVEMENT_HORIZONTAL_SENSITIVITY: float = 0.5  # Movement joystick left/right is half as sensitive
 const BUTTON_SIZE: float = 60.0
 const PANEL_WIDTH: float = 300.0
 const PANEL_HEIGHT: float = 350.0
@@ -177,8 +180,8 @@ func _update_look_joystick_stick_position() -> void:
     normalized_y = clamp(normalized_y, -1.0, 1.0)
     
     # Convert normalized values to joystick offset
-    # Multiply by JOYSTICK_RADIUS to get pixel offset from center
-    var offset = Vector2(normalized_x * JOYSTICK_RADIUS, normalized_y * JOYSTICK_RADIUS)
+    # Multiply by LOOK_JOYSTICK_RADIUS to get pixel offset from center
+    var offset = Vector2(normalized_x * LOOK_JOYSTICK_RADIUS, normalized_y * LOOK_JOYSTICK_RADIUS)
     
     # Update the stick position to match camera angles
     # This ensures the stick visually represents where the camera is looking
@@ -199,7 +202,7 @@ func _update_joystick_position() -> void:
     # Position look joystick in bottom-right corner with margin
     # Add extra margin to keep it away from version/time labels
     # Account for joystick size so it stays within viewport bounds
-    look_joystick_base.position = Vector2(viewport_size.x - look_joystick_margin_x - JOYSTICK_RADIUS * 2, viewport_size.y - look_joystick_margin_y - JOYSTICK_RADIUS * 2)
+    look_joystick_base.position = Vector2(viewport_size.x - look_joystick_margin_x - LOOK_JOYSTICK_RADIUS * 2, viewport_size.y - look_joystick_margin_y - LOOK_JOYSTICK_RADIUS * 2)
     
     DebugLogOverlay.add_log("Joystick positions updated:", "cyan")
     DebugLogOverlay.add_log("  Movement joystick: (%.0f, %.0f)" % [joystick_base.position.x, joystick_base.position.y], "cyan")
@@ -220,12 +223,12 @@ func _input(event: InputEvent) -> void:
         
         if touch.pressed:
             # Check which joystick is closer and within range
-            if dist < JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER and (look_dist >= JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER or dist < look_dist):
+            if dist < JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER and (look_dist >= LOOK_JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER or dist < look_dist):
                 # Start movement joystick
                 joystick_active = true
                 joystick_touch_index = touch.index
                 _update_joystick(touch_pos)
-            elif look_dist < JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER:
+            elif look_dist < LOOK_JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER:
                 # Start look joystick
                 look_joystick_active = true
                 look_joystick_touch_index = touch.index
@@ -268,7 +271,8 @@ func _update_joystick(touch_pos: Vector2) -> void:
     if normalized.length() < DEADZONE:
         joystick_vector = Vector2.ZERO
     else:
-        joystick_vector = normalized
+        # Apply horizontal sensitivity multiplier to make left/right movement less sensitive
+        joystick_vector = Vector2(normalized.x * MOVEMENT_HORIZONTAL_SENSITIVITY, normalized.y)
 
 func get_input_vector() -> Vector2:
     return joystick_vector
@@ -289,8 +293,8 @@ func _create_look_joystick() -> void:
     
     # Create look joystick base
     look_joystick_base = Control.new()
-    look_joystick_base.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
-    look_joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
+    look_joystick_base.size = Vector2(LOOK_JOYSTICK_RADIUS * 2, LOOK_JOYSTICK_RADIUS * 2)
+    look_joystick_base.pivot_offset = Vector2(LOOK_JOYSTICK_RADIUS, LOOK_JOYSTICK_RADIUS)
     # Set z_index to ensure joystick renders above UI elements
     # With parent MobileControls z_index=10, need child z_index >= 91 for effective > 100
     # (UIManager elements like version_label have effective z_index of 100)
@@ -299,39 +303,39 @@ func _create_look_joystick() -> void:
     
     # Base circle
     var base_panel = Panel.new()
-    base_panel.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
-    base_panel.position = Vector2(-JOYSTICK_RADIUS, -JOYSTICK_RADIUS)
+    base_panel.size = Vector2(LOOK_JOYSTICK_RADIUS * 2, LOOK_JOYSTICK_RADIUS * 2)
+    base_panel.position = Vector2(-LOOK_JOYSTICK_RADIUS, -LOOK_JOYSTICK_RADIUS)
     base_panel.modulate = Color(0.6, 0.3, 0.3, 0.7)  # More visible reddish tint (increased opacity and red channel)
     look_joystick_base.add_child(base_panel)
     
     # Add StyleBox for circular appearance
     var base_style = StyleBoxFlat.new()
     base_style.bg_color = Color(0.6, 0.3, 0.3, 0.7)  # More visible reddish tint
-    base_style.corner_radius_top_left = int(JOYSTICK_RADIUS)
-    base_style.corner_radius_top_right = int(JOYSTICK_RADIUS)
-    base_style.corner_radius_bottom_left = int(JOYSTICK_RADIUS)
-    base_style.corner_radius_bottom_right = int(JOYSTICK_RADIUS)
+    base_style.corner_radius_top_left = int(LOOK_JOYSTICK_RADIUS)
+    base_style.corner_radius_top_right = int(LOOK_JOYSTICK_RADIUS)
+    base_style.corner_radius_bottom_left = int(LOOK_JOYSTICK_RADIUS)
+    base_style.corner_radius_bottom_right = int(LOOK_JOYSTICK_RADIUS)
     base_panel.add_theme_stylebox_override("panel", base_style)
     
     # Stick circle
     look_joystick_stick = Control.new()
     look_joystick_stick.position = Vector2(0, 0)
-    look_joystick_stick.size = Vector2(STICK_RADIUS * 2, STICK_RADIUS * 2)
-    look_joystick_stick.pivot_offset = Vector2(STICK_RADIUS, STICK_RADIUS)
+    look_joystick_stick.size = Vector2(LOOK_STICK_RADIUS * 2, LOOK_STICK_RADIUS * 2)
+    look_joystick_stick.pivot_offset = Vector2(LOOK_STICK_RADIUS, LOOK_STICK_RADIUS)
     look_joystick_base.add_child(look_joystick_stick)
     
     var stick_panel = Panel.new()
-    stick_panel.size = Vector2(STICK_RADIUS * 2, STICK_RADIUS * 2)
-    stick_panel.position = Vector2(-STICK_RADIUS, -STICK_RADIUS)
+    stick_panel.size = Vector2(LOOK_STICK_RADIUS * 2, LOOK_STICK_RADIUS * 2)
+    stick_panel.position = Vector2(-LOOK_STICK_RADIUS, -LOOK_STICK_RADIUS)
     stick_panel.modulate = Color(0.9, 0.5, 0.5, 0.85)  # More visible reddish stick (increased opacity and brightness)
     look_joystick_stick.add_child(stick_panel)
     
     var stick_style = StyleBoxFlat.new()
     stick_style.bg_color = Color(0.9, 0.5, 0.5, 0.85)  # More visible reddish stick
-    stick_style.corner_radius_top_left = int(STICK_RADIUS)
-    stick_style.corner_radius_top_right = int(STICK_RADIUS)
-    stick_style.corner_radius_bottom_left = int(STICK_RADIUS)
-    stick_style.corner_radius_bottom_right = int(STICK_RADIUS)
+    stick_style.corner_radius_top_left = int(LOOK_STICK_RADIUS)
+    stick_style.corner_radius_top_right = int(LOOK_STICK_RADIUS)
+    stick_style.corner_radius_bottom_left = int(LOOK_STICK_RADIUS)
+    stick_style.corner_radius_bottom_right = int(LOOK_STICK_RADIUS)
     stick_panel.add_theme_stylebox_override("panel", stick_style)
     
     DebugLogOverlay.add_log("Look joystick visuals created", "green")
@@ -343,13 +347,13 @@ func _update_look_joystick(touch_pos: Vector2) -> void:
     var offset = touch_pos - joystick_center
     
     # Limit offset to joystick radius
-    if offset.length() > JOYSTICK_RADIUS:
-        offset = offset.normalized() * JOYSTICK_RADIUS
+    if offset.length() > LOOK_JOYSTICK_RADIUS:
+        offset = offset.normalized() * LOOK_JOYSTICK_RADIUS
     
     look_joystick_stick.position = offset
     
     # Calculate normalized vector (-1 to 1 range)
-    var normalized = offset / JOYSTICK_RADIUS
+    var normalized = offset / LOOK_JOYSTICK_RADIUS
     
     # Apply deadzone for the vector (for backward compatibility)
     if normalized.length() < DEADZONE:

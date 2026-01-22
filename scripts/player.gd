@@ -4,6 +4,7 @@ class_name Player
 # Preload dependencies
 const CrystalSystem = preload("res://scripts/crystal_system.gd")
 const TorchSystem = preload("res://scripts/torch_system.gd")
+const CampfireSystem = preload("res://scripts/campfire_system.gd")
 
 # Torch placement settings
 @export var torch_placement_offset: float = 0.5  # Height offset when placing torch
@@ -11,10 +12,17 @@ const TorchSystem = preload("res://scripts/torch_system.gd")
 @export var torch_light_range: float = 30.0  # How far torch light reaches
 @export var torch_light_attenuation: float = 0.5  # Light falloff rate
 
+# Campfire placement settings
+@export var campfire_placement_offset: float = 0.0  # Height offset when placing campfire (on ground)
+@export var campfire_light_energy: float = 8.0  # Brightness of campfire light
+@export var campfire_light_range: float = 40.0  # How far campfire light reaches
+@export var campfire_light_attenuation: float = 0.8  # Light falloff rate
+
 # Movement settings
 @export var move_speed: float = 5.0
 @export var rotation_speed: float = 3.0
 @export var jetpack_speed: float = 3.0  # Upward speed when using jetpack
+@export var jetpack_move_speed_multiplier: float = 4.0  # Horizontal speed multiplier when jetpack is active
 @export var glide_speed: float = 0.5  # Slow descent speed when gliding after jetpack release
 @export var camera_distance: float = 10.0
 @export var camera_height: float = 5.0
@@ -67,6 +75,11 @@ var crystal_inventory: Dictionary = {}
 # Torch inventory
 var torch_count: int = 100  # Player starts with 100 torches
 var selected_item: String = "torch"  # Currently selected item
+
+# New inventory items
+var flint_stone_count: int = 2  # Player starts with 2 flint stones
+var mushroom_count: int = 0  # Player starts with 0 mushrooms
+var bottle_fill_level: float = 100.0  # Drinking bottle fill level (0-100)
 
 # Glide state - tracks if player was using jetpack and should now glide
 var is_gliding: bool = false
@@ -245,8 +258,13 @@ func _physics_process(delta) -> void:
                             break  # Stop checking once we find a blocking slope
         
         if can_move:
-            velocity.x = direction.x * move_speed
-            velocity.z = direction.z * move_speed
+            # Apply jetpack speed multiplier when jetpack is active
+            var current_move_speed = move_speed
+            if jetpack_active:
+                current_move_speed = move_speed * jetpack_move_speed_multiplier
+            
+            velocity.x = direction.x * current_move_speed
+            velocity.z = direction.z * current_move_speed
             
             # Rotate towards movement direction (in both first and third person)
             # This allows turning with joystick in first-person mode
@@ -308,6 +326,10 @@ func _input(event) -> void:
     # Torch placement
     if event.is_action_pressed("place_torch"):
         _place_torch()
+    
+    # Use flint stones to create campfire
+    if event.is_action_pressed("use_flint_stones"):
+        _use_flint_stones()
     
     # Toggle inventory (show/hide)
     if event.is_action_pressed("toggle_inventory"):
@@ -717,6 +739,15 @@ func _load_saved_state():
             current_health = player_data["current_health"]
         else:
             current_health = max_health  # Default to full if not in save
+        # Restore new inventory items
+        if "flint_stone_count" in player_data:
+            flint_stone_count = player_data["flint_stone_count"]
+        
+        if "mushroom_count" in player_data:
+            mushroom_count = player_data["mushroom_count"]
+        
+        if "bottle_fill_level" in player_data:
+            bottle_fill_level = player_data["bottle_fill_level"]
         
         print("Player: Loaded saved position: ", global_position)
 
@@ -747,6 +778,34 @@ func _place_torch() -> void:
         ui_manager.show_message("Torch placed! (%d left)" % torch_count, 1.5)
     
     print("Player: Placed torch at ", torch.global_position, " - ", torch_count, " torches remaining")
+
+## Use flint stones to create a campfire at the player's current position
+func _use_flint_stones() -> void:
+    # Check if player has enough flint stones
+    if flint_stone_count < 2:
+        var ui_manager = get_tree().get_first_node_in_group("UIManager")
+        if ui_manager and ui_manager.has_method("show_message"):
+            ui_manager.show_message("Need 2 flint stones to create campfire! (%d/2)" % flint_stone_count, 2.0)
+        return
+    
+    # Deduct 2 flint stones from inventory
+    flint_stone_count -= 2
+    
+    # Create campfire at player position using CampfireSystem
+    var campfire = CampfireSystem.create_campfire_node(campfire_light_energy, campfire_light_range, campfire_light_attenuation)
+    campfire.global_position = global_position + Vector3(0, campfire_placement_offset, 0)
+    
+    # Add campfire to the world
+    get_parent().add_child(campfire)
+    
+    # Update UI
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_flint_stone_count"):
+        ui_manager.update_flint_stone_count(flint_stone_count)
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("Campfire created! (%d flint stones left)" % flint_stone_count, 2.0)
+    
+    print("Player: Created campfire at ", campfire.global_position, " - ", flint_stone_count, " flint stones remaining")
 
 ## Toggle inventory UI visibility
 func _toggle_inventory() -> void:

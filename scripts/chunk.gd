@@ -60,24 +60,46 @@ const ROCK_COUNT_GRASSLAND_MAX = 5
 
 # Crystal placement constants
 const CRYSTAL_SEED_OFFSET = 54321  # Offset for crystal placement seed
-const CRYSTAL_SPAWN_CHANCE = 0.20  # 20% chance a rock will have crystals (reduced from 35%)
+const CRYSTAL_SPAWN_CHANCE = 0.05  # 5% base chance - very rare
+const CRYSTAL_SPAWN_CHANCE_HIDDEN = 0.08  # 8% in hidden valleys - still rare
+const CRYSTAL_SPAWN_CHANCE_CAVE = 0.30  # 30% in mountain caves for rare crystals
 const CRYSTALS_PER_ROCK_MIN = 1
-const CRYSTALS_PER_ROCK_MAX = 2  # Reduced from 3 for rarer crystals
+const CRYSTALS_PER_ROCK_MAX = 1  # Only 1 crystal per rock for rarity
+const CRYSTAL_RARE_PREFERENCE_CHANCE = 0.6  # 60% chance to prefer rare crystals in unique mountain caves
+const CRYSTAL_FILTER_MAX_ATTEMPTS = 10  # Max attempts to filter out rare crystals before skipping
 
 # Path bush placement constants
 const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differentiation
+
+# Fence post placement constants
+const FENCE_POST_SEED_OFFSET = 111111  # Offset for fence post placement seed
+const FENCE_POST_SPACING = 4.0  # Distance between fence posts along ocean paths
 
 # Ocean and lighthouse constants
 const OCEAN_LEVEL = -8.0  # Elevation threshold for ocean biome
 const OCEAN_START_DISTANCE = 160.0  # Distance from origin (0,0) where ocean begins (5 chunks = 160 units)
 const LIGHTHOUSE_SEED_OFFSET = 77777  # Offset for lighthouse placement seed
 const LIGHTHOUSE_SPACING = 80.0  # Distance between lighthouses along coastline
+const MIN_LARGE_OCEAN_SIZE = 3  # Minimum number of connected ocean chunks to be considered "large ocean"
+const MAX_OCEAN_SEARCH_CHUNKS = 20  # Maximum number of chunks to search when detecting large ocean (performance limit)
 
 # Fishing boat constants
 const FISHING_BOAT_SEED_OFFSET = 88888  # Offset for fishing boat placement seed
 const FISHING_BOAT_PLACEMENT_RADIUS = 96.0  # Only place boat near starting area (3 chunks = 96 units)
 const FISHING_BOAT_SELECTION_MODULO = 7  # Hash modulo for deterministic boat chunk selection
 const FISHING_BOAT_SELECTION_VALUE = 3  # Target value for boat chunk selection
+
+# Stone animal gravel area constants
+const GRAVEL_AREA_SEED_OFFSET = 99999  # Offset for gravel area placement seed
+const GRAVEL_AREA_PLACEMENT_RADIUS = 128.0  # Place gravel area at limited distance from spawn (4 chunks = 128 units)
+const GRAVEL_AREA_SELECTION_MODULO = 11  # Hash modulo for deterministic gravel area chunk selection
+const GRAVEL_AREA_SELECTION_VALUE = 7  # Target value for gravel area chunk selection
+const GRAVEL_AREA_RADIUS = 8.0  # Radius of the gravel area in world units
+const GRAVEL_PEBBLE_DENSITY = 150  # Number of pebbles to place in gravel area
+const STONE_ANIMAL_COUNT_MIN = 4  # Minimum number of stone animals
+const STONE_ANIMAL_COUNT_MAX = 8  # Maximum number of stone animals
+const GRAVEL_AREA_FLATNESS_SAMPLE_COUNT = 8  # Number of samples for flatness check
+const STONE_ANIMAL_PLACEMENT_RATIO = 0.7  # Animals placed within 70% of gravel area radius
 
 # Woodpecker ambient sound constants
 const WOODPECKER_SOUND_DURATION = 1.5  # Duration of woodpecker sound in seconds
@@ -139,6 +161,12 @@ var placed_lighthouses: Array = []  # Array of lighthouse MeshInstance3D
 
 # Fishing boat data
 var placed_fishing_boat: MeshInstance3D = null  # Single fishing boat if placed
+
+# Stone animal gravel area data
+var has_gravel_area: bool = false  # True if this chunk has the gravel area
+var gravel_area_center: Vector2 = Vector2.ZERO  # Center of gravel area in local chunk coordinates
+var placed_stone_animals: Array = []  # Array of stone animal MeshInstance3D
+var placed_gravel_pebbles: Array = []  # Array of gravel pebble MeshInstance3D
 
 # Unique mountain chunk data
 var is_unique_mountain: bool = false  # True if this is the unique high mountain chunk
@@ -207,6 +235,7 @@ func generate() -> void:
     _generate_caves_if_unique_mountain()  # Generate caves for unique mountain
     _place_lighthouses_if_coastal()
     _place_fishing_boat_if_coastal()
+    _place_gravel_area_with_stone_animals()  # Place unique gravel area with stone animals
     _setup_ambient_sounds()  # Setup ambient sounds for dense forests
 
 # ============================================================================
@@ -906,12 +935,46 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
             sample_count += 1
     avg_height /= sample_count
     
-    # Increase spawn chance for rocks in lower/hidden locations
-    var spawn_chance = CRYSTAL_SPAWN_CHANCE
-    if rock_height < avg_height - 2.0:  # Rock is in a valley or lower area
-        spawn_chance *= 1.8  # 80% increase in spawn chance for hidden spots
-    elif rock_height < avg_height:  # Slightly below average
-        spawn_chance *= 1.3  # 30% increase
+    # Determine if this is a hidden location (valley or cave)
+    var is_in_valley = rock_height < avg_height - 2.0  # Rock is in a deep valley
+    var is_slightly_hidden = rock_height < avg_height  # Slightly below average
+    var is_in_cave = false
+    var is_unique_mountain_cave = false
+    
+    # Check if rock is inside any cave chamber
+    for chamber in cave_data:
+        var distance_to_chamber = rock_instance.position.distance_to(chamber["position"])
+        if distance_to_chamber < chamber["radius"]:
+            is_in_cave = true
+            # Check if this is the unique mountain chunk cave
+            if is_unique_mountain:
+                is_unique_mountain_cave = true
+            break
+    
+    # Common crystals (Mountain Crystal, Emerald, Garnet, Amethyst) only spawn in hidden locations
+    # Don't spawn on exposed rocks at all
+    var spawn_chance = 0.0
+    var allow_rare_crystals = false
+    
+    if is_unique_mountain_cave:
+        # In unique mountain caves: high chance and rare crystals allowed
+        spawn_chance = CRYSTAL_SPAWN_CHANCE_CAVE
+        allow_rare_crystals = true
+    elif is_in_cave:
+        # In other caves: moderate chance, only common crystals
+        spawn_chance = CRYSTAL_SPAWN_CHANCE_HIDDEN
+        allow_rare_crystals = false
+    elif is_in_valley:
+        # In deep valleys: lower chance, only common crystals
+        spawn_chance = CRYSTAL_SPAWN_CHANCE_HIDDEN
+        allow_rare_crystals = false
+    elif is_slightly_hidden:
+        # Slightly hidden: very low chance, only common crystals
+        spawn_chance = CRYSTAL_SPAWN_CHANCE
+        allow_rare_crystals = false
+    else:
+        # Exposed rocks: no crystals at all
+        return
     
     # Check if this rock should have crystals
     if rng.randf() > spawn_chance:
@@ -930,6 +993,32 @@ func _place_crystals_on_rock(rock_instance: MeshInstance3D, rng: RandomNumberGen
     for i in range(crystal_count):
         # Select random crystal type based on rock color
         var crystal_type = CrystalSystem.select_random_crystal_type(rng, rock_color_index)
+        
+        # Filter out rare crystals if not in unique mountain cave
+        if not allow_rare_crystals:
+            var attempts = 0
+            while (crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE) and attempts < CRYSTAL_FILTER_MAX_ATTEMPTS:
+                crystal_type = CrystalSystem.select_random_crystal_type(rng, rock_color_index)
+                attempts += 1
+            
+            # If still a rare crystal after max attempts, skip this crystal placement
+            if crystal_type == CrystalSystem.CrystalType.RUBY or crystal_type == CrystalSystem.CrystalType.SAPPHIRE:
+                continue
+        # In unique mountain caves, prefer rare crystals
+        elif allow_rare_crystals and rng.randf() < CRYSTAL_RARE_PREFERENCE_CHANCE:
+            # Try to select Ruby or Sapphire, respecting rock color preferences
+            # Ruby prefers rock colors [1, 3], Sapphire prefers [1, 2]
+            var can_spawn_ruby = CrystalSystem.can_spawn_on_rock_color(CrystalSystem.CrystalType.RUBY, rock_color_index)
+            var can_spawn_sapphire = CrystalSystem.can_spawn_on_rock_color(CrystalSystem.CrystalType.SAPPHIRE, rock_color_index)
+            
+            if can_spawn_ruby and can_spawn_sapphire:
+                # Both can spawn, choose randomly with equal probability
+                crystal_type = CrystalSystem.CrystalType.RUBY if rng.randf() < 0.5 else CrystalSystem.CrystalType.SAPPHIRE
+            elif can_spawn_ruby:
+                crystal_type = CrystalSystem.CrystalType.RUBY
+            elif can_spawn_sapphire:
+                crystal_type = CrystalSystem.CrystalType.SAPPHIRE
+            # If neither can spawn on this rock color, keep the originally selected type
         
         # Random size variation
         var size_scale = rng.randf_range(0.8, 1.5)
@@ -1134,6 +1223,9 @@ func _generate_paths() -> void:
     
     # Place bushes along path edges
     _place_path_bushes()
+    
+    # Place fence posts along ocean-directed paths
+    _place_fence_posts_on_ocean_paths()
 
 ## Create visual mesh for paths
 func _create_path_mesh() -> void:
@@ -1317,6 +1409,75 @@ func _place_path_bushes() -> void:
                 add_child(bush_instance)
                 placed_objects.append(bush_instance)
 
+## Place fence posts along ocean-directed paths (paths that end at the ocean)
+func _place_fence_posts_on_ocean_paths() -> void:
+    if path_segments.is_empty():
+        return
+    
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ FENCE_POST_SEED_OFFSET
+    
+    # Only place fence posts on path segments that are endpoints near ocean
+    for segment in path_segments:
+        # Check if this segment is an endpoint
+        if not segment.is_endpoint:
+            continue
+        
+        # Check if the endpoint is near ocean (use world position)
+        var world_end_x = chunk_x * CHUNK_SIZE + segment.end_pos.x
+        var world_end_z = chunk_z * CHUNK_SIZE + segment.end_pos.y
+        var world_end_pos = Vector2(world_end_x, world_end_z)
+        
+        # Simple ocean check: distance from origin or check neighboring chunks
+        var distance_from_origin = world_end_pos.length()
+        var near_ocean = distance_from_origin >= OCEAN_START_DISTANCE
+        
+        # If not obviously near ocean by distance, skip
+        if not near_ocean:
+            continue
+        
+        # Place posts along this path segment
+        var start = segment.start_pos
+        var end = segment.end_pos
+        var segment_length = start.distance_to(end)
+        var direction = (end - start).normalized()
+        
+        # Calculate number of posts along segment
+        var num_posts = int(segment_length / FENCE_POST_SPACING)
+        
+        for i in range(num_posts + 1):  # +1 to include endpoint
+            # Position along the segment
+            var t = float(i) / float(max(num_posts, 1))
+            var post_pos_2d = start.lerp(end, t)
+            
+            # Check if position is within chunk bounds
+            if post_pos_2d.x < 0 or post_pos_2d.x >= CHUNK_SIZE or post_pos_2d.y < 0 or post_pos_2d.y >= CHUNK_SIZE:
+                continue
+            
+            # Get terrain height
+            var world_x = chunk_x * CHUNK_SIZE + post_pos_2d.x
+            var world_z = chunk_z * CHUNK_SIZE + post_pos_2d.y
+            var height = get_height_at_world_pos(world_x, world_z)
+            
+            # Skip if in lake
+            if has_lake:
+                var dist_to_lake = Vector2(post_pos_2d.x, post_pos_2d.y).distance_to(lake_center)
+                if dist_to_lake < lake_radius:
+                    continue
+            
+            # Create fence post instance
+            var post_instance = MeshInstance3D.new()
+            post_instance.mesh = ProceduralModels.create_fence_post_mesh(rng.randi())
+            post_instance.material_override = ProceduralModels.create_fence_post_material()
+            post_instance.position = Vector3(post_pos_2d.x, height, post_pos_2d.y)
+            
+            # Slight random rotation for natural look (mainly y-axis)
+            post_instance.rotation.y = rng.randf_range(-0.1, 0.1)
+            post_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+            
+            add_child(post_instance)
+            placed_objects.append(post_instance)
+
 ## Generate ocean water for low-elevation chunks
 func _generate_ocean_if_low() -> void:
     # Ocean chunks are identified during metadata calculation
@@ -1406,14 +1567,20 @@ func _place_lighthouses_if_coastal() -> void:
     ]
     
     var has_ocean_neighbor = false
+    var ocean_neighbor_pos: Vector2i = Vector2i.ZERO
     for neighbor_pos in neighbors_to_check:
         # Simple heuristic: check if neighbor would be ocean based on noise
         var neighbor_height = _get_estimated_chunk_height(neighbor_pos)
         if neighbor_height <= OCEAN_LEVEL:
             has_ocean_neighbor = true
+            ocean_neighbor_pos = neighbor_pos
             break
     
     if not has_ocean_neighbor:
+        return
+    
+    # Check if the ocean neighbor is part of a "large ocean" (at least MIN_LARGE_OCEAN_SIZE connected ocean chunks)
+    if not _is_part_of_large_ocean(ocean_neighbor_pos):
         return
     
     # Find suitable location for lighthouse near chunk edge facing ocean
@@ -1463,6 +1630,47 @@ func _get_estimated_chunk_height(chunk_pos: Vector2i) -> float:
             total_height += height
     
     return total_height / (samples * samples)
+
+## Check if an ocean chunk is part of a "large ocean" (at least MIN_LARGE_OCEAN_SIZE connected ocean chunks)
+func _is_part_of_large_ocean(ocean_chunk_pos: Vector2i) -> bool:
+    # Use flood fill to count connected ocean chunks (limited search to avoid performance issues)
+    var visited: Dictionary = {}
+    var to_visit: Array[Vector2i] = [ocean_chunk_pos]
+    var ocean_count = 0
+    
+    while to_visit.size() > 0 and ocean_count < MAX_OCEAN_SEARCH_CHUNKS:
+        var current_pos = to_visit.pop_front()
+        
+        # Skip if already visited
+        if visited.has(current_pos):
+            continue
+        
+        visited[current_pos] = true
+        
+        # Check if this chunk is ocean
+        var chunk_height = _get_estimated_chunk_height(current_pos)
+        if chunk_height > OCEAN_LEVEL:
+            continue
+        
+        ocean_count += 1
+        
+        # If we've found enough ocean chunks, it's a large ocean
+        if ocean_count >= MIN_LARGE_OCEAN_SIZE:
+            return true
+        
+        # Add neighbors to visit
+        var neighbors = [
+            Vector2i(current_pos.x - 1, current_pos.y),
+            Vector2i(current_pos.x + 1, current_pos.y),
+            Vector2i(current_pos.x, current_pos.y - 1),
+            Vector2i(current_pos.x, current_pos.y + 1)
+        ]
+        
+        for neighbor in neighbors:
+            if not visited.has(neighbor):
+                to_visit.append(neighbor)
+    
+    return ocean_count >= MIN_LARGE_OCEAN_SIZE
 
 ## Find a suitable coastal position for lighthouse
 func _find_coastal_position(rng: RandomNumberGenerator) -> Vector3:
@@ -1641,6 +1849,155 @@ func _place_fishing_boat(pos: Vector3, rng: RandomNumberGenerator, ocean_directi
     placed_fishing_boat.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
     
     add_child(placed_fishing_boat)
+
+# ============================================================================
+# STONE ANIMAL GRAVEL AREA SYSTEM
+# ============================================================================
+
+## Place unique gravel area with stone animals at limited distance from spawn
+func _place_gravel_area_with_stone_animals() -> void:
+    # Check distance from origin (starting area at 0,0)
+    var distance_from_origin = Vector2(chunk_x, chunk_z).length() * CHUNK_SIZE
+    
+    # Only place gravel area at limited distance from spawn
+    # Should be further than FISHING_BOAT_PLACEMENT_RADIUS but not too far
+    if distance_from_origin < FISHING_BOAT_PLACEMENT_RADIUS or distance_from_origin > GRAVEL_AREA_PLACEMENT_RADIUS:
+        return
+    
+    # Don't place in ocean chunks
+    if is_ocean:
+        return
+    
+    # Don't place in lake areas
+    if has_lake:
+        return
+    
+    # Don't place in unique mountain areas (too rocky)
+    if is_unique_mountain:
+        return
+    
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ GRAVEL_AREA_SEED_OFFSET
+    
+    # Only place one gravel area in the entire game world
+    # Use a deterministic check to ensure only one chunk gets the gravel area
+    var gravel_chunk_hash = hash(Vector2i(chunk_x, chunk_z))
+    # Hash-based selection ensures only one chunk matches this condition
+    if (gravel_chunk_hash % GRAVEL_AREA_SELECTION_MODULO) != GRAVEL_AREA_SELECTION_VALUE:
+        return
+    
+    # Find suitable location for gravel area (relatively flat area)
+    var gravel_pos = _find_gravel_area_position(rng)
+    
+    if gravel_pos:
+        has_gravel_area = true
+        gravel_area_center = Vector2(gravel_pos.x, gravel_pos.z)
+        _create_gravel_area(gravel_pos, rng)
+        _place_stone_animals_in_gravel_area(gravel_pos, rng)
+
+## Find a suitable position for the gravel area (relatively flat terrain)
+func _find_gravel_area_position(rng: RandomNumberGenerator) -> Vector3:
+    # Try to find a relatively flat area in the chunk
+    var best_pos = Vector3.ZERO
+    var best_flatness = 999.0  # Lower is better (less slope variation)
+    
+    # Sample several random positions
+    for i in range(10):
+        var local_x = rng.randf_range(GRAVEL_AREA_RADIUS + 2.0, CHUNK_SIZE - GRAVEL_AREA_RADIUS - 2.0)
+        var local_z = rng.randf_range(GRAVEL_AREA_RADIUS + 2.0, CHUNK_SIZE - GRAVEL_AREA_RADIUS - 2.0)
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Check flatness by sampling nearby heights
+        var height_variance = 0.0
+        for j in range(GRAVEL_AREA_FLATNESS_SAMPLE_COUNT):
+            var angle = (float(j) / GRAVEL_AREA_FLATNESS_SAMPLE_COUNT) * TAU
+            var offset = 3.0
+            var sample_x = world_x + cos(angle) * offset
+            var sample_z = world_z + sin(angle) * offset
+            var sample_height = get_height_at_world_pos(sample_x, sample_z)
+            height_variance += abs(sample_height - height)
+        
+        if height_variance < best_flatness:
+            best_flatness = height_variance
+            best_pos = Vector3(local_x, height, local_z)
+    
+    return best_pos
+
+## Create the gravel area with pebbles
+func _create_gravel_area(center_pos: Vector3, rng: RandomNumberGenerator) -> void:
+    # Place many small pebbles to create a gravel floor
+    for i in range(GRAVEL_PEBBLE_DENSITY):
+        # Random position within the gravel area radius
+        var angle = rng.randf() * TAU
+        var radius = rng.randf() * GRAVEL_AREA_RADIUS
+        var local_x = center_pos.x + cos(angle) * radius
+        var local_z = center_pos.z + sin(angle) * radius
+        
+        # Make sure we stay within chunk bounds
+        if local_x < 0 or local_x >= CHUNK_SIZE or local_z < 0 or local_z >= CHUNK_SIZE:
+            continue
+        
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Create pebble instance
+        var pebble_seed = rng.randi()
+        var pebble_instance = MeshInstance3D.new()
+        pebble_instance.mesh = ProceduralModels.create_gravel_pebble_mesh(pebble_seed)
+        pebble_instance.material_override = ProceduralModels.create_gravel_material()
+        pebble_instance.position = Vector3(local_x, height, local_z)
+        pebble_instance.rotation.y = rng.randf() * TAU
+        pebble_instance.rotation.x = rng.randf_range(-0.2, 0.2)
+        pebble_instance.rotation.z = rng.randf_range(-0.2, 0.2)
+        pebble_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # Too small for shadows
+        
+        add_child(pebble_instance)
+        placed_gravel_pebbles.append(pebble_instance)
+
+## Place stone animals in the gravel area
+func _place_stone_animals_in_gravel_area(center_pos: Vector3, rng: RandomNumberGenerator) -> void:
+    var num_animals = rng.randi_range(STONE_ANIMAL_COUNT_MIN, STONE_ANIMAL_COUNT_MAX)
+    
+    # Ensure we have a variety of animal types
+    var animal_types = [
+        ProceduralModels.StoneAnimalType.BIRD,
+        ProceduralModels.StoneAnimalType.RABBIT,
+        ProceduralModels.StoneAnimalType.DEER,
+        ProceduralModels.StoneAnimalType.FOX
+    ]
+    
+    for i in range(num_animals):
+        # Random position within the gravel area (closer to center)
+        var angle = rng.randf() * TAU
+        var radius = rng.randf() * (GRAVEL_AREA_RADIUS * STONE_ANIMAL_PLACEMENT_RATIO)  # Keep animals more central
+        var local_x = center_pos.x + cos(angle) * radius
+        var local_z = center_pos.z + sin(angle) * radius
+        
+        # Make sure we stay within chunk bounds
+        if local_x < 0 or local_x >= CHUNK_SIZE or local_z < 0 or local_z >= CHUNK_SIZE:
+            continue
+        
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Select animal type (ensure variety)
+        var animal_type = animal_types[i % animal_types.size()]
+        
+        # Create stone animal instance
+        var animal_seed = rng.randi()
+        var animal_instance = MeshInstance3D.new()
+        animal_instance.mesh = ProceduralModels.create_stone_animal_mesh(animal_type, animal_seed)
+        animal_instance.material_override = ProceduralModels.create_stone_animal_material()
+        animal_instance.position = Vector3(local_x, height, local_z)
+        animal_instance.rotation.y = rng.randf() * TAU  # Random facing direction
+        animal_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+        
+        add_child(animal_instance)
+        placed_stone_animals.append(animal_instance)
 
 # ============================================================================
 # AMBIENT SOUND SYSTEM
