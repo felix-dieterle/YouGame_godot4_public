@@ -47,7 +47,7 @@ func test_day_cycle_constants():
 	print("\n--- Test: Day Cycle Constants ---")
 	
 	# Verify constants are set correctly
-	assert_equal(DayNightCycle.DAY_CYCLE_DURATION, 30.0 * 60.0, "Day cycle should be 30 minutes")
+	assert_equal(DayNightCycle.DAY_CYCLE_DURATION, 90.0 * 60.0, "Day cycle should be 90 minutes")
 	assert_equal(DayNightCycle.SUNRISE_DURATION, 60.0, "Sunrise should be 1 minute")
 	assert_equal(DayNightCycle.SUNSET_DURATION, 60.0, "Sunset should be 1 minute")
 	assert_equal(DayNightCycle.SLEEP_LOCKOUT_DURATION, 4.0 * 60.0 * 60.0, "Lockout should be 4 hours")
@@ -98,7 +98,7 @@ func test_time_progression():
 	await get_tree().process_frame
 	
 	# Test initial state - should start INITIAL_TIME_OFFSET_HOURS into the day
-	# Display will show 7:00 AM due to sun_time_offset_hours = -3.0
+	# Display will show 7:00 AM due to INITIAL_TIME_OFFSET_HOURS = 0.0 and sun_time_offset_hours = 0.0
 	var expected_initial_time = DayNightCycle.DAY_CYCLE_DURATION * (DayNightCycle.INITIAL_TIME_OFFSET_HOURS / DayNightCycle.DAY_DURATION_HOURS)
 	assert_equal(day_night.current_time, expected_initial_time, "Initial time should be INITIAL_TIME_OFFSET_HOURS into day cycle")
 	assert_equal(day_night.is_night, false, "Should start as day")
@@ -328,7 +328,7 @@ func test_brightness_at_8am():
 	
 	# IMPORTANT: The day cycle represents time AFTER sunrise animation completes
 	# Sunrise animation: 6:00-7:00 AM (60 seconds real time)
-	# Day cycle: 7:00 AM to 5:00 PM (10 hours in-game, 30 minutes real time)
+	# Day cycle: 7:00 AM to 5:00 PM (10 hours in-game, 90 minutes real time)
 	# Current implementation has a bug - uses 11-hour cycle from 6 AM instead
 	# This test uses the CORRECT mapping to expose the time display bug
 	
@@ -566,8 +566,8 @@ func test_time_progression_to_930am():
 	
 	# 9:30 AM is 2.5 hours after 7:00 AM
 	# In the 10-hour day cycle (7 AM to 5 PM), this is 25% of the cycle
-	# DAY_CYCLE_DURATION = 1800 seconds (30 minutes)
-	# Time to 9:30 AM = 0.25 * 1800 = 450 seconds
+	# DAY_CYCLE_DURATION = 5400 seconds (90 minutes)
+	# Time to 9:30 AM = 0.25 * 5400 = 1350 seconds
 	const TARGET_TIME_930AM = 0.25 * DayNightCycle.DAY_CYCLE_DURATION
 	
 	# Simulate time progression (use 1 second steps for reasonable speed)

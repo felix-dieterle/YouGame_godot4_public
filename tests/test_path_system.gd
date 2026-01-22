@@ -29,12 +29,25 @@ func test_path_generation():
 	else:
 		print("FAIL: Unexpected path segments at starting chunk: ", segments.size())
 	
-	# Test a different chunk to verify path system still works
-	var test_chunk_pos = Vector2i(1, 0)
-	var test_segments = PathSystem.get_path_segments_for_chunk(test_chunk_pos, world_seed)
+	# Test chunks adjacent to origin should have initial paths
+	var adjacent_chunks = [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]
 	
-	# Note: test_segments may be empty if no paths come from neighbors
-	print("INFO: Test chunk ", test_chunk_pos, " has ", test_segments.size(), " segment(s)")
+	var paths_found = 0
+	for test_chunk_pos in adjacent_chunks:
+		var test_segments = PathSystem.get_path_segments_for_chunk(test_chunk_pos, world_seed)
+		if test_segments.size() > 0:
+			paths_found += 1
+			print("INFO: Adjacent chunk ", test_chunk_pos, " has ", test_segments.size(), " segment(s)")
+	
+	if paths_found > 0:
+		print("PASS: Initial paths created in adjacent chunks (", paths_found, "/4)")
+	else:
+		print("FAIL: No initial paths found in adjacent chunks")
 
 func test_path_continuation():
 	print("\n--- Test: Path Continuation Across Chunks ---")

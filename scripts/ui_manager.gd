@@ -7,6 +7,7 @@ var chunk_info_label: Label
 var version_label: Label
 var time_label: Label
 var time_speed_label: Label  # Shows current time speed multiplier
+var sun_position_label: Label  # Shows current sun position (0-180°)
 var time_minus_button: Button  # Slow down time
 var time_plus_button: Button  # Speed up time
 var night_overlay: ColorRect
@@ -14,6 +15,16 @@ var night_label: Label
 var countdown_timer: Timer
 var crystal_counter_panel: PanelContainer  # Container for crystal counters
 var crystal_labels: Dictionary = {}  # Maps CrystalType to Label
+var inventory_panel: PanelContainer  # Inventory UI panel
+var inventory_visible: bool = false  # Track inventory visibility
+var torch_count_label: Label  # Label for torch count
+var flint_stone_count_label: Label  # Label for flint stone count
+var mushroom_count_label: Label  # Label for mushroom count
+var bottle_fill_label: Label  # Label for bottle fill level
+var selected_item_label: Label  # Label for selected item
+var air_bar: ProgressBar  # Air bar
+var health_bar: ProgressBar  # Health bar
+var game_over_overlay: ColorRect  # Game over screen
 
 # State
 var initial_loading_complete: bool = false
@@ -37,6 +48,7 @@ const VERSION_LABEL_Z_INDEX: int = 50  # Above most UI elements but below debug 
 const TIME_LABEL_OFFSET_Y: float = -25.0  # Offset above version label
 const TIME_SPEED_LABEL_OFFSET_Y: float = -70.0  # Offset above time label (increased for larger buttons)
 const TIME_SPEED_LABEL_BUTTON_SPACE: float = -90.0  # Space reserved for buttons (increased for larger buttons)
+const SUN_POSITION_LABEL_OFFSET_Y: float = -95.0  # Offset above time speed label
 const TIME_BUTTON_WIDTH: float = 40.0  # Increased from 25.0 for better touch targets on Android
 const TIME_BUTTON_HEIGHT: float = 40.0  # Increased from 20.0 for better touch targets on Android
 const TIME_MINUS_BUTTON_OFFSET_X: float = -85.0  # Adjusted for larger button width
@@ -52,6 +64,10 @@ const DAY_DURATION_HOURS: float = 10.0  # 10-hour day cycle from 7:00 AM to 5:00
 # Night overlay constants
 const NIGHT_OVERLAY_COLOR: Color = Color(0.0, 0.0, 0.1, 0.9)  # Very dark blue
 const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
+
+# Game over constants
+const GAME_OVER_MESSAGE: String = "GAME OVER\n\nYou drowned!"
+const GAME_OVER_INSTRUCTION: String = "Restart the game to continue"
 
 # Game version
 var game_version: String = ""
@@ -141,6 +157,24 @@ func _ready() -> void:
     time_speed_label.visible = true
     add_child(time_speed_label)
     
+    # Create sun position label (bottom right, above time speed label)
+    sun_position_label = Label.new()
+    sun_position_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    sun_position_label.anchor_left = 1.0
+    sun_position_label.anchor_top = 1.0
+    sun_position_label.anchor_right = 1.0
+    sun_position_label.anchor_bottom = 1.0
+    sun_position_label.offset_left = VERSION_LABEL_OFFSET_LEFT
+    sun_position_label.offset_top = VERSION_LABEL_OFFSET_TOP + SUN_POSITION_LABEL_OFFSET_Y
+    sun_position_label.offset_right = VERSION_LABEL_OFFSET_RIGHT
+    sun_position_label.offset_bottom = VERSION_LABEL_OFFSET_BOTTOM + SUN_POSITION_LABEL_OFFSET_Y
+    sun_position_label.add_theme_font_size_override("font_size", 14)
+    sun_position_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5, 0.9))
+    sun_position_label.z_index = VERSION_LABEL_Z_INDEX
+    sun_position_label.text = "Sun: --°"
+    sun_position_label.visible = true
+    add_child(sun_position_label)
+    
     # Create minus button (slow down time)
     time_minus_button = Button.new()
     time_minus_button.text = "-"
@@ -219,6 +253,12 @@ func _ready() -> void:
     
     # Create crystal counter panel (top-right)
     _create_crystal_counter_panel()
+    
+    # Create inventory panel (initially hidden)
+    _create_inventory_panel()
+    
+    # Create air and health bars (bottom-left)
+    _create_air_health_bars()
     
     # Create and show start menu if save file exists
     _create_start_menu()
@@ -582,4 +622,357 @@ func update_time_scale(scale: float) -> void:
         time_speed_label.text = "%dx" % int(scale)
     else:
         time_speed_label.text = "%.2fx" % scale
+
+# Update sun position display
+# sun_degrees: 0-180 (0=sunrise, 90=noon, 180=sunset) or -1 for night
+func update_sun_position(sun_degrees: float) -> void:
+    if not sun_position_label:
+        return
+    
+    # During night, show "Night" instead of degrees
+    if sun_degrees < 0:
+        sun_position_label.text = "Sun: Night"
+    else:
+        # Display the sun position in degrees
+        sun_position_label.text = "Sun: %d°" % int(sun_degrees)
+
+## Create inventory panel
+func _create_inventory_panel() -> void:
+    # Create panel container
+    inventory_panel = PanelContainer.new()
+    inventory_panel.anchor_left = 0.5
+    inventory_panel.anchor_top = 0.5
+    inventory_panel.anchor_right = 0.5
+    inventory_panel.anchor_bottom = 0.5
+    inventory_panel.offset_left = -250
+    inventory_panel.offset_top = -200
+    inventory_panel.offset_right = 250
+    inventory_panel.offset_bottom = 200
+    inventory_panel.z_index = 100
+    inventory_panel.visible = false  # Initially hidden
+    
+    # Style the panel
+    var panel_style = StyleBoxFlat.new()
+    panel_style.bg_color = Color(0.1, 0.1, 0.15, 0.95)
+    panel_style.corner_radius_top_left = 10
+    panel_style.corner_radius_top_right = 10
+    panel_style.corner_radius_bottom_left = 10
+    panel_style.corner_radius_bottom_right = 10
+    panel_style.border_color = Color(0.5, 0.5, 0.6, 1.0)
+    panel_style.border_width_left = 3
+    panel_style.border_width_right = 3
+    panel_style.border_width_top = 3
+    panel_style.border_width_bottom = 3
+    inventory_panel.add_theme_stylebox_override("panel", panel_style)
+    
+    # Create VBoxContainer
+    var vbox = VBoxContainer.new()
+    vbox.add_theme_constant_override("separation", 15)
+    vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+    vbox.offset_left = 20
+    vbox.offset_top = 20
+    vbox.offset_right = -20
+    vbox.offset_bottom = -20
+    inventory_panel.add_child(vbox)
+    
+    # Title
+    var title = Label.new()
+    title.text = "Inventory"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 28)
+    title.add_theme_color_override("font_color", Color(1, 1, 1))
+    vbox.add_child(title)
+    
+    # Separator
+    var separator1 = HSeparator.new()
+    vbox.add_child(separator1)
+    
+    # Torch count
+    var torch_hbox = HBoxContainer.new()
+    torch_hbox.add_theme_constant_override("separation", 10)
+    
+    var torch_icon = ColorRect.new()
+    torch_icon.custom_minimum_size = Vector2(32, 32)
+    torch_icon.color = Color(1.0, 0.6, 0.1)  # Orange color for torch
+    torch_hbox.add_child(torch_icon)
+    
+    torch_count_label = Label.new()
+    torch_count_label.text = "Torches: 100"
+    torch_count_label.add_theme_font_size_override("font_size", 20)
+    torch_count_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    torch_count_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    torch_hbox.add_child(torch_count_label)
+    
+    vbox.add_child(torch_hbox)
+    
+    # Flint stone count
+    var flint_hbox = HBoxContainer.new()
+    flint_hbox.add_theme_constant_override("separation", 10)
+    
+    var flint_icon = ColorRect.new()
+    flint_icon.custom_minimum_size = Vector2(32, 32)
+    flint_icon.color = Color(0.5, 0.5, 0.5)  # Gray color for flint
+    flint_hbox.add_child(flint_icon)
+    
+    flint_stone_count_label = Label.new()
+    flint_stone_count_label.text = "Flint Stones: 2"
+    flint_stone_count_label.add_theme_font_size_override("font_size", 20)
+    flint_stone_count_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    flint_stone_count_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    flint_hbox.add_child(flint_stone_count_label)
+    
+    vbox.add_child(flint_hbox)
+    
+    # Mushroom count
+    var mushroom_hbox = HBoxContainer.new()
+    mushroom_hbox.add_theme_constant_override("separation", 10)
+    
+    var mushroom_icon = ColorRect.new()
+    mushroom_icon.custom_minimum_size = Vector2(32, 32)
+    mushroom_icon.color = Color(0.8, 0.4, 0.3)  # Brown/red color for mushroom
+    mushroom_hbox.add_child(mushroom_icon)
+    
+    mushroom_count_label = Label.new()
+    mushroom_count_label.text = "Mushrooms: 0"
+    mushroom_count_label.add_theme_font_size_override("font_size", 20)
+    mushroom_count_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    mushroom_count_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    mushroom_hbox.add_child(mushroom_count_label)
+    
+    vbox.add_child(mushroom_hbox)
+    
+    # Drinking bottle
+    var bottle_hbox = HBoxContainer.new()
+    bottle_hbox.add_theme_constant_override("separation", 10)
+    
+    var bottle_icon = ColorRect.new()
+    bottle_icon.custom_minimum_size = Vector2(32, 32)
+    bottle_icon.color = Color(0.3, 0.5, 0.8)  # Blue color for water bottle
+    bottle_hbox.add_child(bottle_icon)
+    
+    bottle_fill_label = Label.new()
+    bottle_fill_label.text = "Water Bottle: 100%"
+    bottle_fill_label.add_theme_font_size_override("font_size", 20)
+    bottle_fill_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    bottle_fill_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    bottle_hbox.add_child(bottle_fill_label)
+    
+    vbox.add_child(bottle_hbox)
+    
+    # Selected item
+    var separator2 = HSeparator.new()
+    vbox.add_child(separator2)
+    
+    var selected_label_title = Label.new()
+    selected_label_title.text = "Selected Item:"
+    selected_label_title.add_theme_font_size_override("font_size", 18)
+    selected_label_title.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
+    vbox.add_child(selected_label_title)
+    
+    selected_item_label = Label.new()
+    selected_item_label.text = "Torch"
+    selected_item_label.add_theme_font_size_override("font_size", 24)
+    selected_item_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3))
+    selected_item_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    vbox.add_child(selected_item_label)
+    
+    # Spacer
+    var spacer = Control.new()
+    spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    vbox.add_child(spacer)
+    
+    # Instructions
+    var instructions = Label.new()
+    instructions.text = "Press 'I' to close inventory\nPress 'F' to place torch\nPress 'C' to use flint stones (create campfire)"
+    instructions.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    instructions.add_theme_font_size_override("font_size", 14)
+    instructions.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+    vbox.add_child(instructions)
+    
+    add_child(inventory_panel)
+    
+    # Load initial item counts from player
+    var player = get_tree().get_first_node_in_group("Player")
+    if player:
+        if "torch_count" in player:
+            update_torch_count(player.torch_count)
+        if "flint_stone_count" in player:
+            update_flint_stone_count(player.flint_stone_count)
+        if "mushroom_count" in player:
+            update_mushroom_count(player.mushroom_count)
+        if "bottle_fill_level" in player:
+            update_bottle_fill_level(player.bottle_fill_level)
+
+## Toggle inventory UI visibility
+func toggle_inventory_ui() -> void:
+    inventory_visible = not inventory_visible
+    if inventory_panel:
+        inventory_panel.visible = inventory_visible
+    
+    # Log state change
+    if inventory_visible:
+        print("UIManager: Inventory opened")
+    else:
+        print("UIManager: Inventory closed")
+
+## Update torch count display
+func update_torch_count(count: int) -> void:
+    if torch_count_label:
+        torch_count_label.text = "Torches: %d" % count
+
+## Create air and health bars
+func _create_air_health_bars() -> void:
+    # Create container for bars
+    var bars_container = VBoxContainer.new()
+    bars_container.anchor_left = 0.0
+    bars_container.anchor_top = 1.0
+    bars_container.anchor_right = 0.0
+    bars_container.anchor_bottom = 1.0
+    bars_container.offset_left = 20
+    bars_container.offset_top = -120
+    bars_container.offset_right = 220
+    bars_container.offset_bottom = -20
+    bars_container.add_theme_constant_override("separation", 10)
+    bars_container.z_index = 60
+    add_child(bars_container)
+    
+    # Health bar (top)
+    var health_label = Label.new()
+    health_label.text = "Health"
+    health_label.add_theme_font_size_override("font_size", 14)
+    health_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+    bars_container.add_child(health_label)
+    
+    health_bar = ProgressBar.new()
+    health_bar.custom_minimum_size = Vector2(200, 20)
+    health_bar.min_value = 0
+    health_bar.max_value = 100
+    health_bar.value = 100
+    health_bar.show_percentage = false
+    
+    # Style health bar
+    var health_style = StyleBoxFlat.new()
+    health_style.bg_color = Color(0.8, 0.2, 0.2, 0.9)  # Red
+    health_style.corner_radius_top_left = 3
+    health_style.corner_radius_top_right = 3
+    health_style.corner_radius_bottom_left = 3
+    health_style.corner_radius_bottom_right = 3
+    health_bar.add_theme_stylebox_override("fill", health_style)
+    
+    var health_bg_style = StyleBoxFlat.new()
+    health_bg_style.bg_color = Color(0.2, 0.2, 0.2, 0.9)
+    health_bg_style.corner_radius_top_left = 3
+    health_bg_style.corner_radius_top_right = 3
+    health_bg_style.corner_radius_bottom_left = 3
+    health_bg_style.corner_radius_bottom_right = 3
+    health_bar.add_theme_stylebox_override("background", health_bg_style)
+    
+    bars_container.add_child(health_bar)
+    
+    # Air bar (bottom)
+    var air_label = Label.new()
+    air_label.text = "Air"
+    air_label.add_theme_font_size_override("font_size", 14)
+    air_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+    bars_container.add_child(air_label)
+    
+    air_bar = ProgressBar.new()
+    air_bar.custom_minimum_size = Vector2(200, 20)
+    air_bar.min_value = 0
+    air_bar.max_value = 100
+    air_bar.value = 100
+    air_bar.show_percentage = false
+    
+    # Style air bar
+    var air_style = StyleBoxFlat.new()
+    air_style.bg_color = Color(0.2, 0.6, 1.0, 0.9)  # Light blue
+    air_style.corner_radius_top_left = 3
+    air_style.corner_radius_top_right = 3
+    air_style.corner_radius_bottom_left = 3
+    air_style.corner_radius_bottom_right = 3
+    air_bar.add_theme_stylebox_override("fill", air_style)
+    
+    var air_bg_style = StyleBoxFlat.new()
+    air_bg_style.bg_color = Color(0.2, 0.2, 0.2, 0.9)
+    air_bg_style.corner_radius_top_left = 3
+    air_bg_style.corner_radius_top_right = 3
+    air_bg_style.corner_radius_bottom_left = 3
+    air_bg_style.corner_radius_bottom_right = 3
+    air_bar.add_theme_stylebox_override("background", air_bg_style)
+    
+    bars_container.add_child(air_bar)
+
+## Update air and health bars
+func update_air_health_bars(current_air: float, max_air: float, current_health: float, max_health: float) -> void:
+    if air_bar:
+        air_bar.max_value = max_air
+        air_bar.value = current_air
+    
+    if health_bar:
+        health_bar.max_value = max_health
+        health_bar.value = current_health
+
+## Show game over screen
+func show_game_over() -> void:
+    # Create game over overlay if it doesn't exist
+    if not game_over_overlay:
+        game_over_overlay = ColorRect.new()
+        game_over_overlay.anchor_right = 1.0
+        game_over_overlay.anchor_bottom = 1.0
+        game_over_overlay.color = Color(0.0, 0.0, 0.0, 0.9)
+        game_over_overlay.z_index = 300  # Above everything
+        add_child(game_over_overlay)
+        
+        # Create label
+        var game_over_label = Label.new()
+        game_over_label.anchor_left = 0.5
+        game_over_label.anchor_top = 0.5
+        game_over_label.anchor_right = 0.5
+        game_over_label.anchor_bottom = 0.5
+        game_over_label.offset_left = -200
+        game_over_label.offset_top = -100
+        game_over_label.offset_right = 200
+        game_over_label.offset_bottom = 100
+        game_over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        game_over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+        game_over_label.add_theme_font_size_override("font_size", 48)
+        game_over_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+        game_over_label.text = GAME_OVER_MESSAGE
+        game_over_overlay.add_child(game_over_label)
+        
+        # Add instruction
+        var instruction_label = Label.new()
+        instruction_label.anchor_left = 0.5
+        instruction_label.anchor_top = 0.5
+        instruction_label.anchor_right = 0.5
+        instruction_label.anchor_bottom = 0.5
+        instruction_label.offset_left = -200
+        instruction_label.offset_top = 100
+        instruction_label.offset_right = 200
+        instruction_label.offset_bottom = 150
+        instruction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        instruction_label.add_theme_font_size_override("font_size", 18)
+        instruction_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+        instruction_label.text = GAME_OVER_INSTRUCTION
+        game_over_overlay.add_child(instruction_label)
+    
+    game_over_overlay.visible = true
+    
+    # Pause the game
+    get_tree().paused = true
+## Update flint stone count display
+func update_flint_stone_count(count: int) -> void:
+    if flint_stone_count_label:
+        flint_stone_count_label.text = "Flint Stones: %d" % count
+
+## Update mushroom count display
+func update_mushroom_count(count: int) -> void:
+    if mushroom_count_label:
+        mushroom_count_label.text = "Mushrooms: %d" % count
+
+## Update bottle fill level display
+func update_bottle_fill_level(level: float) -> void:
+    if bottle_fill_label:
+        bottle_fill_label.text = "Water Bottle: %d%%" % int(level)
+
 

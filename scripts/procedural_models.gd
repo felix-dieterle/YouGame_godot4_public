@@ -9,11 +9,11 @@ class_name ProceduralModels
 ## - Rocks (for terrain decoration)
 ## All models are optimized for mobile rendering
 
-# Tree generation constants
-const TREE_TRUNK_HEIGHT = 2.0
-const TREE_TRUNK_RADIUS = 0.15
-const TREE_CANOPY_RADIUS = 1.2
-const TREE_CANOPY_HEIGHT = 2.5
+# Tree generation constants - Increased for larger, more prominent trees
+const TREE_TRUNK_HEIGHT = 4.0  # Increased from 2.0 for taller trees
+const TREE_TRUNK_RADIUS = 0.25  # Increased from 0.15 for thicker trunks
+const TREE_CANOPY_RADIUS = 2.5  # Increased from 1.2 for wider canopies
+const TREE_CANOPY_HEIGHT = 4.5  # Increased from 2.5 for taller canopies
 const TREE_TRUNK_SEGMENTS = 6
 const TREE_CANOPY_SEGMENTS = 8
 
@@ -41,6 +41,39 @@ const LIGHTHOUSE_TOWER_RADIUS = 0.8
 const LIGHTHOUSE_TOWER_SEGMENTS = 8
 const LIGHTHOUSE_BEACON_HEIGHT = 1.5
 const LIGHTHOUSE_BEACON_RADIUS = 1.2
+
+# Fishing boat generation constants
+const BOAT_LENGTH = 4.0
+const BOAT_WIDTH = 1.5
+const BOAT_HEIGHT = 0.8
+const BOAT_SEGMENTS = 8
+const BOAT_BENCH_OFFSET_RATIO = 0.2  # Position of bench along boat length
+const BOAT_BENCH_THICKNESS_RATIO = 0.3  # Bench height relative to its base position
+
+# Stone animal generation constants
+const STONE_ANIMAL_BIRD_HEIGHT = 0.6
+const STONE_ANIMAL_BIRD_WIDTH = 0.4
+const STONE_ANIMAL_RABBIT_HEIGHT = 0.5
+const STONE_ANIMAL_RABBIT_WIDTH = 0.4
+const STONE_ANIMAL_DEER_HEIGHT = 1.2
+const STONE_ANIMAL_DEER_WIDTH = 0.7
+const STONE_ANIMAL_FOX_HEIGHT = 0.6
+const STONE_ANIMAL_FOX_WIDTH = 0.5
+const STONE_COLOR = Color(0.5, 0.5, 0.55)  # Gray stone color
+
+# Gravel/pebble generation constants
+const GRAVEL_PEBBLE_MIN_SIZE = 0.05
+const GRAVEL_PEBBLE_MAX_SIZE = 0.15
+const GRAVEL_PEBBLE_SIZE_VARIANCE_X_MIN = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_X_MAX = 1.2
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MIN = 0.4
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MAX = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MIN = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MAX = 1.2
+# Fence post generation constants
+const FENCE_POST_HEIGHT = 1.5  # Height of wooden fence post
+const FENCE_POST_RADIUS = 0.1  # Radius of fence post
+const FENCE_POST_SEGMENTS = 6  # Number of segments (hexagonal shape)
 
 # Tree type enum
 enum TreeType {
@@ -82,39 +115,55 @@ static func create_tree_mesh(seed_val: int = 0, tree_type: int = TreeType.AUTO) 
     surface_tool.generate_normals()
     return surface_tool.commit()
 
-## Create a conifer (pine/spruce) tree
+## Create a conifer (pine/spruce) tree with enhanced realism
 static func _create_conifer_tree(st: SurfaceTool, rng: RandomNumberGenerator):
-    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(1.2, 1.5)
-    var base_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.6, 0.8)
+    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(1.3, 1.6)  # Taller trunks for conifers
+    var base_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.7, 0.9)
     
-    # Trunk (brown cylinder)
-    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS * 0.8, 
-                  TREE_TRUNK_SEGMENTS, Color(0.35, 0.22, 0.13))
+    # Trunk (brown cylinder with darker brown for conifers)
+    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS * 0.9, 
+                  TREE_TRUNK_SEGMENTS, Color(0.3, 0.18, 0.10))
     
-    # Multiple cone layers for conifer shape
-    var layer_count = 3
+    # Multiple cone layers for classic conifer shape - more layers for better appearance
+    var layer_count = 4  # Increased from 3 for fuller trees
     for i in range(layer_count):
-        var layer_height = trunk_height + i * 0.8
-        var cone_height = 1.5
-        var cone_radius = base_radius * (1.0 - i * 0.25)
-        var green_shade = rng.randf_range(0.15, 0.25)
+        var layer_height = trunk_height + i * 0.9
+        var cone_height = 1.8  # Taller cone sections
+        var cone_radius = base_radius * (1.0 - i * 0.2)  # Gradual taper
+        var green_shade = rng.randf_range(0.12, 0.20)  # Darker greens for conifers
         _add_cone(st, Vector3(0, layer_height, 0), cone_height, 
-                  cone_radius, TREE_CANOPY_SEGMENTS, Color(green_shade, 0.5 + green_shade, green_shade))
+                  cone_radius, TREE_CANOPY_SEGMENTS, Color(green_shade, 0.45 + green_shade, green_shade))
 
-## Create a broad-leaf tree (original style)
+## Create a broad-leaf tree with improved multi-layer canopy
 static func _create_broadleaf_tree(st: SurfaceTool, rng: RandomNumberGenerator):
-    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(0.9, 1.1)
-    var canopy_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.8, 1.2)
-    var canopy_height = TREE_CANOPY_HEIGHT * rng.randf_range(0.9, 1.1)
+    var trunk_height = TREE_TRUNK_HEIGHT * rng.randf_range(1.1, 1.4)  # Taller trunks for broadleaf
+    var base_radius = TREE_CANOPY_RADIUS * rng.randf_range(0.9, 1.2)
     
-    # Trunk (brown cylinder)
-    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS, 
-                  TREE_TRUNK_SEGMENTS, Color(0.4, 0.25, 0.15))
+    # Trunk (brown cylinder with slight variation)
+    var trunk_brown = Color(0.35, 0.22, 0.14)
+    _add_cylinder(st, Vector3.ZERO, trunk_height, TREE_TRUNK_RADIUS * 1.2, 
+                  TREE_TRUNK_SEGMENTS, trunk_brown)
     
-    # Canopy (green cone)
-    var green_variation = rng.randf_range(-0.1, 0.1)
-    _add_cone(st, Vector3(0, trunk_height, 0), canopy_height, 
-              canopy_radius, TREE_CANOPY_SEGMENTS, Color(0.2 + green_variation, 0.6 + green_variation, 0.2 + green_variation))
+    # Multi-layer rounded canopy for realistic broadleaf appearance
+    # Use overlapping spherical shapes to create a fuller, more natural canopy
+    var layer_count = 3
+    var green_base = rng.randf_range(0.15, 0.25)
+    
+    for i in range(layer_count):
+        # Layers positioned to create rounded canopy shape
+        var layer_height = trunk_height + i * 1.2 - 0.3
+        var layer_radius = base_radius * (1.2 - i * 0.2)  # Slightly smaller as we go up
+        var cone_height = 2.2
+        
+        # Vary green shades for depth and realism
+        var green_shade = Color(green_base + i * 0.03, 0.5 + green_base + i * 0.02, green_base + i * 0.03)
+        _add_cone(st, Vector3(0, layer_height, 0), cone_height, 
+                  layer_radius, TREE_CANOPY_SEGMENTS, green_shade)
+    
+    # Add top crown cone for rounded top
+    var crown_height = trunk_height + (layer_count - 1) * 1.2 + 1.0
+    _add_cone(st, Vector3(0, crown_height, 0), 1.5, 
+              base_radius * 0.7, TREE_CANOPY_SEGMENTS, Color(green_base + 0.1, 0.55 + green_base, green_base + 0.1))
 
 ## Create a small bush
 static func _create_small_bush(st: SurfaceTool, rng: RandomNumberGenerator):
@@ -462,5 +511,385 @@ static func create_lighthouse_material() -> StandardMaterial3D:
     material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
     material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
     material.roughness = 0.6
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
+## Create a low-poly fishing boat mesh
+static func create_fishing_boat_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var st = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Boat colors - weathered wood brown
+    var wood_color = Color(0.45, 0.35, 0.25)
+    var dark_wood = Color(0.35, 0.25, 0.18)
+    
+    # Boat hull - create a simple boat shape with pointed front
+    var half_width = BOAT_WIDTH / 2.0
+    var half_length = BOAT_LENGTH / 2.0
+    
+    # Define hull vertices (bottom is flat for sitting in sand)
+    # Bottom vertices (y = 0)
+    var bottom_front = Vector3(half_length, 0, 0)  # Pointed front
+    var bottom_left_mid = Vector3(0, 0, -half_width)
+    var bottom_right_mid = Vector3(0, 0, half_width)
+    var bottom_left_back = Vector3(-half_length * 0.8, 0, -half_width * 0.7)
+    var bottom_right_back = Vector3(-half_length * 0.8, 0, half_width * 0.7)
+    var bottom_back = Vector3(-half_length, 0, 0)  # Slightly pointed back
+    
+    # Top vertices (y = BOAT_HEIGHT)
+    var top_front = Vector3(half_length * 0.9, BOAT_HEIGHT, 0)
+    var top_left_mid = Vector3(0, BOAT_HEIGHT, -half_width * 0.8)
+    var top_right_mid = Vector3(0, BOAT_HEIGHT, half_width * 0.8)
+    var top_left_back = Vector3(-half_length * 0.7, BOAT_HEIGHT, -half_width * 0.6)
+    var top_right_back = Vector3(-half_length * 0.7, BOAT_HEIGHT, half_width * 0.6)
+    var top_back = Vector3(-half_length * 0.85, BOAT_HEIGHT, 0)
+    
+    # Create hull sides - left side
+    st.set_color(wood_color)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_left_mid)
+    st.add_vertex(top_front)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_front)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(top_left_mid)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(top_left_back)
+    st.add_vertex(top_left_mid)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(top_left_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(top_back)
+    st.add_vertex(top_left_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(bottom_back)
+    st.add_vertex(top_back)
+    
+    # Right side (mirror of left)
+    st.set_color(wood_color)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_front)
+    st.add_vertex(top_right_mid)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_right_mid)
+    st.add_vertex(bottom_right_mid)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_right_mid)
+    st.add_vertex(top_right_mid)
+    st.add_vertex(top_right_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_right_mid)
+    st.add_vertex(top_right_back)
+    st.add_vertex(bottom_right_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_right_back)
+    st.add_vertex(top_right_back)
+    st.add_vertex(top_back)
+    
+    st.set_color(wood_color)
+    st.add_vertex(bottom_right_back)
+    st.add_vertex(top_back)
+    st.add_vertex(bottom_back)
+    
+    # Front triangular face
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_front)
+    st.add_vertex(top_left_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_left_mid)
+    st.add_vertex(bottom_left_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(bottom_right_mid)
+    st.add_vertex(top_right_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(top_right_mid)
+    st.add_vertex(top_front)
+    
+    # Back face
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_back)
+    st.add_vertex(top_left_back)
+    st.add_vertex(top_back)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_back)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(top_left_back)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_back)
+    st.add_vertex(top_back)
+    st.add_vertex(top_right_back)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_back)
+    st.add_vertex(top_right_back)
+    st.add_vertex(bottom_right_back)
+    
+    # Bottom (flat for sitting in sand)
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_front)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(bottom_right_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(bottom_right_back)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_left_mid)
+    st.add_vertex(bottom_right_back)
+    st.add_vertex(bottom_right_mid)
+    
+    st.set_color(dark_wood)
+    st.add_vertex(bottom_left_back)
+    st.add_vertex(bottom_back)
+    st.add_vertex(bottom_right_back)
+    
+    # Add a simple bench seat inside (darker wood)
+    # Bench is positioned slightly toward the back (negative offset) for realistic boat interior
+    var bench_y = BOAT_HEIGHT * 0.4
+    var bench_width = BOAT_WIDTH * 0.6
+    var bench_length = BOAT_LENGTH * 0.5
+    _add_box(st, Vector3(-bench_length * BOAT_BENCH_OFFSET_RATIO, bench_y, 0), 
+             Vector3(bench_length, bench_y * BOAT_BENCH_THICKNESS_RATIO, bench_width), dark_wood)
+    
+    st.generate_normals()
+    return st.commit()
+
+## Create a material for fishing boats
+static func create_fishing_boat_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.8  # Weathered wood
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
+## Stone animal type enum
+enum StoneAnimalType {
+    BIRD,
+    RABBIT,
+    DEER,
+    FOX
+}
+
+## Create a stone animal mesh
+static func create_stone_animal_mesh(animal_type: int, seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var st = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    match animal_type:
+        StoneAnimalType.BIRD:
+            _create_stone_bird(st, rng)
+        StoneAnimalType.RABBIT:
+            _create_stone_rabbit(st, rng)
+        StoneAnimalType.DEER:
+            _create_stone_deer(st, rng)
+        StoneAnimalType.FOX:
+            _create_stone_fox(st, rng)
+        _:
+            _create_stone_bird(st, rng)  # Default fallback
+    
+    st.generate_normals()
+    return st.commit()
+
+## Create a simple stone bird (abstract geometric shape)
+static func _create_stone_bird(st: SurfaceTool, rng: RandomNumberGenerator):
+    var height = STONE_ANIMAL_BIRD_HEIGHT * rng.randf_range(0.9, 1.1)
+    var width = STONE_ANIMAL_BIRD_WIDTH * rng.randf_range(0.9, 1.1)
+    
+    # Body (rounded shape)
+    var body_size = Vector3(width * 0.5, height * 0.4, width * 0.6)
+    _add_box(st, Vector3(0, height * 0.3, 0), body_size, STONE_COLOR)
+    
+    # Head (smaller sphere-like shape)
+    var head_size = Vector3(width * 0.3, height * 0.25, width * 0.3)
+    _add_box(st, Vector3(0, height * 0.7, width * 0.2), head_size, STONE_COLOR)
+    
+    # Beak (tiny pyramid-like shape)
+    var beak_size = Vector3(width * 0.1, height * 0.1, width * 0.15)
+    _add_box(st, Vector3(0, height * 0.7, width * 0.45), beak_size, STONE_COLOR)
+    
+    # Wings (flat shapes on sides)
+    var wing_size = Vector3(width * 0.15, height * 0.3, width * 0.4)
+    _add_box(st, Vector3(-width * 0.4, height * 0.3, 0), wing_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.4, height * 0.3, 0), wing_size, STONE_COLOR)
+
+## Create a simple stone rabbit
+static func _create_stone_rabbit(st: SurfaceTool, rng: RandomNumberGenerator):
+    var height = STONE_ANIMAL_RABBIT_HEIGHT * rng.randf_range(0.9, 1.1)
+    var width = STONE_ANIMAL_RABBIT_WIDTH * rng.randf_range(0.9, 1.1)
+    
+    # Body (round/oval)
+    var body_size = Vector3(width * 0.6, height * 0.5, width * 0.7)
+    _add_box(st, Vector3(0, height * 0.3, 0), body_size, STONE_COLOR)
+    
+    # Head (round)
+    var head_size = Vector3(width * 0.5, height * 0.35, width * 0.5)
+    _add_box(st, Vector3(0, height * 0.65, width * 0.3), head_size, STONE_COLOR)
+    
+    # Ears (long vertical shapes)
+    var ear_size = Vector3(width * 0.12, height * 0.4, width * 0.15)
+    _add_box(st, Vector3(-width * 0.25, height * 0.95, width * 0.3), ear_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.25, height * 0.95, width * 0.3), ear_size, STONE_COLOR)
+    
+    # Tail (small round bump)
+    var tail_size = Vector3(width * 0.2, height * 0.15, width * 0.2)
+    _add_box(st, Vector3(0, height * 0.2, -width * 0.5), tail_size, STONE_COLOR)
+
+## Create a simple stone deer
+static func _create_stone_deer(st: SurfaceTool, rng: RandomNumberGenerator):
+    var height = STONE_ANIMAL_DEER_HEIGHT * rng.randf_range(0.9, 1.1)
+    var width = STONE_ANIMAL_DEER_WIDTH * rng.randf_range(0.9, 1.1)
+    
+    # Body (elongated)
+    var body_size = Vector3(width * 0.5, height * 0.4, width * 1.0)
+    _add_box(st, Vector3(0, height * 0.5, 0), body_size, STONE_COLOR)
+    
+    # Neck (vertical elongated)
+    var neck_size = Vector3(width * 0.25, height * 0.35, width * 0.3)
+    _add_box(st, Vector3(0, height * 0.75, width * 0.4), neck_size, STONE_COLOR)
+    
+    # Head (smaller)
+    var head_size = Vector3(width * 0.3, height * 0.25, width * 0.35)
+    _add_box(st, Vector3(0, height * 0.95, width * 0.55), head_size, STONE_COLOR)
+    
+    # Antlers (simple V-shapes)
+    var antler_size = Vector3(width * 0.08, height * 0.3, width * 0.08)
+    _add_box(st, Vector3(-width * 0.2, height * 1.15, width * 0.55), antler_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.2, height * 1.15, width * 0.55), antler_size, STONE_COLOR)
+    
+    # Legs (four cylinders)
+    var leg_size = Vector3(width * 0.12, height * 0.45, width * 0.12)
+    _add_box(st, Vector3(-width * 0.25, height * 0.22, width * 0.35), leg_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.25, height * 0.22, width * 0.35), leg_size, STONE_COLOR)
+    _add_box(st, Vector3(-width * 0.25, height * 0.22, -width * 0.35), leg_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.25, height * 0.22, -width * 0.35), leg_size, STONE_COLOR)
+
+## Create a simple stone fox
+static func _create_stone_fox(st: SurfaceTool, rng: RandomNumberGenerator):
+    var height = STONE_ANIMAL_FOX_HEIGHT * rng.randf_range(0.9, 1.1)
+    var width = STONE_ANIMAL_FOX_WIDTH * rng.randf_range(0.9, 1.1)
+    
+    # Body (elongated, low to ground)
+    var body_size = Vector3(width * 0.5, height * 0.4, width * 0.9)
+    _add_box(st, Vector3(0, height * 0.35, 0), body_size, STONE_COLOR)
+    
+    # Head (triangular-ish)
+    var head_size = Vector3(width * 0.35, height * 0.3, width * 0.4)
+    _add_box(st, Vector3(0, height * 0.45, width * 0.5), head_size, STONE_COLOR)
+    
+    # Ears (triangular, pointed)
+    var ear_size = Vector3(width * 0.15, height * 0.25, width * 0.12)
+    _add_box(st, Vector3(-width * 0.2, height * 0.7, width * 0.5), ear_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.2, height * 0.7, width * 0.5), ear_size, STONE_COLOR)
+    
+    # Snout (pointed forward)
+    var snout_size = Vector3(width * 0.2, height * 0.15, width * 0.25)
+    _add_box(st, Vector3(0, height * 0.4, width * 0.75), snout_size, STONE_COLOR)
+    
+    # Tail (bushy, elevated)
+    var tail_size = Vector3(width * 0.25, height * 0.25, width * 0.5)
+    _add_box(st, Vector3(0, height * 0.45, -width * 0.7), tail_size, STONE_COLOR)
+
+## Create a material for stone animals
+static func create_stone_animal_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.9  # Stone is very rough
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
+## Create a simple gravel/pebble mesh
+static func create_gravel_pebble_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var st = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Create a small irregular pebble
+    var size = rng.randf_range(GRAVEL_PEBBLE_MIN_SIZE, GRAVEL_PEBBLE_MAX_SIZE)
+    var pebble_size = Vector3(
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_X_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_X_MAX),
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MAX),
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MAX)
+    )
+    
+    # Varied pebble colors (gray tones)
+    var pebble_color = Color(
+        0.45 + rng.randf_range(-0.05, 0.05),
+        0.45 + rng.randf_range(-0.05, 0.05),
+        0.47 + rng.randf_range(-0.05, 0.05)
+    )
+    
+    _add_box(st, Vector3.ZERO, pebble_size, pebble_color)
+    
+    st.generate_normals()
+    return st.commit()
+
+## Create a material for gravel/pebbles
+static func create_gravel_material() -> StandardMaterial3D:
+## Create a simple wooden fence post mesh
+static func create_fence_post_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Slight variation in height for natural look
+    var height = FENCE_POST_HEIGHT * rng.randf_range(0.9, 1.1)
+    var radius = FENCE_POST_RADIUS * rng.randf_range(0.9, 1.1)
+    
+    # Weathered wood color (grayish brown)
+    var wood_color = Color(0.45, 0.35, 0.25)
+    
+    # Create a simple cylinder for the post
+    _add_cylinder(surface_tool, Vector3.ZERO, height, radius, FENCE_POST_SEGMENTS, wood_color)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create material for fence posts
+static func create_fence_post_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.9  # Very rough, weathered wood
     material.cull_mode = BaseMaterial3D.CULL_BACK
     return material

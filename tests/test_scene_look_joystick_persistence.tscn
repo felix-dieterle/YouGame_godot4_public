@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b3f8q5v6w7x8y9"]
+
+[ext_resource type="Script" path="res://tests/test_look_joystick_persistence.gd" id="1_test"]
+
+[node name="TestLookJoystickPersistence" type="Node"]
+script = ExtResource("1_test")

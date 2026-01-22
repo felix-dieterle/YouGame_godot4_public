@@ -48,6 +48,7 @@ static var next_segment_id: int = 0
 # Constants - Reference chunk size from a known constant
 # Note: Must match the chunk size used in the game
 const CHUNK_SIZE = 32.0  # Should match Chunk.CHUNK_SIZE
+const CHUNK_CENTER_OFFSET = CHUNK_SIZE / 2.0  # Center position within a chunk
 const DEFAULT_PATH_WIDTH = 2.5  # Increased for better visibility
 const MAIN_PATH_WIDTH_MULTIPLIER = 1.5  # Main paths are 50% wider than default
 const BRANCH_PATH_WIDTH_MULTIPLIER = 0.8  # Branch paths are 80% of default width (20% narrower)
@@ -57,6 +58,14 @@ const MIN_SEGMENT_LENGTH = 8.0
 const MAX_SEGMENT_LENGTH = 20.0
 const PATH_ROUGHNESS = 0.3  # How much paths can deviate (0 = straight, 1 = very curvy)
 const MIN_STARTING_PATH_RATIO = 0.7  # Starting path is at least 70% of max length for visibility
+const BOUNDARY_DETECTION_THRESHOLD = 2.0  # Distance from edge to consider path exiting chunk
+
+# Ocean-related constants (must match Chunk constants)
+# NOTE: These values MUST stay synchronized with Chunk.OCEAN_LEVEL and Chunk.OCEAN_START_DISTANCE
+# to ensure consistent ocean detection across the path and chunk systems
+const OCEAN_LEVEL = -8.0  # Must match Chunk.OCEAN_LEVEL
+const OCEAN_START_DISTANCE = 160.0  # Must match Chunk.OCEAN_START_DISTANCE
+const OCEAN_PROXIMITY_THRESHOLD = 8.0  # Distance to consider "near" ocean for endpoint detection
 
 ## Generate or get path segments for a chunk
 static func get_path_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -> Array[PathSegment]:
@@ -86,6 +95,30 @@ static func _generate_segments_for_chunk(chunk_pos: Vector2i, world_seed: int) -
 	else:
 		# Check for incoming paths from neighboring chunks
 		new_segments = _continue_paths_from_neighbors(chunk_pos, world_seed, rng)
+		
+		# If no paths from neighbors, create initial paths for chunks adjacent to origin
+		# This ensures the path system has seed paths to continue from
+		if new_segments.is_empty():
+			var distance_from_origin = abs(chunk_pos.x) + abs(chunk_pos.y)
+			
+			# Create initial paths in chunks directly adjacent to origin (distance = 1)
+			if distance_from_origin == 1:
+				var start_pos = Vector2(CHUNK_CENTER_OFFSET, CHUNK_CENTER_OFFSET)
+				
+				# Determine direction away from origin
+				# Convert chunk grid position to direction vector (e.g., (1,0) -> right, (0,-1) -> up)
+				var direction = Vector2(chunk_pos).normalized()
+				
+				# Add some random variation
+				var angle_variation = rng.randf_range(-PI/8, PI/8)
+				direction = direction.rotated(angle_variation)
+				
+				# Create initial path segment with guaranteed visibility
+				var length = rng.randf_range(MIN_SEGMENT_LENGTH * MIN_STARTING_PATH_RATIO, MAX_SEGMENT_LENGTH)
+				var end_pos = start_pos + direction * length
+				
+				var initial_segment = _create_segment(chunk_pos, start_pos, end_pos, PathType.MAIN_PATH, rng)
+				new_segments.append(initial_segment)
 	
 	# Register segments
 	_register_segments(chunk_pos, new_segments)
@@ -146,19 +179,18 @@ static func _continue_paths_from_neighbors(chunk_pos: Vector2i, world_seed: int,
 ## Get position where segment exits chunk (if any)
 static func _get_chunk_exit_position(segment: PathSegment, segment_chunk: Vector2i, target_chunk: Vector2i) -> Vector2:
 	var end = segment.end_pos
-	var threshold = 2.0  # Distance from edge to consider exiting
 	
 	# Left neighbor
-	if target_chunk.x < segment_chunk.x and end.x < threshold:
+	if target_chunk.x < segment_chunk.x and end.x < BOUNDARY_DETECTION_THRESHOLD:
 		return end
 	# Right neighbor
-	if target_chunk.x > segment_chunk.x and end.x > CHUNK_SIZE - threshold:
+	if target_chunk.x > segment_chunk.x and end.x > CHUNK_SIZE - BOUNDARY_DETECTION_THRESHOLD:
 		return end
 	# Top neighbor
-	if target_chunk.y < segment_chunk.y and end.y < threshold:
+	if target_chunk.y < segment_chunk.y and end.y < BOUNDARY_DETECTION_THRESHOLD:
 		return end
 	# Bottom neighbor
-	if target_chunk.y > segment_chunk.y and end.y > CHUNK_SIZE - threshold:
+	if target_chunk.y > segment_chunk.y and end.y > CHUNK_SIZE - BOUNDARY_DETECTION_THRESHOLD:
 		return end
 	
 	return Vector2(-1, -1)  # No exit
@@ -312,6 +344,12 @@ static func _check_endpoint(segment: PathSegment, chunk_pos: Vector2i, world_see
 	# Check if segment ends near a forest or settlement cluster
 	var segment_world_end = _segment_end_world_pos(segment)
 	
+	# Check for nearby ocean/coastal areas first (higher priority)
+	var near_ocean = _is_near_ocean(segment_world_end)
+	if near_ocean:
+		segment.is_endpoint = true
+		return
+	
 	# Check for nearby clusters (using ClusterSystem if available)
 	var near_cluster = _is_near_cluster(segment_world_end, world_seed)
 	
@@ -352,6 +390,35 @@ static func _is_near_cluster(world_pos: Vector2, world_seed: int) -> bool:
 		
 		var distance = world_pos.distance_to(cluster_world_pos)
 		if distance < cluster.radius:
+			return true
+	
+	return false
+
+## Check if position is near ocean/coastal area
+static func _is_near_ocean(world_pos: Vector2) -> bool:
+	# Get chunk position
+	var chunk_x = int(floor(world_pos.x / CHUNK_SIZE))
+	var chunk_y = int(floor(world_pos.y / CHUNK_SIZE))
+	
+	# Check distance from origin - if far enough, it's ocean territory
+	var distance_from_origin = world_pos.length()
+	if distance_from_origin >= OCEAN_START_DISTANCE:
+		return true
+	
+	# Check neighboring chunks for ocean using estimated height
+	# This is a simplified check without full chunk generation
+	var neighbors = [
+		Vector2i(chunk_x, chunk_y),      # Current
+		Vector2i(chunk_x - 1, chunk_y),  # West
+		Vector2i(chunk_x + 1, chunk_y),  # East
+		Vector2i(chunk_x, chunk_y - 1),  # North
+		Vector2i(chunk_x, chunk_y + 1),  # South
+	]
+	
+	for neighbor_pos in neighbors:
+		# Estimate if this chunk would be ocean
+		var chunk_distance = Vector2(neighbor_pos.x * CHUNK_SIZE, neighbor_pos.y * CHUNK_SIZE).length()
+		if chunk_distance >= OCEAN_START_DISTANCE:
 			return true
 	
 	return false

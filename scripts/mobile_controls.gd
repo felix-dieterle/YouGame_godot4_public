@@ -14,23 +14,30 @@ var look_joystick_stick: Control
 var look_joystick_active: bool = false
 var look_joystick_touch_index: int = -1
 var look_joystick_vector: Vector2 = Vector2.ZERO
-var look_direction_indicator: Control  # Visual indicator for current look direction
+# Target camera angles in radians (set by joystick position)
+var look_target_yaw: float = 0.0  # Horizontal rotation
+var look_target_pitch: float = 0.0  # Vertical rotation
 
 # Menu button and settings panel
 var menu_button: Button
 var settings_panel: Panel
 var settings_visible: bool = false
 
+# Jetpack button
+var jetpack_button: Button
+var jetpack_pressed: bool = false
+
 # Configuration
 const JOYSTICK_RADIUS: float = 80.0
+const LOOK_JOYSTICK_RADIUS: float = 120.0  # 1.5x larger than movement joystick
 const STICK_RADIUS: float = 30.0
+const LOOK_STICK_RADIUS: float = 45.0  # Proportionally larger for look joystick (1.5x)
 const DEADZONE: float = 0.2
 const JOYSTICK_DETECTION_MULTIPLIER: float = 1.5  # Multiplier for joystick detection radius
+const MOVEMENT_HORIZONTAL_SENSITIVITY: float = 0.5  # Movement joystick left/right is half as sensitive
 const BUTTON_SIZE: float = 60.0
 const PANEL_WIDTH: float = 300.0
 const PANEL_HEIGHT: float = 350.0
-const INDICATOR_MARGIN: float = 10.0  # Margin for direction indicator from edge
-const INDICATOR_WIDTH: float = 6.0  # Width of direction indicator line
 @export var joystick_margin_x: float = 120.0
 @export var joystick_margin_y: float = 120.0
 @export var look_joystick_margin_x: float = 120.0  # Right margin for look joystick
@@ -112,6 +119,9 @@ func _ready() -> void:
     # Create look joystick (bottom right)
     _create_look_joystick()
     
+    # Create jetpack button (middle right)
+    _create_jetpack_button()
+    
     # Create menu button (bottom right)
     _create_menu_button()
     
@@ -128,24 +138,59 @@ func _ready() -> void:
     DebugLogOverlay.add_log("MobileControls._ready() completed", "green")
 
 func _process(_delta: float) -> void:
-    # Update the look direction indicator to show where the camera is pointing
-    _update_look_direction_indicator()
+    # Update the look joystick stick position to reflect current camera rotation
+    _update_look_joystick_stick_position()
 
-func _update_look_direction_indicator() -> void:
-    # Update the visual indicator to show current look direction
+func _update_look_joystick_stick_position() -> void:
+    # Update the look joystick stick position to reflect current camera rotation
+    # This only happens when the joystick is NOT being actively touched
     if not player or not "camera_rotation_x" in player or not "camera_rotation_y" in player:
         return
     
-    if not look_direction_indicator:
+    if not look_joystick_stick:
+        return
+    
+    # Don't update stick position while the user is actively touching the joystick
+    # This prevents interference with user input and keeps stick exactly where pushed
+    if look_joystick_active:
+        return
+    
+    # Check if player has the required properties for max angles
+    if not "camera_max_yaw" in player or not "camera_max_pitch" in player:
         return
     
     # Get camera rotation from player
     var yaw = player.camera_rotation_y    # Horizontal rotation (radians)
+    var pitch = player.camera_rotation_x  # Vertical rotation (radians)
     
-    # Set the rotation of the indicator to show yaw direction
-    # The indicator points upward when yaw=0 (straight ahead)
-    # and rotates left/right as the player looks left/right
-    look_direction_indicator.rotation = yaw
+    # Get max rotation angles in radians
+    var max_yaw_rad = deg_to_rad(player.camera_max_yaw)
+    var max_pitch_rad = deg_to_rad(player.camera_max_pitch)
+    
+    # Convert camera rotation to joystick position
+    # Yaw controls X position (left/right)
+    # Pitch controls Y position (up/down)
+    # Normalize to -1..1 range based on max angles
+    # Negate both axes to match the fix in _update_look_joystick (visual consistency)
+    var normalized_x = -yaw / max_yaw_rad if max_yaw_rad > 0 else 0.0
+    var normalized_y = -pitch / max_pitch_rad if max_pitch_rad > 0 else 0.0
+    
+    # Clamp to ensure we stay within -1..1 range
+    normalized_x = clamp(normalized_x, -1.0, 1.0)
+    normalized_y = clamp(normalized_y, -1.0, 1.0)
+    
+    # Convert normalized values to joystick offset
+    # Multiply by LOOK_JOYSTICK_RADIUS to get pixel offset from center
+    var offset = Vector2(normalized_x * LOOK_JOYSTICK_RADIUS, normalized_y * LOOK_JOYSTICK_RADIUS)
+    
+    # Update the stick position to match camera angles
+    # This ensures the stick visually represents where the camera is looking
+    look_joystick_stick.position = offset
+    
+    # Also update the target angles to match current camera position
+    # This ensures continuity when user starts touching the joystick again
+    look_target_yaw = yaw
+    look_target_pitch = pitch
 
 func _update_joystick_position() -> void:
     # Position joystick in bottom-left corner with margin
@@ -157,7 +202,7 @@ func _update_joystick_position() -> void:
     # Position look joystick in bottom-right corner with margin
     # Add extra margin to keep it away from version/time labels
     # Account for joystick size so it stays within viewport bounds
-    look_joystick_base.position = Vector2(viewport_size.x - look_joystick_margin_x - JOYSTICK_RADIUS * 2, viewport_size.y - look_joystick_margin_y - JOYSTICK_RADIUS * 2)
+    look_joystick_base.position = Vector2(viewport_size.x - look_joystick_margin_x - LOOK_JOYSTICK_RADIUS * 2, viewport_size.y - look_joystick_margin_y - LOOK_JOYSTICK_RADIUS * 2)
     
     DebugLogOverlay.add_log("Joystick positions updated:", "cyan")
     DebugLogOverlay.add_log("  Movement joystick: (%.0f, %.0f)" % [joystick_base.position.x, joystick_base.position.y], "cyan")
@@ -178,12 +223,12 @@ func _input(event: InputEvent) -> void:
         
         if touch.pressed:
             # Check which joystick is closer and within range
-            if dist < JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER and (look_dist >= JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER or dist < look_dist):
+            if dist < JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER and (look_dist >= LOOK_JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER or dist < look_dist):
                 # Start movement joystick
                 joystick_active = true
                 joystick_touch_index = touch.index
                 _update_joystick(touch_pos)
-            elif look_dist < JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER:
+            elif look_dist < LOOK_JOYSTICK_RADIUS * JOYSTICK_DETECTION_MULTIPLIER:
                 # Start look joystick
                 look_joystick_active = true
                 look_joystick_touch_index = touch.index
@@ -199,7 +244,8 @@ func _input(event: InputEvent) -> void:
                 look_joystick_active = false
                 look_joystick_touch_index = -1
                 look_joystick_vector = Vector2.ZERO
-                look_joystick_stick.position = Vector2.ZERO
+                # Don't reset stick position - it will be updated by _update_look_joystick_stick_position()
+                # to reflect the current camera direction
     
     elif event is InputEventScreenDrag:
         var drag = event as InputEventScreenDrag
@@ -225,7 +271,8 @@ func _update_joystick(touch_pos: Vector2) -> void:
     if normalized.length() < DEADZONE:
         joystick_vector = Vector2.ZERO
     else:
-        joystick_vector = normalized
+        # Apply horizontal sensitivity multiplier to make left/right movement less sensitive
+        joystick_vector = Vector2(normalized.x * MOVEMENT_HORIZONTAL_SENSITIVITY, normalized.y)
 
 func get_input_vector() -> Vector2:
     return joystick_vector
@@ -233,13 +280,21 @@ func get_input_vector() -> Vector2:
 func get_look_vector() -> Vector2:
     return look_joystick_vector
 
+func get_look_target_angles() -> Vector2:
+    """Returns target camera angles in radians as Vector2(yaw, pitch)"""
+    return Vector2(look_target_yaw, look_target_pitch)
+
+func has_look_input() -> bool:
+    """Returns true if the look joystick is currently being touched"""
+    return look_joystick_active
+
 func _create_look_joystick() -> void:
     DebugLogOverlay.add_log("Creating look joystick...", "cyan")
     
     # Create look joystick base
     look_joystick_base = Control.new()
-    look_joystick_base.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
-    look_joystick_base.pivot_offset = Vector2(JOYSTICK_RADIUS, JOYSTICK_RADIUS)
+    look_joystick_base.size = Vector2(LOOK_JOYSTICK_RADIUS * 2, LOOK_JOYSTICK_RADIUS * 2)
+    look_joystick_base.pivot_offset = Vector2(LOOK_JOYSTICK_RADIUS, LOOK_JOYSTICK_RADIUS)
     # Set z_index to ensure joystick renders above UI elements
     # With parent MobileControls z_index=10, need child z_index >= 91 for effective > 100
     # (UIManager elements like version_label have effective z_index of 100)
@@ -248,62 +303,40 @@ func _create_look_joystick() -> void:
     
     # Base circle
     var base_panel = Panel.new()
-    base_panel.size = Vector2(JOYSTICK_RADIUS * 2, JOYSTICK_RADIUS * 2)
-    base_panel.position = Vector2(-JOYSTICK_RADIUS, -JOYSTICK_RADIUS)
+    base_panel.size = Vector2(LOOK_JOYSTICK_RADIUS * 2, LOOK_JOYSTICK_RADIUS * 2)
+    base_panel.position = Vector2(-LOOK_JOYSTICK_RADIUS, -LOOK_JOYSTICK_RADIUS)
     base_panel.modulate = Color(0.6, 0.3, 0.3, 0.7)  # More visible reddish tint (increased opacity and red channel)
     look_joystick_base.add_child(base_panel)
     
     # Add StyleBox for circular appearance
     var base_style = StyleBoxFlat.new()
     base_style.bg_color = Color(0.6, 0.3, 0.3, 0.7)  # More visible reddish tint
-    base_style.corner_radius_top_left = int(JOYSTICK_RADIUS)
-    base_style.corner_radius_top_right = int(JOYSTICK_RADIUS)
-    base_style.corner_radius_bottom_left = int(JOYSTICK_RADIUS)
-    base_style.corner_radius_bottom_right = int(JOYSTICK_RADIUS)
+    base_style.corner_radius_top_left = int(LOOK_JOYSTICK_RADIUS)
+    base_style.corner_radius_top_right = int(LOOK_JOYSTICK_RADIUS)
+    base_style.corner_radius_bottom_left = int(LOOK_JOYSTICK_RADIUS)
+    base_style.corner_radius_bottom_right = int(LOOK_JOYSTICK_RADIUS)
     base_panel.add_theme_stylebox_override("panel", base_style)
     
     # Stick circle
     look_joystick_stick = Control.new()
     look_joystick_stick.position = Vector2(0, 0)
-    look_joystick_stick.size = Vector2(STICK_RADIUS * 2, STICK_RADIUS * 2)
-    look_joystick_stick.pivot_offset = Vector2(STICK_RADIUS, STICK_RADIUS)
+    look_joystick_stick.size = Vector2(LOOK_STICK_RADIUS * 2, LOOK_STICK_RADIUS * 2)
+    look_joystick_stick.pivot_offset = Vector2(LOOK_STICK_RADIUS, LOOK_STICK_RADIUS)
     look_joystick_base.add_child(look_joystick_stick)
     
     var stick_panel = Panel.new()
-    stick_panel.size = Vector2(STICK_RADIUS * 2, STICK_RADIUS * 2)
-    stick_panel.position = Vector2(-STICK_RADIUS, -STICK_RADIUS)
+    stick_panel.size = Vector2(LOOK_STICK_RADIUS * 2, LOOK_STICK_RADIUS * 2)
+    stick_panel.position = Vector2(-LOOK_STICK_RADIUS, -LOOK_STICK_RADIUS)
     stick_panel.modulate = Color(0.9, 0.5, 0.5, 0.85)  # More visible reddish stick (increased opacity and brightness)
     look_joystick_stick.add_child(stick_panel)
     
     var stick_style = StyleBoxFlat.new()
     stick_style.bg_color = Color(0.9, 0.5, 0.5, 0.85)  # More visible reddish stick
-    stick_style.corner_radius_top_left = int(STICK_RADIUS)
-    stick_style.corner_radius_top_right = int(STICK_RADIUS)
-    stick_style.corner_radius_bottom_left = int(STICK_RADIUS)
-    stick_style.corner_radius_bottom_right = int(STICK_RADIUS)
+    stick_style.corner_radius_top_left = int(LOOK_STICK_RADIUS)
+    stick_style.corner_radius_top_right = int(LOOK_STICK_RADIUS)
+    stick_style.corner_radius_bottom_left = int(LOOK_STICK_RADIUS)
+    stick_style.corner_radius_bottom_right = int(LOOK_STICK_RADIUS)
     stick_panel.add_theme_stylebox_override("panel", stick_style)
-    
-    # Create direction indicator (shows current look direction relative to straight ahead)
-    var indicator_length = JOYSTICK_RADIUS - INDICATOR_MARGIN
-    look_direction_indicator = Control.new()
-    look_direction_indicator.position = Vector2(0, 0)
-    look_direction_indicator.size = Vector2(INDICATOR_WIDTH, indicator_length)  # Thin rectangle extending upward
-    look_direction_indicator.pivot_offset = Vector2(INDICATOR_WIDTH / 2, 0)  # Pivot at the base (center of joystick)
-    look_joystick_base.add_child(look_direction_indicator)
-    
-    var indicator_panel = Panel.new()
-    indicator_panel.size = Vector2(INDICATOR_WIDTH, indicator_length)
-    indicator_panel.position = Vector2(-INDICATOR_WIDTH / 2, -indicator_length)  # Position extending upward from pivot
-    indicator_panel.modulate = Color(1.0, 1.0, 0.0, 0.9)  # Bright yellow for visibility
-    look_direction_indicator.add_child(indicator_panel)
-    
-    var indicator_style = StyleBoxFlat.new()
-    indicator_style.bg_color = Color(1.0, 1.0, 0.0, 0.9)  # Bright yellow
-    indicator_style.corner_radius_top_left = 3
-    indicator_style.corner_radius_top_right = 3
-    indicator_style.corner_radius_bottom_left = 3
-    indicator_style.corner_radius_bottom_right = 3
-    indicator_panel.add_theme_stylebox_override("panel", indicator_style)
     
     DebugLogOverlay.add_log("Look joystick visuals created", "green")
     DebugLogOverlay.add_log("Look joystick base visible: %s" % str(look_joystick_base.visible), "cyan")
@@ -314,19 +347,37 @@ func _update_look_joystick(touch_pos: Vector2) -> void:
     var offset = touch_pos - joystick_center
     
     # Limit offset to joystick radius
-    if offset.length() > JOYSTICK_RADIUS:
-        offset = offset.normalized() * JOYSTICK_RADIUS
+    if offset.length() > LOOK_JOYSTICK_RADIUS:
+        offset = offset.normalized() * LOOK_JOYSTICK_RADIUS
     
     look_joystick_stick.position = offset
     
-    # Calculate normalized vector
-    var normalized = offset / JOYSTICK_RADIUS
+    # Calculate normalized vector (-1 to 1 range)
+    var normalized = offset / LOOK_JOYSTICK_RADIUS
     
-    # Apply deadzone
+    # Apply deadzone for the vector (for backward compatibility)
     if normalized.length() < DEADZONE:
         look_joystick_vector = Vector2.ZERO
     else:
         look_joystick_vector = normalized
+    
+    # NEW: Convert joystick position directly to target camera angles
+    # The joystick circle represents exactly 80 degrees in all directions
+    # normalized.x maps to yaw (horizontal rotation): -1 = -80°, +1 = +80°
+    # normalized.y maps to pitch (vertical rotation): -1 = -80°, +1 = +80°
+    # Get max angles from player if available, default to 80 degrees
+    var max_yaw_deg = 80.0
+    var max_pitch_deg = 80.0
+    if player:
+        if "camera_max_yaw" in player:
+            max_yaw_deg = player.camera_max_yaw
+        if "camera_max_pitch" in player:
+            max_pitch_deg = player.camera_max_pitch
+    
+    # Convert normalized position to target angles in radians
+    # Negate both axes to fix inverted behavior (moving right should rotate camera right, moving up should tilt camera up)
+    look_target_yaw = -normalized.x * deg_to_rad(max_yaw_deg)
+    look_target_pitch = -normalized.y * deg_to_rad(max_pitch_deg)
 
 func _create_styled_button_style(bg_color: Color, corner_radius: int) -> StyleBoxFlat:
     # Helper function to create a styled button with rounded corners
@@ -615,6 +666,10 @@ func _update_button_position() -> void:
     
     DebugLogOverlay.add_log("Menu button positioned at (%.0f, %.0f), viewport: %.0fx%.0f" % [button_x, button_y, viewport_size.x, viewport_size.y], "cyan")
     
+    # Update jetpack button position if it exists
+    if jetpack_button:
+        _update_jetpack_button_position()
+    
     # Log absolute position after positioning
     if menu_button.is_inside_tree():
         var global_pos = menu_button.global_position
@@ -707,3 +762,63 @@ func _log_control_info() -> void:
         
         # Log visibility checks using helper
         _log_button_bounds_check(bounds_check)
+
+func _create_jetpack_button() -> void:
+    DebugLogOverlay.add_log("Creating jetpack button...", "cyan")
+    
+    jetpack_button = Button.new()
+    jetpack_button.text = "🚀"  # Rocket emoji for jetpack
+    jetpack_button.tooltip_text = "Jetpack - Hold to ascend"  # Accessibility support
+    jetpack_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    jetpack_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    jetpack_button.add_theme_font_size_override("font_size", 35)
+    
+    # Set focus mode to prevent focus issues on mobile
+    jetpack_button.focus_mode = Control.FOCUS_NONE
+    
+    # Ensure button is above other UI elements and can receive touch events
+    jetpack_button.z_index = 101
+    jetpack_button.mouse_filter = Control.MOUSE_FILTER_STOP
+    
+    # Style the button states with a blue/cyan color for jetpack
+    jetpack_button.add_theme_stylebox_override("normal", _create_styled_button_style(Color(0.2, 0.4, 0.6, 0.7), int(BUTTON_SIZE / 2)))
+    jetpack_button.add_theme_stylebox_override("hover", _create_styled_button_style(Color(0.3, 0.5, 0.7, 0.8), int(BUTTON_SIZE / 2)))
+    jetpack_button.add_theme_stylebox_override("pressed", _create_styled_button_style(Color(0.4, 0.6, 0.8, 0.9), int(BUTTON_SIZE / 2)))
+    
+    # Connect button press/release signals
+    jetpack_button.button_down.connect(_on_jetpack_button_down)
+    jetpack_button.button_up.connect(_on_jetpack_button_up)
+    
+    # Ensure button is visible
+    jetpack_button.visible = true
+    
+    add_child(jetpack_button)
+    DebugLogOverlay.add_log("Jetpack button added to scene tree, visible=%s" % str(jetpack_button.visible), "green")
+    
+    # Defer positioning to ensure viewport size is ready
+    call_deferred("_update_jetpack_button_position")
+
+func _update_jetpack_button_position() -> void:
+    # Position jetpack button on the right side, above the look joystick
+    var viewport_size = get_viewport_rect().size
+    var right_margin = look_joystick_margin_x
+    var vertical_center = viewport_size.y / 2
+    
+    # Place the button at vertical center on the right side
+    jetpack_button.position = Vector2(
+        viewport_size.x - right_margin - BUTTON_SIZE,
+        vertical_center - BUTTON_SIZE / 2
+    )
+    
+    DebugLogOverlay.add_log("Jetpack button positioned at: (%.0f, %.0f)" % [jetpack_button.position.x, jetpack_button.position.y], "cyan")
+
+func _on_jetpack_button_down() -> void:
+    jetpack_pressed = true
+    DebugLogOverlay.add_log("Jetpack button pressed", "green")
+
+func _on_jetpack_button_up() -> void:
+    jetpack_pressed = false
+    DebugLogOverlay.add_log("Jetpack button released", "yellow")
+
+func is_jetpack_pressed() -> bool:
+    return jetpack_pressed
