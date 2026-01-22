@@ -47,6 +47,7 @@ var is_locked_out: bool = false
 var lockout_end_time: float = 0.0  # Unix timestamp when lockout ends
 var day_count: int = 1  # Track number of days passed
 var night_start_time: float = 0.0  # Unix timestamp when night began
+var last_log_time: float = 0.0  # Track last time we logged for throttling
 
 # Warning states
 var warning_2min_shown: bool = false
@@ -240,9 +241,9 @@ func _update_lighting() -> void:
     # Update UI time display (includes sun offset for display)
     if ui_manager and ui_manager.has_method("update_game_time"):
         # Only log every 5 seconds to avoid spam
-        var should_log = int(current_time) % 5 == 0
-        if should_log:
+        if current_time - last_log_time >= 5.0:
             DebugLogOverlay.add_log("update_game_time called: current_time=%.2f, cycle_duration=%.2f, offset=%.2f" % [current_time, DAY_CYCLE_DURATION, sun_time_offset_hours], "white")
+            last_log_time = current_time
         ui_manager.update_game_time(current_time, DAY_CYCLE_DURATION, sun_time_offset_hours)
     
     # Update UI sun position display

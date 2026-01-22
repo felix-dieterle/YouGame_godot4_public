@@ -24,6 +24,9 @@ var log_messages: Array[String] = []
 # Game version (cached)
 var game_version: String = ""
 
+# Regex for stripping BBCode tags (compiled once for performance)
+var bbcode_color_regex: RegEx = null
+
 # Singleton instance (type is inferred from autoload)
 static var instance = null
 
@@ -32,6 +35,10 @@ func _ready() -> void:
     
     # Cache game version
     game_version = ProjectSettings.get_setting("application/config/version", "unknown")
+    
+    # Compile regex once for performance
+    bbcode_color_regex = RegEx.new()
+    bbcode_color_regex.compile("\\[color=[^\\]]+\\]")
     
     # Create toggle button (top left corner)
     _create_toggle_button()
@@ -235,10 +242,8 @@ func _on_copy_pressed() -> void:
     for msg in log_messages:
         # Remove BBCode color tags: [color=...]...[/color]
         var plain_msg = msg
-        # Remove [color=...] opening tag
-        var regex_open = RegEx.new()
-        regex_open.compile("\\[color=[^\\]]+\\]")
-        plain_msg = regex_open.sub(plain_msg, "", true)
+        # Remove [color=...] opening tag using pre-compiled regex
+        plain_msg = bbcode_color_regex.sub(plain_msg, "", true)
         # Remove [/color] closing tag
         plain_msg = plain_msg.replace("[/color]", "")
         plain_text_lines.append(plain_msg)
@@ -246,7 +251,6 @@ func _on_copy_pressed() -> void:
     var clipboard_text = "\n".join(plain_text_lines)
     DisplayServer.clipboard_set(clipboard_text)
     add_log("Logs copied to clipboard!", "green")
-
 
 # Static method to add logs from anywhere
 static func add_log(message: String, color: String = "white"):
