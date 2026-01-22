@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.yougame.savegamewidget">
+
+    <application>
+        <!-- Widget Provider -->
+        <receiver
+            android:name=".SaveGameWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.yougame.savegamewidget.UPDATE_WIDGET" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/savegame_widget_info" />
+        </receiver>
+    </application>
+
+</manifest>
