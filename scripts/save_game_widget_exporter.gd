@@ -34,6 +34,8 @@ func export_save_data(save_data: Dictionary) -> void:
 	var position = player.get("position", Vector3.ZERO)
 	
 	# Call Android plugin method
+	# Note: position.y is included for future debugging features (e.g., cave detection)
+	# but is not currently displayed in the widget
 	_android_plugin.exportSaveData(
 		timestamp,
 		day_count,
