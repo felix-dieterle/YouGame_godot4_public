@@ -16,7 +16,7 @@ var save_data: Dictionary = {
         "torch_count": 100,  # Number of torches in inventory
         "selected_item": "torch",  # Currently selected item
         "current_air": 100.0,  # Current air level
-        "current_health": 100.0  # Current health
+        "current_health": 100.0,  # Current health
         "flint_stone_count": 2,  # Number of flint stones in inventory
         "mushroom_count": 0,  # Number of mushrooms in inventory
         "bottle_fill_level": 100.0  # Drinking bottle fill level (0-100)
