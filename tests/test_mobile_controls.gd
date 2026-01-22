@@ -34,6 +34,7 @@ func _ready():
 	await test_look_joystick_visibility_visual()
 	test_look_joystick_properties()
 	test_joystick_positions()
+	test_menu_button_position()
 	
 	# Print results
 	print("\n=== Test Results ===")
@@ -251,6 +252,42 @@ func test_joystick_positions():
 		assert_pass("Look joystick Y position is fully within rendering viewport")
 	else:
 		assert_fail("Look joystick extends outside rendering viewport vertically (pos: %.0f, bottom edge: %.0f, viewport: %.0f)" % [look_base.global_position.y, joystick_bottom_edge, rendering_viewport_size.y])
+
+func test_menu_button_position():
+	print("\n--- Test: Menu Button Position (No Overlap with Debug Buttons) ---")
+	
+	if not mobile_controls or not mobile_controls.menu_button:
+		assert_fail("Menu button not available")
+		return
+	
+	var menu_button = mobile_controls.menu_button
+	
+	# Debug overlay has 5 buttons: toggle (📋), clear (🗑), copy (📄), sun (☀), moon (🌙)
+	# Each button is 40px wide with 5px spacing
+	# Positions: 10, 55, 100, 145, 190
+	# Last button ends at: 190 + 40 = 230px
+	const DEBUG_BUTTONS_END_X = 230.0
+	const MIN_SPACING = 10.0
+	const EXPECTED_MENU_BUTTON_X = 240.0  # 230 + 10px spacing
+	
+	var menu_x = menu_button.position.x
+	
+	print("  Menu button position: (%.0f, %.0f)" % [menu_x, menu_button.position.y])
+	print("  Debug buttons end at: %.0f" % DEBUG_BUTTONS_END_X)
+	print("  Required spacing: %.0f" % MIN_SPACING)
+	print("  Expected menu button X: %.0f" % EXPECTED_MENU_BUTTON_X)
+	
+	# Check that menu button is positioned after all debug buttons with proper spacing
+	if menu_x >= DEBUG_BUTTONS_END_X + MIN_SPACING:
+		assert_pass("Menu button is positioned at x=%.0f (after all 5 debug buttons)" % menu_x)
+	else:
+		assert_fail("Menu button at x=%.0f overlaps with debug buttons (should be >= %.0f)" % [menu_x, DEBUG_BUTTONS_END_X + MIN_SPACING])
+	
+	# Check exact position matches expected value
+	if abs(menu_x - EXPECTED_MENU_BUTTON_X) < 1.0:
+		assert_pass("Menu button is at expected position x=%.0f" % EXPECTED_MENU_BUTTON_X)
+	else:
+		assert_fail("Menu button position x=%.0f doesn't match expected %.0f" % [menu_x, EXPECTED_MENU_BUTTON_X])
 
 # Helper functions for tracking test results
 func assert_pass(message: String):
