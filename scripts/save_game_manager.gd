@@ -317,8 +317,7 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0) -> void:
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0) -> void:
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0, flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
     save_data["player"]["is_first_person"] = is_first_person
