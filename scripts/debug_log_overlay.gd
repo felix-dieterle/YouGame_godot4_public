@@ -384,8 +384,9 @@ func _on_export_zip_pressed() -> void:
         var sun_count = LogExportManager.get_log_count(LogExportManager.LogType.SUN_LIGHTING_ISSUE)
         var sleep_count = LogExportManager.get_log_count(LogExportManager.LogType.SLEEP_STATE_ISSUE)
         var error_count = LogExportManager.get_log_count(LogExportManager.LogType.ERROR_LOGS)
+        var general_count = LogExportManager.get_log_count(LogExportManager.LogType.GENERAL_DEBUG)
         add_log("All logs exported to ZIP!", "orange")
-        add_log("Sun: %d | Sleep: %d | Errors: %d" % [sun_count, sleep_count, error_count], "cyan")
+        add_log("Sun: %d | Sleep: %d | Errors: %d | General: %d" % [sun_count, sleep_count, error_count, general_count], "cyan")
         add_log("File: %s" % filepath, "cyan")
     else:
         add_log("Failed to export logs to ZIP", "red")

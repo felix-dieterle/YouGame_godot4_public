@@ -31,12 +31,15 @@ func _ready():
 				
 				# Verify it's a valid ZIP (starts with PK)
 				file = FileAccess.open(zip_path, FileAccess.READ)
-				var magic = file.get_buffer(2)
-				file.close()
-				if magic[0] == 0x50 and magic[1] == 0x4B:  # "PK" signature
-					print("✓ ZIP file has valid magic signature")
+				if file:
+					var magic = file.get_buffer(2)
+					file.close()
+					if magic[0] == 0x50 and magic[1] == 0x4B:  # "PK" signature
+						print("✓ ZIP file has valid magic signature")
+					else:
+						print("✗ ZIP file has invalid magic signature")
 				else:
-					print("✗ ZIP file has invalid magic signature")
+					print("✗ Could not reopen ZIP file for signature check")
 			else:
 				print("✗ Could not open ZIP file")
 		else:

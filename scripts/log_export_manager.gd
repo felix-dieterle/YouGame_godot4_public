@@ -203,14 +203,15 @@ func _export_all_logs_as_zip_internal() -> String:
 	var err = packer.open(zip_path)
 	
 	if err != OK:
-		push_error("Failed to create ZIP file: %s" % zip_path)
+		push_error("Failed to create ZIP file: %s (Error: %d)" % [zip_path, err])
 		return ""
 	
 	# Export each log type to the ZIP
 	var log_types = [
 		{"type": LogType.SUN_LIGHTING_ISSUE, "filename": "1_sun_lighting_issue.log", "logs": sun_lighting_logs},
 		{"type": LogType.SLEEP_STATE_ISSUE, "filename": "2_sleep_state_issue.log", "logs": sleep_state_logs},
-		{"type": LogType.ERROR_LOGS, "filename": "3_error_logs.log", "logs": error_logs}
+		{"type": LogType.ERROR_LOGS, "filename": "3_error_logs.log", "logs": error_logs},
+		{"type": LogType.GENERAL_DEBUG, "filename": "4_general_debug.log", "logs": general_logs}
 	]
 	
 	for log_info in log_types:
@@ -254,6 +255,7 @@ func _generate_metadata() -> String:
 	metadata += "Sun Lighting Issue Logs: %d\n" % sun_lighting_logs.size()
 	metadata += "Sleep State Issue Logs: %d\n" % sleep_state_logs.size()
 	metadata += "Error Logs: %d\n" % error_logs.size()
+	metadata += "General Debug Logs: %d\n" % general_logs.size()
 	metadata += "\n--- System Information ---\n"
 	metadata += "OS: %s\n" % OS.get_name()
 	metadata += "Processor: %s (%d cores)\n" % [OS.get_processor_name(), OS.get_processor_count()]
@@ -264,6 +266,7 @@ func _generate_metadata() -> String:
 	metadata += "1_sun_lighting_issue.log: Useful data about the brightness/sun problem\n"
 	metadata += "2_sleep_state_issue.log: Debug info for game state after reloading during sleep time\n"
 	metadata += "3_error_logs.log: Error messages and exceptions\n"
+	metadata += "4_general_debug.log: General debug messages and diagnostics\n"
 	metadata += "\n==============================================\n"
 	return metadata
 
