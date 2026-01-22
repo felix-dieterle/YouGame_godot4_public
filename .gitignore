@@ -38,6 +38,12 @@ keystore.properties
 android/plugins/**/build/
 android/plugins/**/.gradle/
 android/plugins/**/*.aar
+# Exception: Allow the savegame widget AAR to be committed
+!android/plugins/savegame_widget/savegame_widget.aar
+!android/plugins/savegame_widget/libs/*.aar
+android/plugins/savegame_widget/libs/godot/
+android/plugins/savegame_widget/temp_aar/
+android/plugins/savegame_widget/temp_build/
 android/plugins/**/local.properties
 android/plugins/**/gradle/
 android/plugins/**/gradlew
