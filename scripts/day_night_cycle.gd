@@ -533,14 +533,14 @@ func _calculate_current_sun_angle() -> float:
         return lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
 
 # Get sun position in 0-180 degree range for display
-# 0° = sunrise, 90° = zenith/noon, 180° = sunset
+# 0° = game start (displayed sunrise), 90° = zenith/noon, 180° = sunset
 # Returns -1 during night when sun is not visible
 func get_sun_position_degrees() -> float:
     # During night, return -1 to indicate sun is not visible
     if is_night and not is_animating_sunrise:
         return -1.0
     
-    # Calculate time ratio (0.0 = sunrise, 0.5 = noon, 1.0 = sunset)
+    # Calculate time ratio (0.0 = game start, 0.5 = noon, 1.0 = sunset)
     var time_ratio: float = 0.0
     
     if is_animating_sunrise:
@@ -553,10 +553,16 @@ func get_sun_position_degrees() -> float:
         time_ratio = 1.0  # At end of day (180°) during sunset
     else:
         # Normal day progression
-        time_ratio = current_time / DAY_CYCLE_DURATION
+        # Account for INITIAL_TIME_OFFSET_HOURS so that game start shows as 0°
+        # The initial offset makes the sun start higher for better brightness,
+        # but we want the display to show 0° at game start for intuitive UX
+        var initial_offset_time = DAY_CYCLE_DURATION * (INITIAL_TIME_OFFSET_HOURS / DAY_DURATION_HOURS)
+        time_ratio = (current_time - initial_offset_time) / (DAY_CYCLE_DURATION - initial_offset_time)
+        # Clamp to 0.0-1.0 range to handle edge cases
+        time_ratio = clamp(time_ratio, 0.0, 1.0)
     
     # Map 0.0-1.0 ratio to 0-180 degrees
-    # 0.0 (sunrise) -> 0°, 0.5 (noon) -> 90°, 1.0 (sunset) -> 180°
+    # 0.0 (game start) -> 0°, 0.5 (midpoint of playable day) -> 90°, 1.0 (sunset) -> 180°
     return time_ratio * 180.0
 
 # Update moon position based on time of day.
