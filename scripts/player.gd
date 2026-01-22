@@ -20,6 +20,7 @@ const CampfireSystem = preload("res://scripts/campfire_system.gd")
 
 # Movement settings
 @export var move_speed: float = 5.0
+@export var sprint_speed: float = 10.0
 @export var rotation_speed: float = 3.0
 @export var jetpack_speed: float = 3.0  # Upward speed when using jetpack
 @export var jetpack_move_speed_multiplier: float = 4.0  # Horizontal speed multiplier when jetpack is active
@@ -54,6 +55,7 @@ var camera_rotation_y: float = 0.0  # Horizontal rotation (yaw)
 var footstep_player: AudioStreamPlayer
 var footstep_timer: float = 0.0
 var footstep_interval: float = 0.5  # Time between footsteps when moving
+@export var sprint_footstep_multiplier: float = 0.5  # Multiplier for footstep interval when sprinting
 var last_terrain_material: String = "grass"
 const FOOTSTEP_DURATION: float = 0.15  # Sound duration in seconds
 
@@ -68,6 +70,9 @@ var robot_parts: Array[Node3D] = []
 
 # Input control
 var input_enabled: bool = true
+
+# Sprint state
+var is_sprinting: bool = false
 
 # Crystal inventory - tracks collected crystals by type (initialized in _ready)
 var crystal_inventory: Dictionary = {}
@@ -258,8 +263,10 @@ func _physics_process(delta) -> void:
                             break  # Stop checking once we find a blocking slope
         
         if can_move:
+            # Use sprint speed if sprinting, otherwise use normal move speed
+            var current_speed = sprint_speed if is_sprinting else move_speed
             # Apply jetpack speed multiplier when jetpack is active
-            var current_move_speed = move_speed
+            var current_move_speed = current_speed
             if jetpack_active:
                 current_move_speed = move_speed * jetpack_move_speed_multiplier
             
@@ -319,6 +326,11 @@ func _physics_process(delta) -> void:
     _update_air_and_health(delta)
 
 func _input(event) -> void:
+    # Sprint toggle
+    if event.is_action_pressed("toggle_sprint"):
+        is_sprinting = not is_sprinting
+        DebugLogOverlay.add_log("Sprint toggled: %s" % ("ON" if is_sprinting else "OFF"), "cyan")
+    
     # Camera view toggle
     if event.is_action_pressed("toggle_camera_view"):
         _toggle_camera_view()
@@ -516,8 +528,9 @@ func _update_footsteps(delta: float) -> void:
     # Update footstep timer
     footstep_timer += delta
     
-    # Play footstep sound at regular intervals
-    if footstep_timer >= footstep_interval:
+    # Play footstep sound at regular intervals (faster when sprinting)
+    var current_interval = footstep_interval * (sprint_footstep_multiplier if is_sprinting else 1.0)
+    if footstep_timer >= current_interval:
         footstep_timer = 0.0
         _play_footstep_sound()
 
