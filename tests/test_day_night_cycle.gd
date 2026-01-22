@@ -5,12 +5,12 @@ const DayNightCycle = preload("res://scripts/day_night_cycle.gd")
 
 # Environment constants matching main.tscn configuration
 # These should be kept in sync with scenes/main.tscn to ensure tests reflect production
-const MAIN_AMBIENT_LIGHT_ENERGY: float = 1.0  # main.tscn Environment ambient_light_energy (FIXED - was 0.8)
-const MAIN_TONEMAP_EXPOSURE: float = 1.2  # main.tscn Environment tonemap_exposure (FIXED - was 1.5)
-const MAIN_DIRECTIONAL_LIGHT_ENERGY: float = 1.5  # main.tscn DirectionalLight3D initial energy (FIXED - was 1.2)
-const MAIN_SKY_RAYLEIGH_COEFFICIENT: float = 3.0  # main.tscn PhysicalSkyMaterial
-const MAIN_SKY_MIE_COEFFICIENT: float = 0.003  # main.tscn PhysicalSkyMaterial
-const MAIN_SKY_TURBIDITY: float = 8.0  # main.tscn PhysicalSkyMaterial
+const MAIN_AMBIENT_LIGHT_ENERGY: float = 1.5  # main.tscn Environment ambient_light_energy
+const MAIN_TONEMAP_EXPOSURE: float = 1.5  # main.tscn Environment tonemap_exposure
+const MAIN_DIRECTIONAL_LIGHT_ENERGY: float = 1.5  # main.tscn DirectionalLight3D initial energy
+const MAIN_SKY_RAYLEIGH_COEFFICIENT: float = 12.0  # main.tscn PhysicalSkyMaterial
+const MAIN_SKY_MIE_COEFFICIENT: float = 0.002  # main.tscn PhysicalSkyMaterial
+const MAIN_SKY_TURBIDITY: float = 2.5  # main.tscn PhysicalSkyMaterial
 
 var test_passed: int = 0
 var test_failed: int = 0
