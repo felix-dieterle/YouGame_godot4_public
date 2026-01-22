@@ -57,7 +57,7 @@ The direction arrows system displays three color-coded arrows that help players 
 
 #### Nearest Water/Ocean
 - Scans all loaded chunks for ocean biomes (`chunk.is_ocean == true`)
-- Ocean chunks are at elevation `<= OCEAN_LEVEL (-8.0)`
+- Ocean chunks are at elevation `<= Chunk.OCEAN_LEVEL` (currently -8.0)
 - Points to the center of the nearest ocean chunk
 
 #### Nearest Crystal

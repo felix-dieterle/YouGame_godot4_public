@@ -17,11 +17,17 @@ var player: Node3D = null
 var world_manager: Node3D = null
 var camera: Camera3D = null
 
+# Cached camera vectors for performance
+var cached_cam_forward_h: Vector3 = Vector3.ZERO
+var cached_cam_right_h: Vector3 = Vector3.ZERO
+var need_camera_update: bool = true
+
 # Arrow settings
 const ARROW_DISTANCE_FROM_CENTER: float = 150.0  # Distance from screen center in pixels (avoids minimap in top-right)
 const ARROW_SIZE: float = 30.0  # Size of arrow triangle
 const ARROW_LINE_WIDTH: float = 3.0  # Width of arrow line
 const MIN_DISTANCE_TO_SHOW: float = 10.0  # Don't show arrows for targets closer than 10m
+const INVALID_CHUNK_COORDINATE: int = 999999  # Same as used in Chunk class for invalid coordinates
 
 # Arrow colors
 const WATER_ARROW_COLOR: Color = Color(0.2, 0.5, 1.0, 0.8)  # Blue for water
@@ -63,6 +69,11 @@ func _process(delta: float) -> void:
 	if not arrows_visible:
 		return
 	
+	# Update camera vectors if needed
+	if camera and need_camera_update:
+		_update_camera_vectors()
+		need_camera_update = false
+	
 	update_timer += delta
 	if update_timer >= UPDATE_INTERVAL:
 		update_timer = 0.0
@@ -99,14 +110,13 @@ func _draw_arrow_to_target(target_pos: Vector3, color: Color, screen_center: Vec
 	
 	var direction_3d = (target_pos - player_pos).normalized()
 	
-	# Project to screen space - we only care about horizontal direction
-	# Use camera's basis to get the forward and right directions
-	var cam_forward = -camera.global_transform.basis.z
-	var cam_right = camera.global_transform.basis.x
+	# Update camera vectors if needed (e.g., after camera rotation)
+	need_camera_update = true
 	
-	# Project direction onto camera's horizontal plane
-	var forward_component = direction_3d.dot(Vector3(cam_forward.x, 0, cam_forward.z).normalized())
-	var right_component = direction_3d.dot(Vector3(cam_right.x, 0, cam_right.z).normalized())
+	# Project to screen space - we only care about horizontal direction
+	# Use cached camera vectors
+	var forward_component = direction_3d.dot(cached_cam_forward_h)
+	var right_component = direction_3d.dot(cached_cam_right_h)
 	
 	# Convert to 2D screen direction
 	var screen_direction = Vector2(right_component, -forward_component).normalized()
@@ -162,6 +172,18 @@ func _draw_label(pos: Vector2, label: String, distance: String, color: Color) ->
 		
 		y_offset += text_size.y
 
+func _update_camera_vectors() -> void:
+	if not camera:
+		return
+	
+	# Get camera's basis vectors
+	var cam_forward = -camera.global_transform.basis.z
+	var cam_right = camera.global_transform.basis.x
+	
+	# Pre-compute normalized horizontal vectors
+	cached_cam_forward_h = Vector3(cam_forward.x, 0, cam_forward.z).normalized()
+	cached_cam_right_h = Vector3(cam_right.x, 0, cam_right.z).normalized()
+
 func _update_targets() -> void:
 	if not world_manager or not player:
 		return
@@ -215,7 +237,7 @@ func _find_nearest_crystal() -> void:
 		var chunk = world_manager.chunks[chunk_coord]
 		if chunk and chunk.placed_crystals:
 			for crystal in chunk.placed_crystals:
-				if crystal and is_instance_valid(crystal):
+				if is_instance_valid(crystal):
 					var crystal_pos = crystal.global_position
 					var distance = player_pos.distance_to(crystal_pos)
 					if distance < nearest_distance:
@@ -228,7 +250,7 @@ func _find_mountain_position() -> void:
 	# We need to search for the chunk that matches the criteria
 	
 	# Use the static variables from Chunk class if they're set
-	if Chunk.mountain_center_chunk_x != 999999 and Chunk.mountain_center_chunk_z != 999999:
+	if Chunk.mountain_center_chunk_x != INVALID_CHUNK_COORDINATE and Chunk.mountain_center_chunk_z != INVALID_CHUNK_COORDINATE:
 		mountain_pos = Vector3(
 			Chunk.mountain_center_chunk_x * Chunk.CHUNK_SIZE + Chunk.CHUNK_SIZE / 2.0,
 			Chunk.MOUNTAIN_HEIGHT_OFFSET,
