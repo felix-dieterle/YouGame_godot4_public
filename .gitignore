@@ -34,6 +34,12 @@ export/
 *.jks
 keystore.properties
 
+# Android build artifacts
+android/plugins/**/build/
+android/plugins/**/.gradle/
+android/plugins/**/*.aar
+android/plugins/**/local.properties
+
 # Temporary files
 /tmp/
 *.tmp
