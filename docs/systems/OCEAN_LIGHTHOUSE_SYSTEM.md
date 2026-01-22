@@ -7,7 +7,8 @@ The ocean and lighthouse system adds large bodies of water (oceans/seas) that sp
 ## Features
 
 ### Ocean Biome
-- **Detection**: Chunks with average elevation ≤ -8.0 are classified as ocean
+- **Detection**: Chunks with average elevation ≤ -8.0 OR beyond 160 units from origin are classified as ocean
+- **Distance-based**: Ocean always begins at 160 units (~5 chunks) from spawn, ensuring players can find it
 - **Visual**: Deep blue, semi-transparent water covering the entire chunk
 - **Terrain**: Sandy/rocky seabed visible below the water surface
 - **Coverage**: Oceans can span multiple adjacent chunks, creating large bodies of water
@@ -28,6 +29,7 @@ The ocean and lighthouse system adds large bodies of water (oceans/seas) that sp
 
 ```gdscript
 const OCEAN_LEVEL = -8.0                    # Elevation threshold for ocean biome
+const OCEAN_START_DISTANCE = 160.0          # Distance from origin where ocean begins (5 chunks)
 const LIGHTHOUSE_SEED_OFFSET = 77777        # Seed offset for lighthouse placement
 const LIGHTHOUSE_SPACING = 80.0             # Distance between lighthouses
 ```
@@ -62,11 +64,18 @@ The chunk generation pipeline has been extended:
 func _calculate_metadata() -> void:
     var avg_height = # calculate average chunk height
     
-    if avg_height <= OCEAN_LEVEL:
+    # Calculate distance from origin to determine ocean zones
+    var chunk_world_center = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
+    var distance_from_origin = chunk_world_center.length()
+    
+    # Force ocean for chunks beyond OCEAN_START_DISTANCE
+    if avg_height <= OCEAN_LEVEL or distance_from_origin >= OCEAN_START_DISTANCE:
         biome = "ocean"
         landmark_type = "ocean"
         is_ocean = true
 ```
+
+Ocean chunks are now guaranteed to appear beyond a certain distance from the origin (spawn point), making them discoverable to players. This ensures that even with the terrain gradient system, ocean will be visible within reasonable exploration distance.
 
 ### Coastal Detection
 
@@ -163,7 +172,8 @@ if chunk.placed_lighthouses.size() > 0:
 
 Adjust ocean and lighthouse generation by modifying constants:
 
-- **Ocean Level**: Change `OCEAN_LEVEL` to adjust what elevation counts as ocean
+- **Ocean Level**: Change `OCEAN_LEVEL` to adjust what elevation counts as ocean (natural ocean)
+- **Ocean Start Distance**: Modify `OCEAN_START_DISTANCE` to control where guaranteed ocean begins (default: 160 units = 5 chunks)
 - **Lighthouse Spacing**: Modify `LIGHTHOUSE_SPACING` for more/fewer lighthouses
 - **Lighthouse Appearance**: Edit constants in `procedural_models.gd` for size/proportions
 

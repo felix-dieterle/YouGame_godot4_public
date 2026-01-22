@@ -45,6 +45,7 @@ var visited_chunks: Dictionary = {}
 # Performance optimization
 var update_timer: float = 0.0
 var last_player_position: Vector3 = Vector3.ZERO
+var last_player_chunk: Vector2i = Vector2i(-999999, -999999)  # Track last chunk to avoid redundant updates
 
 # UI elements
 var map_panel: PanelContainer
@@ -129,12 +130,26 @@ func _process(delta: float) -> void:
 	if update_timer <= 0.0:
 		_update_positioning()
 	
-	# Track current chunk as visited
+	# Track current chunk and surrounding chunks as visited (5-chunk radius for 25x larger reveal area)
 	var player_pos = player.global_position
 	var chunk_x = int(floor(player_pos.x / world_manager.CHUNK_SIZE))
 	var chunk_z = int(floor(player_pos.z / world_manager.CHUNK_SIZE))
-	var chunk_pos = Vector2i(chunk_x, chunk_z)
-	visited_chunks[chunk_pos] = true
+	var current_chunk = Vector2i(chunk_x, chunk_z)
+	
+	# Only update visited chunks if player moved to a new chunk (performance optimization)
+	if current_chunk != last_player_chunk:
+		last_player_chunk = current_chunk
+		
+		# Mark all chunks within a 5-chunk radius as visited
+		# This increases the reveal area 25x (area = π×r², so π×5² vs π×1²)
+		var reveal_radius = 5
+		var radius_squared = reveal_radius * reveal_radius
+		for dx in range(-reveal_radius, reveal_radius + 1):
+			for dz in range(-reveal_radius, reveal_radius + 1):
+				# Only mark chunks within circular radius (not square)
+				if dx * dx + dz * dz <= radius_squared:
+					var chunk_pos = Vector2i(chunk_x + dx, chunk_z + dz)
+					visited_chunks[chunk_pos] = true
 	
 	# Update compass direction (cheap operation)
 	_update_compass()
@@ -154,7 +169,8 @@ func _update_compass() -> void:
 		return
 	
 	# Get player's rotation and convert to compass direction
-	var rotation_deg = rad_to_deg(player.rotation.y)
+	# Add 180° offset to align with map orientation (north at top)
+	var rotation_deg = rad_to_deg(player.rotation.y) + 180.0
 	rotation_deg = fmod(rotation_deg + 360.0, 360.0)
 	
 	# Determine cardinal direction

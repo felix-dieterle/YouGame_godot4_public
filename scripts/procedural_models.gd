@@ -50,6 +50,31 @@ const BOAT_SEGMENTS = 8
 const BOAT_BENCH_OFFSET_RATIO = 0.2  # Position of bench along boat length
 const BOAT_BENCH_THICKNESS_RATIO = 0.3  # Bench height relative to its base position
 
+# Stone animal generation constants
+const STONE_ANIMAL_BIRD_HEIGHT = 0.6
+const STONE_ANIMAL_BIRD_WIDTH = 0.4
+const STONE_ANIMAL_RABBIT_HEIGHT = 0.5
+const STONE_ANIMAL_RABBIT_WIDTH = 0.4
+const STONE_ANIMAL_DEER_HEIGHT = 1.2
+const STONE_ANIMAL_DEER_WIDTH = 0.7
+const STONE_ANIMAL_FOX_HEIGHT = 0.6
+const STONE_ANIMAL_FOX_WIDTH = 0.5
+const STONE_COLOR = Color(0.5, 0.5, 0.55)  # Gray stone color
+
+# Gravel/pebble generation constants
+const GRAVEL_PEBBLE_MIN_SIZE = 0.05
+const GRAVEL_PEBBLE_MAX_SIZE = 0.15
+const GRAVEL_PEBBLE_SIZE_VARIANCE_X_MIN = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_X_MAX = 1.2
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MIN = 0.4
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MAX = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MIN = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MAX = 1.2
+# Fence post generation constants
+const FENCE_POST_HEIGHT = 1.5  # Height of wooden fence post
+const FENCE_POST_RADIUS = 0.1  # Radius of fence post
+const FENCE_POST_SEGMENTS = 6  # Number of segments (hexagonal shape)
+
 # Tree type enum
 enum TreeType {
 	AUTO = -1,  # Automatically select tree type based on seed
@@ -665,5 +690,206 @@ static func create_fishing_boat_material() -> StandardMaterial3D:
     material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
     material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
     material.roughness = 0.8  # Weathered wood
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
+## Stone animal type enum
+enum StoneAnimalType {
+    BIRD,
+    RABBIT,
+    DEER,
+    FOX
+}
+
+## Create a stone animal mesh
+static func create_stone_animal_mesh(animal_type: int, seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var st = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    match animal_type:
+        StoneAnimalType.BIRD:
+            _create_stone_bird(st, rng)
+        StoneAnimalType.RABBIT:
+            _create_stone_rabbit(st, rng)
+        StoneAnimalType.DEER:
+            _create_stone_deer(st, rng)
+        StoneAnimalType.FOX:
+            _create_stone_fox(st, rng)
+        _:
+            _create_stone_bird(st, rng)  # Default fallback
+    
+    st.generate_normals()
+    return st.commit()
+
+## Create a simple stone bird (abstract geometric shape)
+static func _create_stone_bird(st: SurfaceTool, rng: RandomNumberGenerator):
+    var height = STONE_ANIMAL_BIRD_HEIGHT * rng.randf_range(0.9, 1.1)
+    var width = STONE_ANIMAL_BIRD_WIDTH * rng.randf_range(0.9, 1.1)
+    
+    # Body (rounded shape)
+    var body_size = Vector3(width * 0.5, height * 0.4, width * 0.6)
+    _add_box(st, Vector3(0, height * 0.3, 0), body_size, STONE_COLOR)
+    
+    # Head (smaller sphere-like shape)
+    var head_size = Vector3(width * 0.3, height * 0.25, width * 0.3)
+    _add_box(st, Vector3(0, height * 0.7, width * 0.2), head_size, STONE_COLOR)
+    
+    # Beak (tiny pyramid-like shape)
+    var beak_size = Vector3(width * 0.1, height * 0.1, width * 0.15)
+    _add_box(st, Vector3(0, height * 0.7, width * 0.45), beak_size, STONE_COLOR)
+    
+    # Wings (flat shapes on sides)
+    var wing_size = Vector3(width * 0.15, height * 0.3, width * 0.4)
+    _add_box(st, Vector3(-width * 0.4, height * 0.3, 0), wing_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.4, height * 0.3, 0), wing_size, STONE_COLOR)
+
+## Create a simple stone rabbit
+static func _create_stone_rabbit(st: SurfaceTool, rng: RandomNumberGenerator):
+    var height = STONE_ANIMAL_RABBIT_HEIGHT * rng.randf_range(0.9, 1.1)
+    var width = STONE_ANIMAL_RABBIT_WIDTH * rng.randf_range(0.9, 1.1)
+    
+    # Body (round/oval)
+    var body_size = Vector3(width * 0.6, height * 0.5, width * 0.7)
+    _add_box(st, Vector3(0, height * 0.3, 0), body_size, STONE_COLOR)
+    
+    # Head (round)
+    var head_size = Vector3(width * 0.5, height * 0.35, width * 0.5)
+    _add_box(st, Vector3(0, height * 0.65, width * 0.3), head_size, STONE_COLOR)
+    
+    # Ears (long vertical shapes)
+    var ear_size = Vector3(width * 0.12, height * 0.4, width * 0.15)
+    _add_box(st, Vector3(-width * 0.25, height * 0.95, width * 0.3), ear_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.25, height * 0.95, width * 0.3), ear_size, STONE_COLOR)
+    
+    # Tail (small round bump)
+    var tail_size = Vector3(width * 0.2, height * 0.15, width * 0.2)
+    _add_box(st, Vector3(0, height * 0.2, -width * 0.5), tail_size, STONE_COLOR)
+
+## Create a simple stone deer
+static func _create_stone_deer(st: SurfaceTool, rng: RandomNumberGenerator):
+    var height = STONE_ANIMAL_DEER_HEIGHT * rng.randf_range(0.9, 1.1)
+    var width = STONE_ANIMAL_DEER_WIDTH * rng.randf_range(0.9, 1.1)
+    
+    # Body (elongated)
+    var body_size = Vector3(width * 0.5, height * 0.4, width * 1.0)
+    _add_box(st, Vector3(0, height * 0.5, 0), body_size, STONE_COLOR)
+    
+    # Neck (vertical elongated)
+    var neck_size = Vector3(width * 0.25, height * 0.35, width * 0.3)
+    _add_box(st, Vector3(0, height * 0.75, width * 0.4), neck_size, STONE_COLOR)
+    
+    # Head (smaller)
+    var head_size = Vector3(width * 0.3, height * 0.25, width * 0.35)
+    _add_box(st, Vector3(0, height * 0.95, width * 0.55), head_size, STONE_COLOR)
+    
+    # Antlers (simple V-shapes)
+    var antler_size = Vector3(width * 0.08, height * 0.3, width * 0.08)
+    _add_box(st, Vector3(-width * 0.2, height * 1.15, width * 0.55), antler_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.2, height * 1.15, width * 0.55), antler_size, STONE_COLOR)
+    
+    # Legs (four cylinders)
+    var leg_size = Vector3(width * 0.12, height * 0.45, width * 0.12)
+    _add_box(st, Vector3(-width * 0.25, height * 0.22, width * 0.35), leg_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.25, height * 0.22, width * 0.35), leg_size, STONE_COLOR)
+    _add_box(st, Vector3(-width * 0.25, height * 0.22, -width * 0.35), leg_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.25, height * 0.22, -width * 0.35), leg_size, STONE_COLOR)
+
+## Create a simple stone fox
+static func _create_stone_fox(st: SurfaceTool, rng: RandomNumberGenerator):
+    var height = STONE_ANIMAL_FOX_HEIGHT * rng.randf_range(0.9, 1.1)
+    var width = STONE_ANIMAL_FOX_WIDTH * rng.randf_range(0.9, 1.1)
+    
+    # Body (elongated, low to ground)
+    var body_size = Vector3(width * 0.5, height * 0.4, width * 0.9)
+    _add_box(st, Vector3(0, height * 0.35, 0), body_size, STONE_COLOR)
+    
+    # Head (triangular-ish)
+    var head_size = Vector3(width * 0.35, height * 0.3, width * 0.4)
+    _add_box(st, Vector3(0, height * 0.45, width * 0.5), head_size, STONE_COLOR)
+    
+    # Ears (triangular, pointed)
+    var ear_size = Vector3(width * 0.15, height * 0.25, width * 0.12)
+    _add_box(st, Vector3(-width * 0.2, height * 0.7, width * 0.5), ear_size, STONE_COLOR)
+    _add_box(st, Vector3(width * 0.2, height * 0.7, width * 0.5), ear_size, STONE_COLOR)
+    
+    # Snout (pointed forward)
+    var snout_size = Vector3(width * 0.2, height * 0.15, width * 0.25)
+    _add_box(st, Vector3(0, height * 0.4, width * 0.75), snout_size, STONE_COLOR)
+    
+    # Tail (bushy, elevated)
+    var tail_size = Vector3(width * 0.25, height * 0.25, width * 0.5)
+    _add_box(st, Vector3(0, height * 0.45, -width * 0.7), tail_size, STONE_COLOR)
+
+## Create a material for stone animals
+static func create_stone_animal_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.9  # Stone is very rough
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
+## Create a simple gravel/pebble mesh
+static func create_gravel_pebble_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var st = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Create a small irregular pebble
+    var size = rng.randf_range(GRAVEL_PEBBLE_MIN_SIZE, GRAVEL_PEBBLE_MAX_SIZE)
+    var pebble_size = Vector3(
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_X_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_X_MAX),
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MAX),
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MAX)
+    )
+    
+    # Varied pebble colors (gray tones)
+    var pebble_color = Color(
+        0.45 + rng.randf_range(-0.05, 0.05),
+        0.45 + rng.randf_range(-0.05, 0.05),
+        0.47 + rng.randf_range(-0.05, 0.05)
+    )
+    
+    _add_box(st, Vector3.ZERO, pebble_size, pebble_color)
+    
+    st.generate_normals()
+    return st.commit()
+
+## Create a material for gravel/pebbles
+static func create_gravel_material() -> StandardMaterial3D:
+## Create a simple wooden fence post mesh
+static func create_fence_post_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Slight variation in height for natural look
+    var height = FENCE_POST_HEIGHT * rng.randf_range(0.9, 1.1)
+    var radius = FENCE_POST_RADIUS * rng.randf_range(0.9, 1.1)
+    
+    # Weathered wood color (grayish brown)
+    var wood_color = Color(0.45, 0.35, 0.25)
+    
+    # Create a simple cylinder for the post
+    _add_cylinder(surface_tool, Vector3.ZERO, height, radius, FENCE_POST_SEGMENTS, wood_color)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create material for fence posts
+static func create_fence_post_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.9  # Very rough, weathered wood
     material.cull_mode = BaseMaterial3D.CULL_BACK
     return material

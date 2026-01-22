@@ -12,11 +12,20 @@ var save_data: Dictionary = {
         "position": Vector3.ZERO,
         "rotation_y": 0.0,
         "is_first_person": false,
-        "inventory": {}  # Crystal inventory
+        "inventory": {},  # Crystal inventory
+        "torch_count": 100,  # Number of torches in inventory
+        "selected_item": "torch",  # Currently selected item
+        "current_air": 100.0,  # Current air level
+        "current_health": 100.0  # Current health
+        "flint_stone_count": 2,  # Number of flint stones in inventory
+        "mushroom_count": 0,  # Number of mushrooms in inventory
+        "bottle_fill_level": 100.0  # Drinking bottle fill level (0-100)
     },
     "world": {
         "seed": 12345,
-        "player_chunk": Vector2i.ZERO
+        "player_chunk": Vector2i.ZERO,
+        "torches": [],  # Placed torches in the world
+        "campfires": []  # Placed campfires in the world
     },
     "day_night": {
         "current_time": 0.0,
@@ -71,17 +80,53 @@ func _auto_save_on_exit() -> void:
     
     if player:
         var inventory = player.crystal_inventory if "crystal_inventory" in player else {}
+        var torch_count = player.torch_count if "torch_count" in player else 100
+        var selected_item = player.selected_item if "selected_item" in player else "torch"
+        var current_air = player.current_air if "current_air" in player else 100.0
+        var current_health = player.current_health if "current_health" in player else 100.0
+        var flint_stone_count = player.flint_stone_count if "flint_stone_count" in player else 2
+        var mushroom_count = player.mushroom_count if "mushroom_count" in player else 0
+        var bottle_fill_level = player.bottle_fill_level if "bottle_fill_level" in player else 100.0
         update_player_data(
             player.global_position,
             player.rotation.y,
             player.is_first_person if "is_first_person" in player else false,
-            inventory
+            inventory,
+            torch_count,
+            selected_item,
+            current_air,
+            current_health
+            flint_stone_count,
+            mushroom_count,
+            bottle_fill_level
         )
+    
+    # Collect all placed torches in the world
+    var torches = get_tree().get_nodes_in_group("Torches")
+    var torch_positions = []
+    for torch in torches:
+        torch_positions.append({
+            "x": torch.global_position.x,
+            "y": torch.global_position.y,
+            "z": torch.global_position.z
+        })
+    
+    # Collect all placed campfires in the world
+    var campfires = get_tree().get_nodes_in_group("Campfires")
+    var campfire_positions = []
+    for campfire in campfires:
+        campfire_positions.append({
+            "x": campfire.global_position.x,
+            "y": campfire.global_position.y,
+            "z": campfire.global_position.z
+        })
     
     if world_manager:
         update_world_data(
             world_manager.WORLD_SEED,
-            world_manager.player_chunk
+            world_manager.player_chunk,
+            torch_positions,
+            campfire_positions
         )
     
     if day_night_cycle:
@@ -131,6 +176,13 @@ func save_game() -> bool:
     config.set_value("player", "position_z", save_data["player"]["position"].z)
     config.set_value("player", "rotation_y", save_data["player"]["rotation_y"])
     config.set_value("player", "is_first_person", save_data["player"]["is_first_person"])
+    config.set_value("player", "torch_count", save_data["player"]["torch_count"])
+    config.set_value("player", "selected_item", save_data["player"]["selected_item"])
+    config.set_value("player", "current_air", save_data["player"]["current_air"])
+    config.set_value("player", "current_health", save_data["player"]["current_health"])
+    config.set_value("player", "flint_stone_count", save_data["player"]["flint_stone_count"])
+    config.set_value("player", "mushroom_count", save_data["player"]["mushroom_count"])
+    config.set_value("player", "bottle_fill_level", save_data["player"]["bottle_fill_level"])
     
     # Save inventory (convert dictionary to JSON string for easier storage)
     var inventory_json = JSON.stringify(save_data["player"]["inventory"])
@@ -140,6 +192,14 @@ func save_game() -> bool:
     config.set_value("world", "seed", save_data["world"]["seed"])
     config.set_value("world", "player_chunk_x", save_data["world"]["player_chunk"].x)
     config.set_value("world", "player_chunk_y", save_data["world"]["player_chunk"].y)
+    
+    # Save torch positions as JSON
+    var torches_json = JSON.stringify(save_data["world"]["torches"])
+    config.set_value("world", "torches", torches_json)
+    
+    # Save campfire positions as JSON
+    var campfires_json = JSON.stringify(save_data["world"]["campfires"])
+    config.set_value("world", "campfires", campfires_json)
     
     # Save day/night data
     config.set_value("day_night", "current_time", save_data["day_night"]["current_time"])
@@ -194,6 +254,13 @@ func load_game() -> bool:
     save_data["player"]["position"] = Vector3(pos_x, pos_y, pos_z)
     save_data["player"]["rotation_y"] = config.get_value("player", "rotation_y", 0.0)
     save_data["player"]["is_first_person"] = config.get_value("player", "is_first_person", false)
+    save_data["player"]["torch_count"] = config.get_value("player", "torch_count", 100)
+    save_data["player"]["selected_item"] = config.get_value("player", "selected_item", "torch")
+    save_data["player"]["current_air"] = config.get_value("player", "current_air", 100.0)
+    save_data["player"]["current_health"] = config.get_value("player", "current_health", 100.0)
+    save_data["player"]["flint_stone_count"] = config.get_value("player", "flint_stone_count", 2)
+    save_data["player"]["mushroom_count"] = config.get_value("player", "mushroom_count", 0)
+    save_data["player"]["bottle_fill_level"] = config.get_value("player", "bottle_fill_level", 100.0)
     
     # Load inventory (parse from JSON string)
     var inventory_json = config.get_value("player", "inventory", "{}")
@@ -209,6 +276,24 @@ func load_game() -> bool:
     var chunk_x = config.get_value("world", "player_chunk_x", 0)
     var chunk_y = config.get_value("world", "player_chunk_y", 0)
     save_data["world"]["player_chunk"] = Vector2i(chunk_x, chunk_y)
+    
+    # Load torch positions (parse from JSON)
+    var torches_json = config.get_value("world", "torches", "[]")
+    var torches_parser = JSON.new()
+    var torches_parse_result = torches_parser.parse(torches_json)
+    if torches_parse_result == OK:
+        save_data["world"]["torches"] = torches_parser.data
+    else:
+        save_data["world"]["torches"] = []
+    
+    # Load campfire positions (parse from JSON)
+    var campfires_json = config.get_value("world", "campfires", "[]")
+    var campfires_parser = JSON.new()
+    var campfires_parse_result = campfires_parser.parse(campfires_json)
+    if campfires_parse_result == OK:
+        save_data["world"]["campfires"] = campfires_parser.data
+    else:
+        save_data["world"]["campfires"] = []
     
     # Load day/night data
     save_data["day_night"]["current_time"] = config.get_value("day_night", "current_time", 0.0)
@@ -232,16 +317,26 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}) -> void:
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0) -> void:
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
     save_data["player"]["is_first_person"] = is_first_person
     save_data["player"]["inventory"] = inventory
+    save_data["player"]["torch_count"] = torch_count
+    save_data["player"]["selected_item"] = selected_item
+    save_data["player"]["current_air"] = current_air
+    save_data["player"]["current_health"] = current_health
+    save_data["player"]["flint_stone_count"] = flint_stone_count
+    save_data["player"]["mushroom_count"] = mushroom_count
+    save_data["player"]["bottle_fill_level"] = bottle_fill_level
 
 # Update world data for saving
-func update_world_data(seed: int, player_chunk: Vector2i) -> void:
+func update_world_data(seed: int, player_chunk: Vector2i, torches: Array = [], campfires: Array = []) -> void:
     save_data["world"]["seed"] = seed
     save_data["world"]["player_chunk"] = player_chunk
+    save_data["world"]["torches"] = torches
+    save_data["world"]["campfires"] = campfires
 
 # Update day/night data for saving
 func update_day_night_data(current_time: float, is_locked_out: bool, lockout_end_time: float, time_scale: float = 2.0, day_count: int = 1, night_start_time: float = 0.0) -> void:

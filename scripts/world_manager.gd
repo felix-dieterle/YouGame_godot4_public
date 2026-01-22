@@ -21,6 +21,7 @@ class_name WorldManager
 # Preload dependencies
 const Chunk = preload("res://scripts/chunk.gd")
 const StartingLocation = preload("res://scripts/starting_location.gd")
+const TorchSystem = preload("res://scripts/torch_system.gd")
 
 # ============================================================================
 # CONFIGURATION
@@ -88,6 +89,9 @@ func _ready() -> void:
     if starting_location:
         starting_location.adjust_to_terrain(self)
     
+    # Load placed torches from save file
+    _load_placed_torches()
+    
     # Mark initial loading as complete after a short delay
     initial_loading_timer.start(0.5)
 
@@ -111,6 +115,7 @@ func _process(_delta) -> void:
         
         # Only update chunks when player moves to a new chunk (performance optimization)
         if new_player_chunk != player_chunk:
+            print("Chunk-Grenze überschritten: ", player_chunk, " -> ", new_player_chunk)
             player_chunk = new_player_chunk
             _update_chunks()
 
@@ -141,6 +146,7 @@ func _update_chunks() -> void:
             _load_chunk(chunk_pos)
 
 func _load_chunk(chunk_pos: Vector2i) -> void:
+    print("Neuer Chunk wird erzeugt: (", chunk_pos.x, ", ", chunk_pos.y, ")")
     var chunk = Chunk.new(chunk_pos.x, chunk_pos.y, WORLD_SEED)
     chunk.position = Vector3(chunk_pos.x * CHUNK_SIZE, 0, chunk_pos.y * CHUNK_SIZE)
     add_child(chunk)
@@ -200,3 +206,34 @@ func get_slope_gradient_at_position(world_pos: Vector3) -> Vector3:
     if chunk:
         return chunk.get_slope_gradient_at_world_pos(world_pos.x, world_pos.z)
     return Vector3.ZERO
+
+## Load placed torches from save file
+func _load_placed_torches() -> void:
+    if not SaveGameManager.has_save_file():
+        return
+    
+    var world_data = SaveGameManager.get_world_data()
+    if not "torches" in world_data:
+        return
+    
+    var torch_positions = world_data["torches"]
+    if not torch_positions is Array:
+        return
+    
+    # Create torches at saved positions using TorchSystem
+    for torch_data in torch_positions:
+        if not torch_data is Dictionary:
+            continue
+        
+        var pos = Vector3(
+            torch_data.get("x", 0.0),
+            torch_data.get("y", 0.0),
+            torch_data.get("z", 0.0)
+        )
+        
+        # Create torch using TorchSystem
+        var torch = TorchSystem.create_torch_node()
+        torch.global_position = pos
+        add_child(torch)
+    
+    print("WorldManager: Loaded ", torch_positions.size(), " torches from save file")

@@ -3,11 +3,28 @@ class_name Player
 
 # Preload dependencies
 const CrystalSystem = preload("res://scripts/crystal_system.gd")
+const TorchSystem = preload("res://scripts/torch_system.gd")
+const CampfireSystem = preload("res://scripts/campfire_system.gd")
+
+# Torch placement settings
+@export var torch_placement_offset: float = 0.5  # Height offset when placing torch
+@export var torch_light_energy: float = 5.0  # Brightness of torch light
+@export var torch_light_range: float = 30.0  # How far torch light reaches
+@export var torch_light_attenuation: float = 0.5  # Light falloff rate
+
+# Campfire placement settings
+@export var campfire_placement_offset: float = 0.0  # Height offset when placing campfire (on ground)
+@export var campfire_light_energy: float = 8.0  # Brightness of campfire light
+@export var campfire_light_range: float = 40.0  # How far campfire light reaches
+@export var campfire_light_attenuation: float = 0.8  # Light falloff rate
 
 # Movement settings
 @export var move_speed: float = 5.0
 @export var sprint_speed: float = 10.0
 @export var rotation_speed: float = 3.0
+@export var jetpack_speed: float = 3.0  # Upward speed when using jetpack
+@export var jetpack_move_speed_multiplier: float = 4.0  # Horizontal speed multiplier when jetpack is active
+@export var glide_speed: float = 0.5  # Slow descent speed when gliding after jetpack release
 @export var camera_distance: float = 10.0
 @export var camera_height: float = 5.0
 @export var max_slope_angle: float = 30.0  # Maximum walkable slope in degrees
@@ -60,6 +77,29 @@ var is_sprinting: bool = false
 # Crystal inventory - tracks collected crystals by type (initialized in _ready)
 var crystal_inventory: Dictionary = {}
 
+# Torch inventory
+var torch_count: int = 100  # Player starts with 100 torches
+var selected_item: String = "torch"  # Currently selected item
+
+# New inventory items
+var flint_stone_count: int = 2  # Player starts with 2 flint stones
+var mushroom_count: int = 0  # Player starts with 0 mushrooms
+var bottle_fill_level: float = 100.0  # Drinking bottle fill level (0-100)
+
+# Glide state - tracks if player was using jetpack and should now glide
+var is_gliding: bool = false
+var was_jetpack_active: bool = false
+
+# Air and health bar system
+@export var max_air: float = 100.0  # Maximum air capacity
+@export var max_health: float = 100.0  # Maximum health
+@export var air_depletion_rate: float = 10.0  # Air lost per second when underwater
+@export var health_depletion_rate: float = 5.0  # Health lost per second when air is empty underwater
+@export var underwater_threshold: float = 0.5  # Water depth threshold to be considered underwater
+var current_air: float = 100.0  # Current air level
+var current_health: float = 100.0  # Current health
+var is_underwater: bool = false  # Track if player is currently underwater
+
 func _ready() -> void:
     # Add to Player group so other systems can find this node
     add_to_group("Player")
@@ -104,6 +144,27 @@ func _physics_process(delta) -> void:
     # Check if input is disabled (e.g., during night)
     if not input_enabled:
         return
+    
+    # Handle jetpack input - check both keyboard and mobile controls
+    var jetpack_active = _is_jetpack_active()
+    
+    # Update glide state based on jetpack transitions
+    if jetpack_active:
+        is_gliding = false
+        was_jetpack_active = true
+    elif was_jetpack_active:
+        # Jetpack was just released - start gliding
+        is_gliding = true
+        was_jetpack_active = false
+    
+    # Apply jetpack upward movement or gliding descent
+    # Set velocity to jetpack speed for consistent ascent
+    # (Game uses terrain snapping instead of gravity, so direct velocity setting is appropriate)
+    if jetpack_active:
+        velocity.y = jetpack_speed
+    elif is_gliding:
+        # Apply slow downward glide when jetpack is released
+        velocity.y = -glide_speed
     
     # Handle camera rotation from look joystick
     var look_input = Vector2.ZERO
@@ -167,7 +228,13 @@ func _physics_process(delta) -> void:
         # Check slope along intended movement path
         var can_move = true
         
-        if world_manager:
+        # Skip slope checking when flying more than 1m above terrain
+        var terrain_level = _get_terrain_level()
+        var height_above_terrain = global_position.y - terrain_level
+        
+        # Only check slopes if we're close to the ground (within 1m)
+        # When flying with jetpack or gliding high above terrain, skip slope checks
+        if world_manager and height_above_terrain <= 1.0:
             # Check multiple points along the movement path to catch steep edges
             # Use configurable lookahead distances to ensure consistent behavior
             var check_distances = [slope_check_near, slope_check_medium, slope_check_far]
@@ -198,8 +265,13 @@ func _physics_process(delta) -> void:
         if can_move:
             # Use sprint speed if sprinting, otherwise use normal move speed
             var current_speed = sprint_speed if is_sprinting else move_speed
-            velocity.x = direction.x * current_speed
-            velocity.z = direction.z * current_speed
+            # Apply jetpack speed multiplier when jetpack is active
+            var current_move_speed = current_speed
+            if jetpack_active:
+                current_move_speed = move_speed * jetpack_move_speed_multiplier
+            
+            velocity.x = direction.x * current_move_speed
+            velocity.z = direction.z * current_move_speed
             
             # Rotate towards movement direction (in both first and third person)
             # This allows turning with joystick in first-person mode
@@ -234,13 +306,24 @@ func _physics_process(delta) -> void:
         var bob_offset = sin(head_bob_time) * head_bob_amplitude
         camera.position.y = first_person_height + bob_offset
     
-    # Snap to terrain
+    # Snap to terrain (only when jetpack is not active and not gliding)
     if world_manager:
-        var target_height = world_manager.get_height_at_position(global_position)
-        var water_depth = world_manager.get_water_depth_at_position(global_position)
+        var terrain_level = _get_terrain_level()
         
-        # Sink into water (knee-deep means player height is reduced)
-        global_position.y = target_height + 1.0 - water_depth
+        # Only snap to terrain when jetpack is not active and not gliding
+        if not _is_jetpack_active() and not is_gliding:
+            # Sink into water (knee-deep means player height is reduced)
+            global_position.y = terrain_level
+        elif is_gliding:
+            # Check if player has reached or gone below terrain level while gliding
+            if global_position.y <= terrain_level:
+                # Stop gliding and snap to terrain
+                is_gliding = false
+                global_position.y = terrain_level
+                velocity.y = 0.0
+    
+    # Update air and health bars
+    _update_air_and_health(delta)
 
 func _input(event) -> void:
     # Sprint toggle
@@ -251,6 +334,18 @@ func _input(event) -> void:
     # Camera view toggle
     if event.is_action_pressed("toggle_camera_view"):
         _toggle_camera_view()
+    
+    # Torch placement
+    if event.is_action_pressed("place_torch"):
+        _place_torch()
+    
+    # Use flint stones to create campfire
+    if event.is_action_pressed("use_flint_stones"):
+        _use_flint_stones()
+    
+    # Toggle inventory (show/hide)
+    if event.is_action_pressed("toggle_inventory"):
+        _toggle_inventory()
     
     # Camera zoom (only in third-person)
     if not is_first_person and event is InputEventMouseButton:
@@ -495,6 +590,65 @@ func _play_footstep_sound() -> void:
 func set_input_enabled(enabled: bool) -> void:
     input_enabled = enabled
 
+## Update air and health bars based on underwater status
+func _update_air_and_health(delta: float) -> void:
+    if not world_manager:
+        return
+    
+    # Check if player is underwater
+    var water_depth = world_manager.get_water_depth_at_position(global_position)
+    is_underwater = water_depth > underwater_threshold
+    
+    if is_underwater:
+        # Deplete air when underwater
+        current_air = max(0.0, current_air - air_depletion_rate * delta)
+        
+        # If air is empty, deplete health
+        if current_air <= 0.0:
+            current_health = max(0.0, current_health - health_depletion_rate * delta)
+            
+            # Check for game over
+            if current_health <= 0.0:
+                _trigger_game_over()
+    else:
+        # Refill air immediately when above water
+        current_air = max_air
+    
+    # Update UI
+    _update_air_health_ui()
+
+## Trigger game over when health reaches zero
+func _trigger_game_over() -> void:
+    # Disable player input
+    set_input_enabled(false)
+    
+    # Show game over message
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("show_game_over"):
+        ui_manager.show_game_over()
+
+## Update air and health UI elements
+func _update_air_health_ui() -> void:
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_air_health_bars"):
+        ui_manager.update_air_health_bars(current_air, max_air, current_health, max_health)
+
+## Get the terrain level at the player's current position (accounting for water depth)
+func _get_terrain_level() -> float:
+    if not world_manager:
+        return 0.0
+    
+    var terrain_height = world_manager.get_height_at_position(global_position)
+    var water_depth = world_manager.get_water_depth_at_position(global_position)
+    return terrain_height + 1.0 - water_depth
+
+## Check if jetpack is currently active from any input source
+func _is_jetpack_active() -> bool:
+    var active = Input.is_action_pressed("jetpack")
+    if mobile_controls and mobile_controls.has_method("is_jetpack_pressed"):
+        active = active or mobile_controls.is_jetpack_pressed()
+    return active
+
 ## Try to collect a crystal at the screen position
 func _try_collect_crystal(screen_pos: Vector2) -> void:
     if not camera:
@@ -580,4 +734,94 @@ func _load_saved_state():
             if ui_manager and ui_manager.has_method("update_crystal_count"):
                 ui_manager.update_crystal_count(crystal_inventory)
         
+        # Restore torch count
+        if "torch_count" in player_data:
+            torch_count = player_data["torch_count"]
+        
+        # Restore selected item
+        if "selected_item" in player_data:
+            selected_item = player_data["selected_item"]
+        
+        # Restore air and health
+        if "current_air" in player_data:
+            current_air = player_data["current_air"]
+        else:
+            current_air = max_air  # Default to full if not in save
+        
+        if "current_health" in player_data:
+            current_health = player_data["current_health"]
+        else:
+            current_health = max_health  # Default to full if not in save
+        # Restore new inventory items
+        if "flint_stone_count" in player_data:
+            flint_stone_count = player_data["flint_stone_count"]
+        
+        if "mushroom_count" in player_data:
+            mushroom_count = player_data["mushroom_count"]
+        
+        if "bottle_fill_level" in player_data:
+            bottle_fill_level = player_data["bottle_fill_level"]
+        
         print("Player: Loaded saved position: ", global_position)
+
+## Place a torch at the player's current position
+func _place_torch() -> void:
+    # Check if player has torches
+    if torch_count <= 0:
+        var ui_manager = get_tree().get_first_node_in_group("UIManager")
+        if ui_manager and ui_manager.has_method("show_message"):
+            ui_manager.show_message("No torches left!", 2.0)
+        return
+    
+    # Deduct one torch from inventory
+    torch_count -= 1
+    
+    # Create torch at player position using TorchSystem
+    var torch = TorchSystem.create_torch_node(torch_light_energy, torch_light_range, torch_light_attenuation)
+    torch.global_position = global_position + Vector3(0, torch_placement_offset, 0)
+    
+    # Add torch to the world
+    get_parent().add_child(torch)
+    
+    # Update UI
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_torch_count"):
+        ui_manager.update_torch_count(torch_count)
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("Torch placed! (%d left)" % torch_count, 1.5)
+    
+    print("Player: Placed torch at ", torch.global_position, " - ", torch_count, " torches remaining")
+
+## Use flint stones to create a campfire at the player's current position
+func _use_flint_stones() -> void:
+    # Check if player has enough flint stones
+    if flint_stone_count < 2:
+        var ui_manager = get_tree().get_first_node_in_group("UIManager")
+        if ui_manager and ui_manager.has_method("show_message"):
+            ui_manager.show_message("Need 2 flint stones to create campfire! (%d/2)" % flint_stone_count, 2.0)
+        return
+    
+    # Deduct 2 flint stones from inventory
+    flint_stone_count -= 2
+    
+    # Create campfire at player position using CampfireSystem
+    var campfire = CampfireSystem.create_campfire_node(campfire_light_energy, campfire_light_range, campfire_light_attenuation)
+    campfire.global_position = global_position + Vector3(0, campfire_placement_offset, 0)
+    
+    # Add campfire to the world
+    get_parent().add_child(campfire)
+    
+    # Update UI
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("update_flint_stone_count"):
+        ui_manager.update_flint_stone_count(flint_stone_count)
+    if ui_manager and ui_manager.has_method("show_message"):
+        ui_manager.show_message("Campfire created! (%d flint stones left)" % flint_stone_count, 2.0)
+    
+    print("Player: Created campfire at ", campfire.global_position, " - ", flint_stone_count, " flint stones remaining")
+
+## Toggle inventory UI visibility
+func _toggle_inventory() -> void:
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("toggle_inventory_ui"):
+        ui_manager.toggle_inventory_ui()
