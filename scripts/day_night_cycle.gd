@@ -482,6 +482,9 @@ func _load_state() -> void:
             time_scale = 2.0  # Start with double speed time progression
             print("DayNightCycle: Set current_time to: ", current_time)
             DebugLogOverlay.add_log("Fresh: current_time=%.2f" % current_time, "green")
+    
+    # Initialize last_log_time to avoid immediate logging on first frame
+    last_log_time = current_time
 
 
 

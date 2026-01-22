@@ -367,7 +367,7 @@ func update_game_time(time_seconds: float, cycle_duration: float, sun_offset_hou
     
     # Only log if time changed to avoid spam
     if time_label.text != time_text:
-        DebugLogOverlay.add_log("UI: Time updated to %s (time_seconds=%.2f, ratio=%.2f)" % [time_text, time_seconds, time_ratio], "white")
+        DebugLogOverlay.add_log("UI: Time updated to %s (time_seconds=%.2f)" % [time_text, time_seconds], "white")
     
     time_label.text = time_text
 
