@@ -21,6 +21,7 @@ run/main_scene="res://scenes/main.tscn"
 DebugLogOverlay="*res://scripts/debug_log_overlay.gd"
 SaveGameManager="*res://scripts/save_game_manager.gd"
 SaveGameWidgetExporter="*res://scripts/save_game_widget_exporter.gd"
+LogExportManager="*res://scripts/log_export_manager.gd"
 
 [display]
 
