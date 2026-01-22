@@ -18,9 +18,10 @@ var world_manager: Node3D = null
 var camera: Camera3D = null
 
 # Arrow settings
-const ARROW_DISTANCE_FROM_CENTER: float = 150.0  # Distance from screen center in pixels
+const ARROW_DISTANCE_FROM_CENTER: float = 150.0  # Distance from screen center in pixels (avoids minimap in top-right)
 const ARROW_SIZE: float = 30.0  # Size of arrow triangle
 const ARROW_LINE_WIDTH: float = 3.0  # Width of arrow line
+const MIN_DISTANCE_TO_SHOW: float = 10.0  # Don't show arrows for targets closer than 10m
 
 # Arrow colors
 const WATER_ARROW_COLOR: Color = Color(0.2, 0.5, 1.0, 0.8)  # Blue for water
@@ -88,6 +89,14 @@ func _draw() -> void:
 func _draw_arrow_to_target(target_pos: Vector3, color: Color, screen_center: Vector2, label_text: String) -> void:
 	# Get direction from player to target in world space
 	var player_pos = player.global_position
+	
+	# Calculate distance to target
+	var distance = player_pos.distance_to(target_pos)
+	
+	# Don't show arrow if player is very close to target
+	if distance < MIN_DISTANCE_TO_SHOW:
+		return
+	
 	var direction_3d = (target_pos - player_pos).normalized()
 	
 	# Project to screen space - we only care about horizontal direction
@@ -104,9 +113,6 @@ func _draw_arrow_to_target(target_pos: Vector3, color: Color, screen_center: Vec
 	
 	# Calculate arrow position on circle around center
 	var arrow_pos = screen_center + screen_direction * ARROW_DISTANCE_FROM_CENTER
-	
-	# Calculate distance to target
-	var distance = player_pos.distance_to(target_pos)
 	
 	# Draw arrow pointing toward target
 	_draw_triangle_arrow(arrow_pos, screen_direction, color)
