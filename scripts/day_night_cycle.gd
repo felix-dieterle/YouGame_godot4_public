@@ -624,7 +624,10 @@ func _update_moon_position() -> void:
     var moon_angle = sun_angle + 180.0
     
     # Position moon in sky (far from player, moves in arc)
-    var angle_rad = deg_to_rad(moon_angle)
+    # moon_angle = 0° means moon overhead, negative = one side, positive = other side
+    # Convert to elevation angle where 90° = zenith, 0° = horizon
+    var elevation_angle = 90.0 + moon_angle
+    var angle_rad = deg_to_rad(elevation_angle)
     
     # Calculate position on arc
     moon.position.x = 0
@@ -673,7 +676,10 @@ func _update_sun_position():
     var sun_angle = _calculate_current_sun_angle()
     
     # Position sun in sky (far from player, moves in arc)
-    var angle_rad = deg_to_rad(sun_angle)
+    # sun_angle = 0° means sun overhead (noon), negative = morning, positive = evening
+    # Convert to elevation angle where 90° = zenith, 0° = horizon
+    var elevation_angle = 90.0 + sun_angle
+    var angle_rad = deg_to_rad(elevation_angle)
     
     # Calculate position on arc
     sun.position.x = 0
