@@ -24,7 +24,7 @@ func after_each():
 
 func test_player_input_disabled_when_loading_during_lockout():
 	# GIVEN: A save file with active night lockout
-	var future_lockout_end = Time.get_unix_time_from_system() + 3600.0  # 1 hour in future
+	var future_lockout_end = Time.get_unix_time_from_system() + 60.0  # 60 seconds in future
 	save_manager.update_day_night_data(
 		0.0,  # current_time
 		true,  # is_locked_out
