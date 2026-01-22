@@ -19,7 +19,8 @@ var save_data: Dictionary = {
         "current_health": 100.0,  # Current health
         "flint_stone_count": 2,  # Number of flint stones in inventory
         "mushroom_count": 0,  # Number of mushrooms in inventory
-        "bottle_fill_level": 100.0  # Drinking bottle fill level (0-100)
+        "bottle_fill_level": 100.0,  # Drinking bottle fill level (0-100)
+        "flashlight_enabled": true  # Flashlight state (default ON)
     },
     "world": {
         "seed": 12345,
@@ -87,6 +88,7 @@ func _auto_save_on_exit() -> void:
         var flint_stone_count = player.flint_stone_count if "flint_stone_count" in player else 2
         var mushroom_count = player.mushroom_count if "mushroom_count" in player else 0
         var bottle_fill_level = player.bottle_fill_level if "bottle_fill_level" in player else 100.0
+        var flashlight_enabled = player.flashlight_enabled if "flashlight_enabled" in player else true
         update_player_data(
             player.global_position,
             player.rotation.y,
@@ -98,7 +100,8 @@ func _auto_save_on_exit() -> void:
             current_health,
             flint_stone_count,
             mushroom_count,
-            bottle_fill_level
+            bottle_fill_level,
+            flashlight_enabled
         )
     
     # Collect all placed torches in the world
@@ -183,6 +186,7 @@ func save_game() -> bool:
     config.set_value("player", "flint_stone_count", save_data["player"]["flint_stone_count"])
     config.set_value("player", "mushroom_count", save_data["player"]["mushroom_count"])
     config.set_value("player", "bottle_fill_level", save_data["player"]["bottle_fill_level"])
+    config.set_value("player", "flashlight_enabled", save_data["player"]["flashlight_enabled"])
     
     # Save inventory (convert dictionary to JSON string for easier storage)
     var inventory_json = JSON.stringify(save_data["player"]["inventory"])
@@ -261,6 +265,7 @@ func load_game() -> bool:
     save_data["player"]["flint_stone_count"] = config.get_value("player", "flint_stone_count", 2)
     save_data["player"]["mushroom_count"] = config.get_value("player", "mushroom_count", 0)
     save_data["player"]["bottle_fill_level"] = config.get_value("player", "bottle_fill_level", 100.0)
+    save_data["player"]["flashlight_enabled"] = config.get_value("player", "flashlight_enabled", true)
     
     # Load inventory (parse from JSON string)
     var inventory_json = config.get_value("player", "inventory", "{}")
@@ -317,7 +322,7 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0, flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0) -> void:
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0, flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0, flashlight_enabled: bool = true) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
     save_data["player"]["is_first_person"] = is_first_person
@@ -329,6 +334,7 @@ func update_player_data(position: Vector3, rotation_y: float, is_first_person: b
     save_data["player"]["flint_stone_count"] = flint_stone_count
     save_data["player"]["mushroom_count"] = mushroom_count
     save_data["player"]["bottle_fill_level"] = bottle_fill_level
+    save_data["player"]["flashlight_enabled"] = flashlight_enabled
 
 # Update world data for saving
 func update_world_data(seed: int, player_chunk: Vector2i, torches: Array = [], campfires: Array = []) -> void:

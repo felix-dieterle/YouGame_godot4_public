@@ -86,6 +86,15 @@ var flint_stone_count: int = 2  # Player starts with 2 flint stones
 var mushroom_count: int = 0  # Player starts with 0 mushrooms
 var bottle_fill_level: float = 100.0  # Drinking bottle fill level (0-100)
 
+# Flashlight system
+@export var flashlight_energy: float = 3.0  # Brightness of flashlight
+@export var flashlight_range: float = 50.0  # How far the flashlight reaches
+@export var flashlight_angle: float = 75.0  # Outer cone angle (large cone)
+@export var flashlight_angle_attenuation: float = 0.5  # Attenuation of light cone
+@export var flashlight_color: Color = Color(1.0, 0.95, 0.9)  # Warm white light color
+var flashlight: SpotLight3D = null  # Reference to the flashlight node
+var flashlight_enabled: bool = true  # Flashlight state (default is ON)
+
 # Glide state - tracks if player was using jetpack and should now glide
 var is_gliding: bool = false
 var was_jetpack_active: bool = false
@@ -116,6 +125,9 @@ func _ready() -> void:
     add_child(camera)
     camera.position = Vector3(0, camera_height, camera_distance)
     camera.look_at(global_position, Vector3.UP)
+    
+    # Setup flashlight (attached to camera)
+    _setup_flashlight()
     
     # Find world manager
     world_manager = get_tree().get_first_node_in_group("WorldManager")
@@ -346,6 +358,10 @@ func _input(event) -> void:
     # Toggle inventory (show/hide)
     if event.is_action_pressed("toggle_inventory"):
         _toggle_inventory()
+    
+    # Toggle flashlight
+    if event.is_action_pressed("toggle_flashlight"):
+        _toggle_flashlight()
     
     # Camera zoom (only in third-person)
     if not is_first_person and event is InputEventMouseButton:
@@ -762,6 +778,12 @@ func _load_saved_state():
         if "bottle_fill_level" in player_data:
             bottle_fill_level = player_data["bottle_fill_level"]
         
+        # Restore flashlight state
+        if "flashlight_enabled" in player_data:
+            flashlight_enabled = player_data["flashlight_enabled"]
+            if flashlight:
+                flashlight.visible = flashlight_enabled
+        
         print("Player: Loaded saved position: ", global_position)
 
 ## Place a torch at the player's current position
@@ -825,3 +847,44 @@ func _toggle_inventory() -> void:
     var ui_manager = get_tree().get_first_node_in_group("UIManager")
     if ui_manager and ui_manager.has_method("toggle_inventory_ui"):
         ui_manager.toggle_inventory_ui()
+
+## Setup flashlight attached to camera
+func _setup_flashlight() -> void:
+    flashlight = SpotLight3D.new()
+    flashlight.name = "Flashlight"
+    
+    # Configure light properties for large light cone
+    flashlight.light_energy = flashlight_energy
+    flashlight.spot_range = flashlight_range
+    flashlight.spot_angle = flashlight_angle  # Large cone angle
+    flashlight.spot_angle_attenuation = flashlight_angle_attenuation
+    flashlight.light_color = flashlight_color  # Warm white light
+    flashlight.shadow_enabled = true
+    
+    # Attach flashlight to camera so it points where player looks
+    camera.add_child(flashlight)
+    flashlight.position = Vector3.ZERO  # Same position as camera
+    
+    # Flashlight is on by default
+    flashlight.visible = flashlight_enabled
+    
+    print("Player: Flashlight created and attached to camera (default: ON)")
+
+## Toggle flashlight on/off
+func _toggle_flashlight() -> void:
+    flashlight_enabled = not flashlight_enabled
+    
+    if flashlight:
+        flashlight.visible = flashlight_enabled
+    
+    # Update UI
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("show_message"):
+        var status = "ON" if flashlight_enabled else "OFF"
+        ui_manager.show_message("Flashlight: %s" % status, 1.5)
+    
+    # Update inventory UI
+    if ui_manager and ui_manager.has_method("update_flashlight_status"):
+        ui_manager.update_flashlight_status(flashlight_enabled)
+    
+    print("Player: Flashlight toggled ", "ON" if flashlight_enabled else "OFF")

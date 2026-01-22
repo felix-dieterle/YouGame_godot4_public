@@ -1,6 +1,9 @@
 extends Control
 class_name UIManager
 
+# UI Color Constants
+const FLASHLIGHT_ICON_COLOR: Color = Color(1.0, 0.95, 0.7)  # Bright white/yellow for flashlight icon
+
 # UI elements
 var status_label: Label
 var chunk_info_label: Label
@@ -21,6 +24,7 @@ var torch_count_label: Label  # Label for torch count
 var flint_stone_count_label: Label  # Label for flint stone count
 var mushroom_count_label: Label  # Label for mushroom count
 var bottle_fill_label: Label  # Label for bottle fill level
+var flashlight_status_label: Label  # Label for flashlight status
 var selected_item_label: Label  # Label for selected item
 var air_bar: ProgressBar  # Air bar
 var health_bar: ProgressBar  # Health bar
@@ -759,6 +763,24 @@ func _create_inventory_panel() -> void:
     
     vbox.add_child(bottle_hbox)
     
+    # Flashlight status
+    var flashlight_hbox = HBoxContainer.new()
+    flashlight_hbox.add_theme_constant_override("separation", 10)
+    
+    var flashlight_icon = ColorRect.new()
+    flashlight_icon.custom_minimum_size = Vector2(32, 32)
+    flashlight_icon.color = FLASHLIGHT_ICON_COLOR
+    flashlight_hbox.add_child(flashlight_icon)
+    
+    flashlight_status_label = Label.new()
+    flashlight_status_label.text = "Flashlight: ON"
+    flashlight_status_label.add_theme_font_size_override("font_size", 20)
+    flashlight_status_label.add_theme_color_override("font_color", Color(0.9, 0.9, 1.0))
+    flashlight_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    flashlight_hbox.add_child(flashlight_status_label)
+    
+    vbox.add_child(flashlight_hbox)
+    
     # Selected item
     var separator2 = HSeparator.new()
     vbox.add_child(separator2)
@@ -783,7 +805,7 @@ func _create_inventory_panel() -> void:
     
     # Instructions
     var instructions = Label.new()
-    instructions.text = "Press 'I' to close inventory\nPress 'F' to place torch\nPress 'C' to use flint stones (create campfire)"
+    instructions.text = "Press 'I' to close inventory\nPress 'F' to place torch\nPress 'C' to use flint stones (create campfire)\nPress 'L' to toggle flashlight"
     instructions.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     instructions.add_theme_font_size_override("font_size", 14)
     instructions.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
@@ -802,6 +824,8 @@ func _create_inventory_panel() -> void:
             update_mushroom_count(player.mushroom_count)
         if "bottle_fill_level" in player:
             update_bottle_fill_level(player.bottle_fill_level)
+        if "flashlight_enabled" in player:
+            update_flashlight_status(player.flashlight_enabled)
 
 ## Toggle inventory UI visibility
 func toggle_inventory_ui() -> void:
@@ -974,5 +998,10 @@ func update_mushroom_count(count: int) -> void:
 func update_bottle_fill_level(level: float) -> void:
     if bottle_fill_label:
         bottle_fill_label.text = "Water Bottle: %d%%" % int(level)
+
+## Update flashlight status display
+func update_flashlight_status(enabled: bool) -> void:
+    if flashlight_status_label:
+        flashlight_status_label.text = "Flashlight: %s" % ("ON" if enabled else "OFF")
 
 
