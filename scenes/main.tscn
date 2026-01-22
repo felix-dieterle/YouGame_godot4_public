@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://djkmwvr3o85qr"]
+[gd_scene load_steps=15 format=3 uid="uid://djkmwvr3o85qr"]
 
 [ext_resource type="Script" path="res://scripts/world_manager.gd" id="1_4f8k2"]
 [ext_resource type="Script" path="res://scripts/debug_visualization.gd" id="2_3h7j5"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://scripts/pause_menu.gd" id="10_pause"]
 [ext_resource type="Script" path="res://scripts/ruler_overlay.gd" id="11_ruler"]
 [ext_resource type="Script" path="res://scripts/minimap_overlay.gd" id="12_minimap"]
+[ext_resource type="Script" path="res://scripts/direction_arrows.gd" id="13_direction_arrows"]
 
 [sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_1"]
 rayleigh_coefficient = 12.0
@@ -135,3 +136,14 @@ grow_vertical = 2
 mouse_filter = 2
 z_index = 60
 script = ExtResource("12_minimap")
+
+[node name="DirectionArrows" type="Control" parent="." groups=["DirectionArrows"]]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 60
+script = ExtResource("13_direction_arrows")
