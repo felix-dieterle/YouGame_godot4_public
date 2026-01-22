@@ -556,11 +556,19 @@ func _update_footsteps(delta: float) -> void:
     # Update footstep timer
     footstep_timer += delta
     
-    # Play footstep sound at regular intervals (faster when sprinting)
-    var current_interval = footstep_interval * (sprint_footstep_multiplier if is_sprinting else 1.0)
-    if footstep_timer >= current_interval:
-        footstep_timer = 0.0
-        _play_footstep_sound()
+    # Check if jetpack is active - play jet sounds instead of footsteps
+    if _is_jetpack_active():
+        # Play jet sound at regular intervals
+        var jet_interval = footstep_interval * 0.3  # Faster for continuous jet sound
+        if footstep_timer >= jet_interval:
+            footstep_timer = 0.0
+            _play_jet_sound()
+    else:
+        # Play footstep sound at regular intervals (faster when sprinting)
+        var current_interval = footstep_interval * (sprint_footstep_multiplier if is_sprinting else 1.0)
+        if footstep_timer >= current_interval:
+            footstep_timer = 0.0
+            _play_footstep_sound()
 
 func _play_footstep_sound() -> void:
     # Get terrain material at current position
@@ -614,6 +622,46 @@ func _play_footstep_sound() -> void:
         var sample = (tone + noise_val) * envelope * 0.3
         
         playback.push_frame(Vector2(sample, sample))
+
+func _play_jet_sound() -> void:
+    # Create a procedural jet/thruster sound
+    var generator = AudioStreamGenerator.new()
+    generator.mix_rate = 22050.0
+    generator.buffer_length = FOOTSTEP_DURATION
+    
+    footstep_player.stream = generator
+    
+    # Start playback to get access to the playback buffer
+    footstep_player.play()
+    
+    # Wait one frame for the stream to initialize
+    await get_tree().process_frame
+    
+    # Generate the sound waveform in the playback buffer
+    var playback = footstep_player.get_stream_playback() as AudioStreamGeneratorPlayback
+    if not playback:
+        return  # Stream not ready, skip this sound
+    
+    var frames_available = playback.get_frames_available()
+    var frames_to_fill = roundi(generator.mix_rate * FOOTSTEP_DURATION)
+    
+    # Jet sound characteristics: low rumble + white noise
+    var base_frequency = 40.0  # Low rumble
+    var noise_amount = 0.9  # Mostly noise for jet effect
+    
+    # Generate audio frames
+    for i in range(min(frames_to_fill, frames_available)):
+        var t = float(i) / generator.mix_rate
+        var envelope = 1.0 - (t / FOOTSTEP_DURATION)  # Linear decay
+        
+        # Mix low frequency rumble with heavy noise
+        var rumble = sin(2.0 * PI * base_frequency * t) * 0.3
+        var rumble2 = sin(2.0 * PI * base_frequency * 1.5 * t) * 0.2  # Add harmonic
+        var noise_val = (randf() * 2.0 - 1.0) * noise_amount
+        var sample = (rumble + rumble2 + noise_val) * envelope * 0.4
+        
+        playback.push_frame(Vector2(sample, sample))
+
 
 func set_input_enabled(enabled: bool) -> void:
     input_enabled = enabled
