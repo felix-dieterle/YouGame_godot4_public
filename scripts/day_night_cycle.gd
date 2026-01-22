@@ -476,17 +476,14 @@ func _load_state() -> void:
         DebugLogOverlay.add_log("Loaded: lockout_end_time=%.2f, time_scale=%.2f" % [lockout_end_time, time_scale], "cyan")
         
         # Log sleep state for debugging problematic state after load
-        var current_unix_time = Time.get_unix_time_from_system()
-        var time_until_lockout_end = lockout_end_time - current_unix_time
-        var log_msg = "DayNightCycle LOAD - is_locked_out: %s | lockout_end_time: %.2f | current_unix_time: %.2f | time_until_end: %.2f | current_time: %.2f | day_count: %d | night_start_time: %.2f" % [
-            str(is_locked_out),
+        var log_msg = LogExportManager.format_sleep_state_log(
+            "DayNightCycle LOAD",
+            is_locked_out,
             lockout_end_time,
-            current_unix_time,
-            time_until_lockout_end,
             current_time,
             day_count,
             night_start_time
-        ]
+        )
         LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
     
     # Fall back to legacy save file if SaveGameManager didn't have data

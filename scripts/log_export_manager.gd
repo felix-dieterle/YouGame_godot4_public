@@ -163,3 +163,18 @@ func _get_logs_internal(log_type: LogType) -> Array[String]:
 		LogType.GENERAL_DEBUG:
 			return general_logs.duplicate()
 	return []
+
+# Helper function to format sleep state log message
+static func format_sleep_state_log(prefix: String, is_locked_out: bool, lockout_end_time: float, current_time: float, day_count: int, night_start_time: float) -> String:
+	var current_unix_time = Time.get_unix_time_from_system()
+	var time_until_lockout_end = lockout_end_time - current_unix_time
+	return "%s - is_locked_out: %s | lockout_end_time: %.2f | current_unix_time: %.2f | time_until_end: %.2f | current_time: %.2f | day_count: %d | night_start_time: %.2f" % [
+		prefix,
+		str(is_locked_out),
+		lockout_end_time,
+		current_unix_time,
+		time_until_lockout_end,
+		current_time,
+		day_count,
+		night_start_time
+	]

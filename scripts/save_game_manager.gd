@@ -316,17 +316,15 @@ func load_game() -> bool:
     save_data["day_night"]["night_start_time"] = config.get_value("day_night", "night_start_time", 0.0)
     
     # Log sleep state information for debugging
-    var current_unix_time = Time.get_unix_time_from_system()
-    var time_until_lockout_end = save_data["day_night"]["lockout_end_time"] - current_unix_time
-    var log_msg = "LOAD - is_locked_out: %s | lockout_end_time: %.2f | current_unix_time: %.2f | time_until_end: %.2f | current_time: %.2f | day_count: %d | night_start_time: %.2f" % [
-        str(save_data["day_night"]["is_locked_out"]),
-        save_data["day_night"]["lockout_end_time"],
-        current_unix_time,
-        time_until_lockout_end,
-        save_data["day_night"]["current_time"],
-        save_data["day_night"]["day_count"],
-        save_data["day_night"]["night_start_time"]
-    ]
+    var day_night_data = save_data["day_night"]
+    var log_msg = LogExportManager.format_sleep_state_log(
+        "LOAD",
+        day_night_data["is_locked_out"],
+        day_night_data["lockout_end_time"],
+        day_night_data["current_time"],
+        day_night_data["day_count"],
+        day_night_data["night_start_time"]
+    )
     LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
     
     # Load settings data
