@@ -95,7 +95,7 @@ func _auto_save_on_exit() -> void:
             torch_count,
             selected_item,
             current_air,
-            current_health
+            current_health,
             flint_stone_count,
             mushroom_count,
             bottle_fill_level
