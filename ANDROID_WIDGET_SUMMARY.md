@@ -3,6 +3,8 @@
 ## Overview
 Successfully implemented an Android home screen widget that displays savegame metrics and metadata for YouGame.
 
+**⚠️ Important:** This feature requires the Android build template to be installed and Gradle build to be enabled. See [Build Instructions](#build-instructions) below.
+
 ## What Was Implemented
 
 ### Core Functionality
@@ -149,16 +151,29 @@ Widget displays on home screen
 - JDK 11+
 
 ### Building APK with Widget
-```bash
-# Ensure Gradle build is enabled
-grep "gradle_build/use_gradle_build=true" export_presets.cfg
 
+**Important:** The widget feature requires the Android build template to be installed.
+
+#### First-time Setup
+```bash
+# 1. Install Android build template in Godot Editor:
+#    Project → Install Android Build Template
+
+# 2. Enable Gradle build in export_presets.cfg
+#    Change: gradle_build/use_gradle_build=false
+#    To:     gradle_build/use_gradle_build=true
+```
+
+#### Building
+```bash
 # Build APK (includes widget plugin)
 ./build.sh
 
 # Install on Android device
 adb install export/YouGame.apk
 ```
+
+**Note:** The default configuration has Gradle build disabled (`gradle_build/use_gradle_build=false`) to allow standard builds without requiring the Android build template. The widget code is included but remains inactive until the build template is installed and Gradle build is enabled.
 
 ### Adding Widget to Home Screen
 1. Long-press on home screen
@@ -220,7 +235,11 @@ Edit these files:
 - `savegame_widget_info.xml` - Widget metadata (size, update frequency)
 
 ### Troubleshooting
-- **Widget not appearing**: Check that `gradle_build/use_gradle_build=true`
+- **Build error "Android build template not installed"**: 
+  - Install template: Project → Install Android Build Template in Godot Editor
+  - Then enable: `gradle_build/use_gradle_build=true` in export_presets.cfg
+  - Or keep Gradle build disabled and widget will remain inactive (no error)
+- **Widget not appearing in widget list**: Ensure Gradle build is enabled and APK rebuilt
 - **Build errors**: Verify Android SDK and Gradle are properly configured
 - **Widget not updating**: Check logcat for errors in SaveGameWidgetPlugin
 - **Data not persisting**: Verify SharedPreferences writes in SaveGameWidgetPlugin

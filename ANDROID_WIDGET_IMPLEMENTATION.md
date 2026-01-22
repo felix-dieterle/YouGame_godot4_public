@@ -82,13 +82,24 @@ Widget displays on home screen
 
 ### For Developers
 
+#### Enabling the Widget Feature
+
+The widget requires the Android build template and Gradle build to be enabled:
+
+**One-time Setup:**
+1. Open the project in Godot Editor
+2. Go to **Project → Install Android Build Template**
+3. In `export_presets.cfg`, set `gradle_build/use_gradle_build=true`
+4. The plugin is automatically compiled and included when building the APK
+
+**Note:** The default build configuration has Gradle build disabled to avoid requiring the Android build template. To use the widget feature, you must complete the setup steps above.
+
 #### Building with the Plugin
 
-The plugin is automatically included when building with Gradle:
+Once the Android build template is installed:
 
-1. Ensure `export_presets.cfg` has `gradle_build/use_gradle_build=true`
-2. Build normally: `./build.sh` or through Godot editor
-3. The plugin is compiled and included in the APK
+1. Build normally: `./build.sh` or through Godot editor
+2. The plugin is compiled and included in the APK
 
 #### Plugin Structure
 
@@ -154,7 +165,20 @@ Edit `savegame_widget_info.xml`:
 - Verify SharedPreferences are being written
 
 ### Build errors
-- Ensure Gradle build is enabled in export presets
+
+#### "Android build template not installed in the project"
+This error occurs when `gradle_build/use_gradle_build=true` is set but the Android build template is not installed.
+
+**Solution:**
+1. Open the project in Godot Editor
+2. Go to **Project → Install Android Build Template**
+3. This creates the necessary `android/build/` directory structure
+4. Rebuild the project
+
+**Alternative:** Keep `gradle_build/use_gradle_build=false` in export presets to build without the widget feature (widget code will be included but inactive).
+
+#### Other build errors
+- Ensure Gradle build is enabled if using the widget
 - Check that Godot 4.3+ is being used
 - Verify Android build tools are properly installed
 
