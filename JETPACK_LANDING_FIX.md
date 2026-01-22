@@ -67,9 +67,15 @@ func _safe_snap_to_terrain(terrain_level: float) -> void:
                 safe_fraction += step
             step *= 0.5
         
-        # Apply the safe movement
-        global_position += motion * max(0.0, safe_fraction - 0.05)  # Small safety margin
+        # Apply the safe movement with additional safety margin
+        # Clamp to ensure we never apply negative movement
+        var final_fraction = clamp(safe_fraction - LANDING_SAFETY_MARGIN, 0.0, 1.0)
+        global_position += motion * final_fraction
 ```
+
+**Constants used:**
+- `LANDING_BINARY_SEARCH_ITERATIONS = 4`: Each iteration halves the search space, giving 1/(2^4) = 1/16 precision
+- `LANDING_SAFETY_MARGIN = 0.05`: Additional 5% buffer to ensure player stays clear of collision geometry
 
 **How it works:**
 
