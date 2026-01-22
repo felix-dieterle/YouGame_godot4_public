@@ -35,8 +35,8 @@ const CampfireSystem = preload("res://scripts/campfire_system.gd")
 @export var slope_check_far: float = 2.5    # Far check - catch steep edges from a distance
 
 # Collision-safe landing settings
-const LANDING_BINARY_SEARCH_ITERATIONS: int = 4  # Binary search iterations (each halves search space: 2^4 = 1/16 precision)
-const LANDING_SAFETY_MARGIN: float = 0.05  # Additional safety buffer (5%) when positioning near collisions
+const LANDING_BINARY_SEARCH_ITERATIONS: int = 4  # Binary search iterations (halves search space each time, final precision: 1/16)
+const LANDING_SAFETY_MARGIN: float = 0.05  # Additional safety buffer (5%) to account for floating-point precision
 
 # First-person settings
 @export var first_person_height: float = 1.6
@@ -685,7 +685,8 @@ func _safe_snap_to_terrain(terrain_level: float) -> void:
             step *= 0.5
         
         # Apply the safe movement with additional safety margin
-        # Clamp to ensure we never apply negative movement
+        # The safety margin prevents floating-point precision issues from placing
+        # the player exactly at collision boundaries, which could cause clipping
         var final_fraction = clamp(safe_fraction - LANDING_SAFETY_MARGIN, 0.0, 1.0)
         global_position += motion * final_fraction
 

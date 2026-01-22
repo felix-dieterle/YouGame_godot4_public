@@ -74,8 +74,8 @@ func _safe_snap_to_terrain(terrain_level: float) -> void:
 ```
 
 **Constants used:**
-- `LANDING_BINARY_SEARCH_ITERATIONS = 4`: Each iteration halves the search space, giving 1/(2^4) = 1/16 precision
-- `LANDING_SAFETY_MARGIN = 0.05`: Additional 5% buffer to ensure player stays clear of collision geometry
+- `LANDING_BINARY_SEARCH_ITERATIONS = 4`: Binary search halves the search space each iteration (4 iterations = 1/16 precision)
+- `LANDING_SAFETY_MARGIN = 0.05`: Additional 5% buffer to prevent floating-point precision issues at collision boundaries
 
 **How it works:**
 
