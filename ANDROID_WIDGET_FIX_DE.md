@@ -1,34 +1,43 @@
-# Android Widget Problem - Lösung (German)
+# Android Widget - Aktivierungsanleitung (German)
 
 ## Problem
 "ich kann mit dem gebauten APK immernoch kein widget erstellen auf dem Handy"
 
 ## Ursache
-Das Android Widget konnte nicht auf dem Handy erstellt werden, weil der Gradle Build in `export_presets.cfg` deaktiviert war (`gradle_build/use_gradle_build=false`).
+Das Android Widget ist im Code vorhanden, wird aber standardmäßig nicht in die APK eingebaut. Das Widget erfordert:
+1. Android Build Template Installation (über Godot Editor)
+2. Gradle Build Aktivierung in `export_presets.cfg`
 
-Wenn der Gradle Build deaktiviert ist, werden Android Plugins nicht in die APK eingebaut, auch wenn der Code vorhanden ist.
+Beide Schritte müssen manuell durchgeführt werden, da sie nicht im Repository enthalten sein können (Build Template enthält projektspezifische Dateien, die nicht committet werden sollten).
 
-## Lösung
-Die Konfiguration wurde geändert:
+## Lösung - Schritt für Schritt
 
-**Datei: `export_presets.cfg`**
+### Schritt 1: Android Build Template installieren
+
+1. Projekt in Godot Editor öffnen
+2. **Project → Install Android Build Template** auswählen
+3. Dies erstellt das `android/build/` Verzeichnis
+4. Diese Dateien **nicht** ins Git committen (sind in `.gitignore`)
+
+### Schritt 2: Gradle Build aktivieren
+
+Bearbeite die Datei `export_presets.cfg`:
+
+**Datei: `export_presets.cfg` (Zeile 21)**
 ```
 - gradle_build/use_gradle_build=false
 + gradle_build/use_gradle_build=true
 ```
 
-## Wichtig: Android Build Template erforderlich
+**Wichtig:** Diese Änderung **nicht** committen, da sie den CI/CD Build brechen würde.
 
-Bevor die APK gebaut werden kann, muss das Android Build Template einmalig installiert werden:
-
-1. Projekt in Godot Editor öffnen
-2. **Project → Install Android Build Template** auswählen
-3. Dies erstellt das `android/build/` Verzeichnis
-4. Danach kann die APK gebaut werden
+### Schritt 3: APK bauen
 
 ```bash
 ./build.sh
 ```
+
+Oder im Godot Editor: **Project → Export → Android → Export Project**
 
 ## Widget verwenden
 
@@ -56,18 +65,44 @@ Das Widget-Plugin liegt in `android/plugins/savegame_widget/` und enthält:
 
 Mit aktiviertem Gradle Build wird das Plugin automatisch in die APK eingebaut und das Widget erscheint in der Android Widget-Liste.
 
-## Änderungen
+## Warum nicht standardmäßig aktiviert?
 
-- `export_presets.cfg`: Gradle Build aktiviert (1 Zeile geändert)
-- `DEVELOPMENT.md`: Dokumentation ergänzt mit Build Template Anforderung
+Das Widget kann nicht standardmäßig aktiviert werden, weil:
 
-## Sicherheit
+1. **Android Build Template kann nicht committet werden**
+   - Enthält projektspezifische Build-Dateien
+   - Wird durch Godot Editor generiert
+   - Muss lokal auf jedem System installiert werden
 
-✅ Code Review: Keine Probleme
-✅ CodeQL Security Scan: Keine Sicherheitslücken
-✅ Minimale Änderung: Nur Konfiguration, kein neuer Code
+2. **CI/CD Kompatibilität**
+   - GitHub Actions Build läuft im headless Modus
+   - Kann kein Build Template installieren
+   - Gradle Build würde den automatischen Build brechen
+
+3. **Standard-Builds müssen funktionieren**
+   - Nicht jeder Entwickler braucht das Widget
+   - CI/CD muss ohne manuelle Einrichtung laufen
+   - Widget ist ein optionales Feature
+
+## Technische Details
+
+Das Widget-Plugin liegt in `android/plugins/savegame_widget/` und enthält:
+- Java-Code für das Android Widget
+- Layout-Dateien für die Anzeige
+- Konfigurationsdateien (.gdap, AndroidManifest.xml)
+- Pre-built AAR Datei (savegame_widget.aar)
+
+Mit aktiviertem Gradle Build wird das Plugin automatisch in die APK eingebaut und das Widget erscheint in der Android Widget-Liste.
+
+## Änderungen in diesem PR
+
+- `DEVELOPMENT.md`: Erweiterte Dokumentation mit Widget-Aktivierungsanleitung
+- `ANDROID_WIDGET_FIX_DE.md`: Diese Anleitung auf Deutsch
+
+**Keine Code-Änderungen** - Widget-Aktivierung erfolgt lokal durch Benutzer.
 
 ---
 
-**Status**: ✅ Behoben  
-**Datum**: 2026-01-22
+**Status**: ✅ Dokumentiert  
+**Datum**: 2026-01-22  
+**Hinweis**: Widget-Code ist vorhanden, Aktivierung erfolgt manuell durch Benutzer
