@@ -8,6 +8,7 @@ var log_panel: Panel
 var log_label: RichTextLabel
 var toggle_button: Button
 var clear_button: Button
+var copy_button: Button
 var version_label: Label
 var is_visible: bool = true  # Start visible to catch early logs
 
@@ -23,6 +24,9 @@ var log_messages: Array[String] = []
 # Game version (cached)
 var game_version: String = ""
 
+# Regex for stripping BBCode tags (compiled once for performance)
+var bbcode_color_regex: RegEx = null
+
 # Singleton instance (type is inferred from autoload)
 static var instance = null
 
@@ -32,11 +36,18 @@ func _ready() -> void:
     # Cache game version
     game_version = ProjectSettings.get_setting("application/config/version", "unknown")
     
+    # Compile regex once for performance
+    bbcode_color_regex = RegEx.new()
+    bbcode_color_regex.compile("\\[color=[^\\]]+\\]")
+    
     # Create toggle button (top left corner)
     _create_toggle_button()
     
     # Create clear button (next to toggle)
     _create_clear_button()
+    
+    # Create copy button (next to clear)
+    _create_copy_button()
     
     # Create log panel
     _create_log_panel()
@@ -111,11 +122,43 @@ func _create_clear_button() -> void:
     add_child(clear_button)
     _update_button_positions()
 
+func _create_copy_button() -> void:
+    copy_button = Button.new()
+    copy_button.text = "📄"  # Document/copy emoji
+    copy_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    copy_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    copy_button.add_theme_font_size_override("font_size", 20)
+    copy_button.focus_mode = Control.FOCUS_NONE
+    copy_button.z_index = 100
+    
+    # Style the button
+    var style_normal = StyleBoxFlat.new()
+    style_normal.bg_color = Color(0.2, 0.6, 0.2, 0.8)  # Green for copy
+    style_normal.corner_radius_top_left = 5
+    style_normal.corner_radius_top_right = 5
+    style_normal.corner_radius_bottom_left = 5
+    style_normal.corner_radius_bottom_right = 5
+    copy_button.add_theme_stylebox_override("normal", style_normal)
+    
+    var style_hover = StyleBoxFlat.new()
+    style_hover.bg_color = Color(0.3, 0.7, 0.3, 0.9)
+    style_hover.corner_radius_top_left = 5
+    style_hover.corner_radius_top_right = 5
+    style_hover.corner_radius_bottom_left = 5
+    style_hover.corner_radius_bottom_right = 5
+    copy_button.add_theme_stylebox_override("hover", style_hover)
+    
+    copy_button.pressed.connect(_on_copy_pressed)
+    add_child(copy_button)
+    _update_button_positions()
+
 func _update_button_positions() -> void:
     if toggle_button:
         toggle_button.position = Vector2(10, 10)
     if clear_button:
         clear_button.position = Vector2(10 + BUTTON_SIZE + 5, 10)
+    if copy_button:
+        copy_button.position = Vector2(10 + (BUTTON_SIZE + 5) * 2, 10)
 
 func _create_log_panel() -> void:
     # Create semi-transparent panel
@@ -192,6 +235,22 @@ func _on_clear_pressed() -> void:
     log_messages.clear()
     _update_log_display()
     add_log("=== Log Cleared ===")
+
+func _on_copy_pressed() -> void:
+    # Get plain text from log messages (strip BBCode tags)
+    var plain_text_lines: Array[String] = []
+    for msg in log_messages:
+        # Remove BBCode color tags: [color=...]...[/color]
+        var plain_msg = msg
+        # Remove [color=...] opening tag using pre-compiled regex
+        plain_msg = bbcode_color_regex.sub(plain_msg, "", true)
+        # Remove [/color] closing tag
+        plain_msg = plain_msg.replace("[/color]", "")
+        plain_text_lines.append(plain_msg)
+    
+    var clipboard_text = "\n".join(plain_text_lines)
+    DisplayServer.clipboard_set(clipboard_text)
+    add_log("Logs copied to clipboard!", "green")
 
 # Static method to add logs from anywhere
 static func add_log(message: String, color: String = "white"):

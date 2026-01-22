@@ -303,12 +303,17 @@ func on_initial_loading_complete() -> void:
         show_message("Loading complete! Ready to explore.", 4.0)
 
 func show_night_overlay(lockout_end_time: float) -> void:
+    DebugLogOverlay.add_log("=== UI: show_night_overlay called ===", "magenta")
+    DebugLogOverlay.add_log("UI: Received lockout_end_time: %.2f" % lockout_end_time, "magenta")
     night_lockout_end_time = lockout_end_time
     night_overlay.visible = true
+    DebugLogOverlay.add_log("UI: Night overlay visible set to true", "magenta")
     _update_night_countdown()
     countdown_timer.start()
+    DebugLogOverlay.add_log("UI: Countdown timer started", "magenta")
 
 func hide_night_overlay() -> void:
+    DebugLogOverlay.add_log("=== UI: hide_night_overlay called ===", "magenta")
     night_overlay.visible = false
     countdown_timer.stop()
 
@@ -321,6 +326,8 @@ func _update_night_countdown():
     
     var current_time = Time.get_unix_time_from_system()
     var time_remaining = night_lockout_end_time - current_time
+    
+    DebugLogOverlay.add_log("UI: Countdown update - time_remaining: %.2f sec" % time_remaining, "magenta")
     
     # Handle potential system time manipulation
     if time_remaining < -3600:  # If more than 1 hour in the past, something is wrong
@@ -341,6 +348,7 @@ func update_game_time(time_seconds: float, cycle_duration: float, sun_offset_hou
     
     # Only update if time_label exists (may not exist during script validation)
     if not time_label:
+        DebugLogOverlay.add_log("UI: update_game_time - time_label is NULL!", "red")
         return
     
     # Convert game time to hours and minutes for day cycle display
@@ -355,7 +363,13 @@ func update_game_time(time_seconds: float, cycle_duration: float, sun_offset_hou
     var hours = int(total_minutes / 60) % 24
     var minutes = int(total_minutes) % 60
     
-    time_label.text = "%02d:%02d" % [hours, minutes]
+    var time_text = "%02d:%02d" % [hours, minutes]
+    
+    # Only log if time changed to avoid spam
+    if time_label.text != time_text:
+        DebugLogOverlay.add_log("UI: Time updated to %s (time_seconds=%.2f)" % [time_text, time_seconds], "white")
+    
+    time_label.text = time_text
 
 ## Create crystal counter panel
 func _create_crystal_counter_panel() -> void:

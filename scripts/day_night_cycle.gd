@@ -47,6 +47,7 @@ var is_locked_out: bool = false
 var lockout_end_time: float = 0.0  # Unix timestamp when lockout ends
 var day_count: int = 1  # Track number of days passed
 var night_start_time: float = 0.0  # Unix timestamp when night began
+var last_log_time: float = 0.0  # Track last time we logged for throttling
 
 # Warning states
 var warning_2min_shown: bool = false
@@ -110,9 +111,15 @@ func _ready() -> void:
     
     # Check if we need to show sunrise animation
     if is_locked_out:
+        DebugLogOverlay.add_log("=== DayNightCycle: Player is locked out ===", "yellow")
         var current_unix_time = Time.get_unix_time_from_system()
+        DebugLogOverlay.add_log("Current unix time: %.2f" % current_unix_time, "yellow")
+        DebugLogOverlay.add_log("Lockout end time: %.2f" % lockout_end_time, "yellow")
+        DebugLogOverlay.add_log("Time remaining: %.2f sec" % (lockout_end_time - current_unix_time), "yellow")
+        
         if debug_skip_lockout or current_unix_time >= lockout_end_time:
             # Lockout expired: start new day with sunrise animation and increment day counter
+            DebugLogOverlay.add_log("Lockout expired, starting new day", "green")
             is_locked_out = false
             is_animating_sunrise = true
             sunrise_animation_time = 0.0
@@ -122,11 +129,14 @@ func _ready() -> void:
             _show_day_message()
         else:
             # Still in lockout, show night screen
+            DebugLogOverlay.add_log("Still locked out, showing night screen", "yellow")
             is_night = true
             _show_night_screen()
             _set_night_lighting()
     else:
         # Normal day start
+        DebugLogOverlay.add_log("=== DayNightCycle: Normal day start ===", "green")
+        DebugLogOverlay.add_log("Starting current_time: %.2f" % current_time, "green")
         _update_lighting()
 
 func _process(delta) -> void:
@@ -230,6 +240,10 @@ func _update_lighting() -> void:
     
     # Update UI time display (includes sun offset for display)
     if ui_manager and ui_manager.has_method("update_game_time"):
+        # Only log every 5 seconds to avoid spam
+        if current_time - last_log_time >= 5.0:
+            DebugLogOverlay.add_log("update_game_time called: current_time=%.2f, cycle_duration=%.2f, offset=%.2f" % [current_time, DAY_CYCLE_DURATION, sun_time_offset_hours], "white")
+            last_log_time = current_time
         ui_manager.update_game_time(current_time, DAY_CYCLE_DURATION, sun_time_offset_hours)
     
     # Update UI sun position display
@@ -385,8 +399,13 @@ func _show_day_message() -> void:
         ui_manager.show_message("Day %d - Game loaded!" % day_count, 5.0)
 
 func _show_night_screen() -> void:
+    DebugLogOverlay.add_log("=== Showing night screen ===", "magenta")
+    DebugLogOverlay.add_log("lockout_end_time: %.2f" % lockout_end_time, "magenta")
     if ui_manager and ui_manager.has_method("show_night_overlay"):
+        DebugLogOverlay.add_log("Calling ui_manager.show_night_overlay", "magenta")
         ui_manager.show_night_overlay(lockout_end_time)
+    else:
+        DebugLogOverlay.add_log("ERROR: ui_manager not found or no show_night_overlay method!", "red")
 
 func _hide_night_screen() -> void:
     if ui_manager and ui_manager.has_method("hide_night_overlay"):
@@ -412,10 +431,13 @@ func _save_state() -> void:
         push_warning("Failed to save day/night state: " + str(error))
 
 func _load_state() -> void:
+    DebugLogOverlay.add_log("=== DayNightCycle: Loading State ===", "yellow")
+    
     # Get day/night state from SaveGameManager (already loaded at startup)
     var loaded_from_manager = false
     if SaveGameManager.has_save_file() and SaveGameManager._data_loaded:
         print("DayNightCycle: Loading from SaveGameManager")
+        DebugLogOverlay.add_log("DayNightCycle: Loading from SaveGameManager", "cyan")
         var day_night_data = SaveGameManager.get_day_night_data()
         is_locked_out = day_night_data.get("is_locked_out", false)
         lockout_end_time = day_night_data.get("lockout_end_time", 0.0)
@@ -427,15 +449,19 @@ func _load_state() -> void:
         night_start_time = day_night_data.get("night_start_time", 0.0)
         loaded_from_manager = true
         print("DayNightCycle: Loaded state from SaveGameManager")
+        DebugLogOverlay.add_log("Loaded: is_locked_out=%s, current_time=%.2f" % [is_locked_out, current_time], "cyan")
+        DebugLogOverlay.add_log("Loaded: lockout_end_time=%.2f, time_scale=%.2f" % [lockout_end_time, time_scale], "cyan")
     
     # Fall back to legacy save file if SaveGameManager didn't have data
     if not loaded_from_manager:
         print("DayNightCycle: Trying to load from legacy file")
+        DebugLogOverlay.add_log("DayNightCycle: Trying legacy file", "cyan")
         var config = ConfigFile.new()
         var error = config.load(SAVE_FILE_PATH)
         
         if error == OK:
             print("DayNightCycle: Legacy file loaded successfully")
+            DebugLogOverlay.add_log("DayNightCycle: Legacy file loaded", "cyan")
             is_locked_out = config.get_value("day_night", "is_locked_out", false)
             lockout_end_time = config.get_value("day_night", "lockout_end_time", 0.0)
             current_time = config.get_value("day_night", "current_time", 0.0)
@@ -443,9 +469,11 @@ func _load_state() -> void:
             day_count = config.get_value("day_night", "day_count", 1)
             night_start_time = config.get_value("day_night", "night_start_time", 0.0)
             print("DayNightCycle: current_time from legacy file: ", current_time)
+            DebugLogOverlay.add_log("Legacy: current_time=%.2f" % current_time, "cyan")
         else:
             # No save file or error loading, use defaults for first start
             print("DayNightCycle: No save file, using fresh start defaults")
+            DebugLogOverlay.add_log("DayNightCycle: Fresh start, no save file", "green")
             is_locked_out = false
             lockout_end_time = 0.0
             # Start at sunrise (INITIAL_TIME_OFFSET_HOURS = 0.0)
@@ -453,6 +481,11 @@ func _load_state() -> void:
             current_time = DAY_CYCLE_DURATION * (INITIAL_TIME_OFFSET_HOURS / DAY_DURATION_HOURS)
             time_scale = 2.0  # Start with double speed time progression
             print("DayNightCycle: Set current_time to: ", current_time)
+            DebugLogOverlay.add_log("Fresh: current_time=%.2f" % current_time, "green")
+    
+    # Initialize last_log_time to avoid immediate logging on first frame
+    last_log_time = current_time
+
 
 
 # Create a moon that appears during night.
