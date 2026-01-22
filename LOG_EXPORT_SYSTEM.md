@@ -102,14 +102,15 @@ Example filename: `sun_lighting_issue_2026-01-22T19-16-36.log`
 
 ## Android Widget Integration
 
-The home screen widget is now integrated into the release APK build:
-- Widget plugin is automatically included when building with Gradle
+The home screen widget can be integrated into the release APK build:
+- Build the widget AAR using `./android/plugins/savegame_widget/build_widget.sh`
 - Widget displays save game information (day count, health, position, etc.)
 - Widget updates automatically when the game is saved
+- See `android/plugins/savegame_widget/README.md` for build instructions
 
 ## Export Configuration
 
-The export presets have been updated to:
-- Enable Gradle build (`gradle_build/use_gradle_build=true`)
-- Include the SaveGameWidget plugin
-- Configure minimum SDK 21, target SDK 33
+The widget plugin is ready to be enabled in export presets:
+- Add to `plugins/enabled` array in `export_presets.cfg` after building the AAR
+- Uses standard (non-Gradle) APK export - no Android build template required
+- Widget AAR must exist before exporting: `android/plugins/savegame_widget/savegame_widget.aar`
