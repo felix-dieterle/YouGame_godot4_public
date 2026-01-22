@@ -1,6 +1,6 @@
 # Scripts Architecture
 
-## Quick Reference - All Scripts (22 files)
+## Quick Reference - All Scripts (23 files)
 
 ### Core Systems (6 files)
 - **world_manager.gd** - Chunk loading/unloading manager (WorldManager class)
@@ -25,9 +25,10 @@
 - **weather_system.gd** - Weather effects (WeatherSystem class)
 - **procedural_models.gd** - Runtime 3D model generation (ProceduralModels class)
 
-### UI & Debug (6 files)
+### UI & Debug (7 files)
 - **ui_manager.gd** - Main UI controller
 - **pause_menu.gd** - Pause menu system
+- **direction_arrows.gd** - Navigation arrows to water/crystals/mountain (DirectionArrows class)
 - **debug_log_overlay.gd** - Debug logging UI (Autoload)
 - **debug_visualization.gd** - Visual debugging tools
 - **debug_narrative_ui.gd** - Narrative system debug UI
