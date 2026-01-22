@@ -557,8 +557,17 @@ func get_sun_position_degrees() -> float:
         # The initial offset makes the sun start higher for better brightness,
         # but we want the display to show 0° at game start for intuitive UX
         var initial_offset_time = DAY_CYCLE_DURATION * (INITIAL_TIME_OFFSET_HOURS / DAY_DURATION_HOURS)
-        time_ratio = (current_time - initial_offset_time) / (DAY_CYCLE_DURATION - initial_offset_time)
+        var remaining_day_duration = DAY_CYCLE_DURATION - initial_offset_time
+        
+        # Prevent division by zero if offset equals full day duration
+        if remaining_day_duration > 0.0:
+            time_ratio = (current_time - initial_offset_time) / remaining_day_duration
+        else:
+            # Edge case: if offset >= day duration, just show end of day
+            time_ratio = 1.0
+        
         # Clamp to 0.0-1.0 range to handle edge cases
+        # (e.g., current_time < initial_offset_time would give negative ratio, clamped to 0.0)
         time_ratio = clamp(time_ratio, 0.0, 1.0)
     
     # Map 0.0-1.0 ratio to 0-180 degrees
