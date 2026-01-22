@@ -30,6 +30,9 @@ const COLOR_FOREST: Color = Color(0.2, 0.5, 0.2, 1.0)
 const COLOR_MOUNTAIN: Color = Color(0.5, 0.4, 0.3, 1.0)
 const COLOR_PEAK: Color = Color(0.6, 0.6, 0.6, 1.0)
 
+# Visibility settings for explored vs unexplored areas
+const UNEXPLORED_DARKNESS: float = 0.65  # How much to darken unexplored areas (0.0 = black, 1.0 = no darkening)
+
 # References
 var world_manager = null
 var player = null
@@ -211,7 +214,7 @@ func _render_map() -> void:
 	var max_z = player_pos.z + half_world_width
 	
 	# Render each pixel of the map with sampling optimization
-	# Only render visited chunks to save performance (fog of war approach)
+	# Unexplored areas are shown dimmed, visited areas are brighter
 	for py in range(0, map_size, PIXEL_SAMPLE_RATE):
 		for px in range(0, map_size, PIXEL_SAMPLE_RATE):
 			# Convert pixel coordinates to world coordinates
@@ -219,25 +222,29 @@ func _render_map() -> void:
 			var world_z = min_z + (py / float(map_size)) * (max_z - min_z)
 			var world_pos = Vector3(world_x, 0, world_z)
 			
-			# Check if this area has been visited first (performance optimization)
+			# Check if this area has been visited
 			var chunk_x = int(floor(world_x / world_manager.CHUNK_SIZE))
 			var chunk_z = int(floor(world_z / world_manager.CHUNK_SIZE))
 			var chunk_pos = Vector2i(chunk_x, chunk_z)
 			
-			# Only render visited chunks (fog of war)
+			# Get terrain color at this position (expensive operation)
+			var color = _get_terrain_color(world_pos)
+			
+			# Apply different brightness based on visited status
 			if chunk_pos in visited_chunks:
-				# Get terrain color at this position (expensive operation)
-				var color = _get_terrain_color(world_pos)
 				# Brighten visited areas slightly
 				color = color.lightened(0.15)
-				
-				# Fill the sampled pixel block for smoother appearance
-				for dy in range(PIXEL_SAMPLE_RATE):
-					for dx in range(PIXEL_SAMPLE_RATE):
-						var set_px = px + dx
-						var set_py = py + dy
-						if set_px < map_size and set_py < map_size:
-							map_image.set_pixel(set_px, set_py, color)
+			else:
+				# Darken unexplored areas to make them slightly visible but clearly different
+				color = color.darkened(UNEXPLORED_DARKNESS)
+			
+			# Fill the sampled pixel block for smoother appearance
+			for dy in range(PIXEL_SAMPLE_RATE):
+				for dx in range(PIXEL_SAMPLE_RATE):
+					var set_px = px + dx
+					var set_py = py + dy
+					if set_px < map_size and set_py < map_size:
+						map_image.set_pixel(set_px, set_py, color)
 	
 	# Draw player position and direction
 	_draw_player_indicator()
