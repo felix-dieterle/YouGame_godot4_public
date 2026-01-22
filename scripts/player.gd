@@ -34,6 +34,10 @@ const CampfireSystem = preload("res://scripts/campfire_system.gd")
 @export var slope_check_medium: float = 1.0 # Medium check - a few steps ahead
 @export var slope_check_far: float = 2.5    # Far check - catch steep edges from a distance
 
+# Collision-safe landing settings
+const LANDING_BINARY_SEARCH_ITERATIONS: int = 4  # Iterations for finding safe landing position (gives 1/16 precision)
+const LANDING_SAFETY_MARGIN: float = 0.05  # Additional safety buffer (5%) when positioning near collisions
+
 # First-person settings
 @export var first_person_height: float = 1.6
 @export var head_bob_frequency: float = 2.0
@@ -666,12 +670,11 @@ func _safe_snap_to_terrain(terrain_level: float) -> void:
         # Safe to move - no collision detected
         global_position.y = terrain_level
     else:
-        # Collision detected - find the closest safe position
-        # Use a binary search approach to find the maximum safe distance
+        # Collision detected - find the closest safe position using binary search
         var safe_fraction = 0.5
         var step = 0.25
         
-        for i in range(4):  # 4 iterations gives us 1/16 precision
+        for i in range(LANDING_BINARY_SEARCH_ITERATIONS):
             var test_motion = motion * safe_fraction
             if test_move(global_transform, test_motion):
                 # Collision - try closer position
@@ -681,8 +684,8 @@ func _safe_snap_to_terrain(terrain_level: float) -> void:
                 safe_fraction += step
             step *= 0.5
         
-        # Apply the safe movement
-        global_position += motion * max(0.0, safe_fraction - 0.05)  # Small safety margin
+        # Apply the safe movement with additional safety margin
+        global_position += motion * max(0.0, safe_fraction - LANDING_SAFETY_MARGIN)
 
 ## Check if jetpack is currently active from any input source
 func _is_jetpack_active() -> bool:
