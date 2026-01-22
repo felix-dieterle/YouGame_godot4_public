@@ -22,6 +22,9 @@ var flint_stone_count_label: Label  # Label for flint stone count
 var mushroom_count_label: Label  # Label for mushroom count
 var bottle_fill_label: Label  # Label for bottle fill level
 var selected_item_label: Label  # Label for selected item
+var air_bar: ProgressBar  # Air bar
+var health_bar: ProgressBar  # Health bar
+var game_over_overlay: ColorRect  # Game over screen
 
 # State
 var initial_loading_complete: bool = false
@@ -61,6 +64,10 @@ const DAY_DURATION_HOURS: float = 10.0  # 10-hour day cycle from 7:00 AM to 5:00
 # Night overlay constants
 const NIGHT_OVERLAY_COLOR: Color = Color(0.0, 0.0, 0.1, 0.9)  # Very dark blue
 const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
+
+# Game over constants
+const GAME_OVER_MESSAGE: String = "GAME OVER\n\nYou drowned!"
+const GAME_OVER_INSTRUCTION: String = "Restart the game to continue"
 
 # Game version
 var game_version: String = ""
@@ -249,6 +256,9 @@ func _ready() -> void:
     
     # Create inventory panel (initially hidden)
     _create_inventory_panel()
+    
+    # Create air and health bars (bottom-left)
+    _create_air_health_bars()
     
     # Create and show start menu if save file exists
     _create_start_menu()
@@ -810,6 +820,146 @@ func update_torch_count(count: int) -> void:
     if torch_count_label:
         torch_count_label.text = "Torches: %d" % count
 
+## Create air and health bars
+func _create_air_health_bars() -> void:
+    # Create container for bars
+    var bars_container = VBoxContainer.new()
+    bars_container.anchor_left = 0.0
+    bars_container.anchor_top = 1.0
+    bars_container.anchor_right = 0.0
+    bars_container.anchor_bottom = 1.0
+    bars_container.offset_left = 20
+    bars_container.offset_top = -120
+    bars_container.offset_right = 220
+    bars_container.offset_bottom = -20
+    bars_container.add_theme_constant_override("separation", 10)
+    bars_container.z_index = 60
+    add_child(bars_container)
+    
+    # Health bar (top)
+    var health_label = Label.new()
+    health_label.text = "Health"
+    health_label.add_theme_font_size_override("font_size", 14)
+    health_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+    bars_container.add_child(health_label)
+    
+    health_bar = ProgressBar.new()
+    health_bar.custom_minimum_size = Vector2(200, 20)
+    health_bar.min_value = 0
+    health_bar.max_value = 100
+    health_bar.value = 100
+    health_bar.show_percentage = false
+    
+    # Style health bar
+    var health_style = StyleBoxFlat.new()
+    health_style.bg_color = Color(0.8, 0.2, 0.2, 0.9)  # Red
+    health_style.corner_radius_top_left = 3
+    health_style.corner_radius_top_right = 3
+    health_style.corner_radius_bottom_left = 3
+    health_style.corner_radius_bottom_right = 3
+    health_bar.add_theme_stylebox_override("fill", health_style)
+    
+    var health_bg_style = StyleBoxFlat.new()
+    health_bg_style.bg_color = Color(0.2, 0.2, 0.2, 0.9)
+    health_bg_style.corner_radius_top_left = 3
+    health_bg_style.corner_radius_top_right = 3
+    health_bg_style.corner_radius_bottom_left = 3
+    health_bg_style.corner_radius_bottom_right = 3
+    health_bar.add_theme_stylebox_override("background", health_bg_style)
+    
+    bars_container.add_child(health_bar)
+    
+    # Air bar (bottom)
+    var air_label = Label.new()
+    air_label.text = "Air"
+    air_label.add_theme_font_size_override("font_size", 14)
+    air_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+    bars_container.add_child(air_label)
+    
+    air_bar = ProgressBar.new()
+    air_bar.custom_minimum_size = Vector2(200, 20)
+    air_bar.min_value = 0
+    air_bar.max_value = 100
+    air_bar.value = 100
+    air_bar.show_percentage = false
+    
+    # Style air bar
+    var air_style = StyleBoxFlat.new()
+    air_style.bg_color = Color(0.2, 0.6, 1.0, 0.9)  # Light blue
+    air_style.corner_radius_top_left = 3
+    air_style.corner_radius_top_right = 3
+    air_style.corner_radius_bottom_left = 3
+    air_style.corner_radius_bottom_right = 3
+    air_bar.add_theme_stylebox_override("fill", air_style)
+    
+    var air_bg_style = StyleBoxFlat.new()
+    air_bg_style.bg_color = Color(0.2, 0.2, 0.2, 0.9)
+    air_bg_style.corner_radius_top_left = 3
+    air_bg_style.corner_radius_top_right = 3
+    air_bg_style.corner_radius_bottom_left = 3
+    air_bg_style.corner_radius_bottom_right = 3
+    air_bar.add_theme_stylebox_override("background", air_bg_style)
+    
+    bars_container.add_child(air_bar)
+
+## Update air and health bars
+func update_air_health_bars(current_air: float, max_air: float, current_health: float, max_health: float) -> void:
+    if air_bar:
+        air_bar.max_value = max_air
+        air_bar.value = current_air
+    
+    if health_bar:
+        health_bar.max_value = max_health
+        health_bar.value = current_health
+
+## Show game over screen
+func show_game_over() -> void:
+    # Create game over overlay if it doesn't exist
+    if not game_over_overlay:
+        game_over_overlay = ColorRect.new()
+        game_over_overlay.anchor_right = 1.0
+        game_over_overlay.anchor_bottom = 1.0
+        game_over_overlay.color = Color(0.0, 0.0, 0.0, 0.9)
+        game_over_overlay.z_index = 300  # Above everything
+        add_child(game_over_overlay)
+        
+        # Create label
+        var game_over_label = Label.new()
+        game_over_label.anchor_left = 0.5
+        game_over_label.anchor_top = 0.5
+        game_over_label.anchor_right = 0.5
+        game_over_label.anchor_bottom = 0.5
+        game_over_label.offset_left = -200
+        game_over_label.offset_top = -100
+        game_over_label.offset_right = 200
+        game_over_label.offset_bottom = 100
+        game_over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        game_over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+        game_over_label.add_theme_font_size_override("font_size", 48)
+        game_over_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+        game_over_label.text = GAME_OVER_MESSAGE
+        game_over_overlay.add_child(game_over_label)
+        
+        # Add instruction
+        var instruction_label = Label.new()
+        instruction_label.anchor_left = 0.5
+        instruction_label.anchor_top = 0.5
+        instruction_label.anchor_right = 0.5
+        instruction_label.anchor_bottom = 0.5
+        instruction_label.offset_left = -200
+        instruction_label.offset_top = 100
+        instruction_label.offset_right = 200
+        instruction_label.offset_bottom = 150
+        instruction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        instruction_label.add_theme_font_size_override("font_size", 18)
+        instruction_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+        instruction_label.text = GAME_OVER_INSTRUCTION
+        game_over_overlay.add_child(instruction_label)
+    
+    game_over_overlay.visible = true
+    
+    # Pause the game
+    get_tree().paused = true
 ## Update flint stone count display
 func update_flint_stone_count(count: int) -> void:
     if flint_stone_count_label:

@@ -15,6 +15,8 @@ var save_data: Dictionary = {
         "inventory": {},  # Crystal inventory
         "torch_count": 100,  # Number of torches in inventory
         "selected_item": "torch",  # Currently selected item
+        "current_air": 100.0,  # Current air level
+        "current_health": 100.0  # Current health
         "flint_stone_count": 2,  # Number of flint stones in inventory
         "mushroom_count": 0,  # Number of mushrooms in inventory
         "bottle_fill_level": 100.0  # Drinking bottle fill level (0-100)
@@ -80,6 +82,8 @@ func _auto_save_on_exit() -> void:
         var inventory = player.crystal_inventory if "crystal_inventory" in player else {}
         var torch_count = player.torch_count if "torch_count" in player else 100
         var selected_item = player.selected_item if "selected_item" in player else "torch"
+        var current_air = player.current_air if "current_air" in player else 100.0
+        var current_health = player.current_health if "current_health" in player else 100.0
         var flint_stone_count = player.flint_stone_count if "flint_stone_count" in player else 2
         var mushroom_count = player.mushroom_count if "mushroom_count" in player else 0
         var bottle_fill_level = player.bottle_fill_level if "bottle_fill_level" in player else 100.0
@@ -90,6 +94,8 @@ func _auto_save_on_exit() -> void:
             inventory,
             torch_count,
             selected_item,
+            current_air,
+            current_health
             flint_stone_count,
             mushroom_count,
             bottle_fill_level
@@ -172,6 +178,8 @@ func save_game() -> bool:
     config.set_value("player", "is_first_person", save_data["player"]["is_first_person"])
     config.set_value("player", "torch_count", save_data["player"]["torch_count"])
     config.set_value("player", "selected_item", save_data["player"]["selected_item"])
+    config.set_value("player", "current_air", save_data["player"]["current_air"])
+    config.set_value("player", "current_health", save_data["player"]["current_health"])
     config.set_value("player", "flint_stone_count", save_data["player"]["flint_stone_count"])
     config.set_value("player", "mushroom_count", save_data["player"]["mushroom_count"])
     config.set_value("player", "bottle_fill_level", save_data["player"]["bottle_fill_level"])
@@ -248,6 +256,8 @@ func load_game() -> bool:
     save_data["player"]["is_first_person"] = config.get_value("player", "is_first_person", false)
     save_data["player"]["torch_count"] = config.get_value("player", "torch_count", 100)
     save_data["player"]["selected_item"] = config.get_value("player", "selected_item", "torch")
+    save_data["player"]["current_air"] = config.get_value("player", "current_air", 100.0)
+    save_data["player"]["current_health"] = config.get_value("player", "current_health", 100.0)
     save_data["player"]["flint_stone_count"] = config.get_value("player", "flint_stone_count", 2)
     save_data["player"]["mushroom_count"] = config.get_value("player", "mushroom_count", 0)
     save_data["player"]["bottle_fill_level"] = config.get_value("player", "bottle_fill_level", 100.0)
@@ -307,6 +317,7 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0) -> void:
 func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
@@ -314,6 +325,8 @@ func update_player_data(position: Vector3, rotation_y: float, is_first_person: b
     save_data["player"]["inventory"] = inventory
     save_data["player"]["torch_count"] = torch_count
     save_data["player"]["selected_item"] = selected_item
+    save_data["player"]["current_air"] = current_air
+    save_data["player"]["current_health"] = current_health
     save_data["player"]["flint_stone_count"] = flint_stone_count
     save_data["player"]["mushroom_count"] = mushroom_count
     save_data["player"]["bottle_fill_level"] = bottle_fill_level
