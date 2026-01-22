@@ -1,0 +1,11 @@
+[config]
+
+name="SaveGameWidget"
+binary_type="local"
+binary="savegame_widget.aar"
+
+[dependencies]
+
+local=[]
+remote=[]
+custom_maven_repos=[]

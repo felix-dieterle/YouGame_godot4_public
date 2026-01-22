@@ -221,11 +221,18 @@ func save_game() -> bool:
     config.set_value("meta", "version", save_data["meta"]["version"])
     config.set_value("meta", "timestamp", Time.get_unix_time_from_system())
     
+    # Update timestamp in save_data for widget export
+    save_data["meta"]["timestamp"] = Time.get_unix_time_from_system()
+    
     # Write to file
     var error = config.save(SAVE_FILE_PATH)
     if error != OK:
         push_error("SaveGameManager: Failed to save game: " + str(error))
         return false
+    
+    # Export to Android widget
+    if has_node("/root/SaveGameWidgetExporter"):
+        get_node("/root/SaveGameWidgetExporter").export_save_data(save_data)
     
     print("SaveGameManager: Game saved successfully to: " + SAVE_FILE_PATH)
     save_completed.emit()
@@ -383,6 +390,11 @@ func delete_save() -> bool:
         var error = dir.remove("game_save.cfg")
         if error == OK:
             _data_loaded = false  # Reset loaded flag
+            
+            # Clear widget data
+            if has_node("/root/SaveGameWidgetExporter"):
+                get_node("/root/SaveGameWidgetExporter").clear_widget_data()
+            
             print("SaveGameManager: Save file deleted")
             return true
         else:

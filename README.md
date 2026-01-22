@@ -10,8 +10,11 @@ YouGame is a mobile-first procedural 3D game featuring:
 - **Cross-chunk systems** for paths, objects, and narrative elements
 - **Day/night cycle** with weather effects
 - **Save/load system** for persistent gameplay
+- **Android home screen widget** showing savegame metrics and metadata*
 - **Mobile-optimized controls** with on-screen joysticks
 - **Debug tools** for development and testing
+
+_*Widget requires Android build template installation - see [ANDROID_WIDGET_IMPLEMENTATION.md](ANDROID_WIDGET_IMPLEMENTATION.md)_
 
 **Current Version:** 1.0.52  
 **Engine:** Godot 4.3  
@@ -25,7 +28,8 @@ YouGame is a mobile-first procedural 3D game featuring:
 1. **Download** the APK from releases
 2. **Install** on your Android device
 3. **Play** - Use on-screen joysticks to move and look around
-4. **Toggle camera** with the V key (if using keyboard)
+4. **Add home screen widget** (optional) - Long-press home screen → Widgets → "YouGame Save Status"
+5. **Toggle camera** with the V key (if using keyboard)
 
 ### For Developers
 
@@ -52,6 +56,7 @@ See **[QUICKSTART.md](QUICKSTART.md)** for detailed setup instructions.
 - **[QUICKSTART.md](QUICKSTART.md)** - Setup and first run
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development practices and build instructions
 - **[FEATURES.md](FEATURES.md)** - Complete feature list
+- **[ANDROID_WIDGET_IMPLEMENTATION.md](ANDROID_WIDGET_IMPLEMENTATION.md)** - Android widget documentation
 - **[docs/INDEX.md](docs/INDEX.md)** - Complete documentation index
 
 ### 🤖 For AI Agents
