@@ -13,8 +13,8 @@ const INITIAL_TIME_OFFSET_HOURS: float = 0.0  # Hours to advance sun position at
 
 # Sun angle constants
 const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
-const SUNRISE_END_ANGLE: float = -60.0     # Sunrise position (sun higher for brighter morning)
-const SUNSET_START_ANGLE: float = 60.0     # Sunset position (matches day end, symmetric)
+const SUNRISE_END_ANGLE: float = -20.0     # Sunrise position (20° from overhead for bright morning)
+const SUNSET_START_ANGLE: float = 20.0     # Sunset position (20° from overhead, symmetric)
 const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end
 const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night
 
