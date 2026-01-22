@@ -1,6 +1,9 @@
 extends Control
 class_name UIManager
 
+# UI Color Constants
+const FLASHLIGHT_ICON_COLOR: Color = Color(1.0, 0.95, 0.7)  # Bright white/yellow for flashlight icon
+
 # UI elements
 var status_label: Label
 var chunk_info_label: Label
@@ -766,7 +769,7 @@ func _create_inventory_panel() -> void:
     
     var flashlight_icon = ColorRect.new()
     flashlight_icon.custom_minimum_size = Vector2(32, 32)
-    flashlight_icon.color = Color(1.0, 0.95, 0.7)  # Bright white/yellow for flashlight
+    flashlight_icon.color = FLASHLIGHT_ICON_COLOR
     flashlight_hbox.add_child(flashlight_icon)
     
     flashlight_status_label = Label.new()

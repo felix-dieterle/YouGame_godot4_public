@@ -32,10 +32,24 @@ func test_player_has_flashlight_properties() -> void:
 	
 	var player = Player.new()
 	
-	if "flashlight_enabled" in player and "flashlight_energy" in player and "flashlight_range" in player and "flashlight_angle" in player:
+	# Check all required flashlight properties
+	var required_properties = [
+		"flashlight_enabled",
+		"flashlight_energy",
+		"flashlight_range",
+		"flashlight_angle",
+		"flashlight_color"
+	]
+	
+	var missing_properties = []
+	for property in required_properties:
+		if not property in player:
+			missing_properties.append(property)
+	
+	if missing_properties.is_empty():
 		pass_test(test_name)
 	else:
-		fail_test(test_name, "Player missing flashlight properties")
+		fail_test(test_name, "Player missing properties: " + str(missing_properties))
 	
 	player.queue_free()
 

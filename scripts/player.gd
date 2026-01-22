@@ -91,6 +91,7 @@ var bottle_fill_level: float = 100.0  # Drinking bottle fill level (0-100)
 @export var flashlight_range: float = 50.0  # How far the flashlight reaches
 @export var flashlight_angle: float = 75.0  # Outer cone angle (large cone)
 @export var flashlight_angle_attenuation: float = 0.5  # Attenuation of light cone
+@export var flashlight_color: Color = Color(1.0, 0.95, 0.9)  # Warm white light color
 var flashlight: SpotLight3D = null  # Reference to the flashlight node
 var flashlight_enabled: bool = true  # Flashlight state (default is ON)
 
@@ -857,7 +858,7 @@ func _setup_flashlight() -> void:
     flashlight.spot_range = flashlight_range
     flashlight.spot_angle = flashlight_angle  # Large cone angle
     flashlight.spot_angle_attenuation = flashlight_angle_attenuation
-    flashlight.light_color = Color(1.0, 0.95, 0.9)  # Slightly warm white
+    flashlight.light_color = flashlight_color  # Warm white light
     flashlight.shadow_enabled = true
     
     # Attach flashlight to camera so it points where player looks
