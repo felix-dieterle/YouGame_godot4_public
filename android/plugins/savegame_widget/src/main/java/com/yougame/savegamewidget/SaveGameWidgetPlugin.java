@@ -4,9 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import androidx.annotation.NonNull;
-import androidx.collection.ArraySet;
-
 import org.godotengine.godot.Godot;
 import org.godotengine.godot.plugin.GodotPlugin;
 import org.godotengine.godot.plugin.SignalInfo;
@@ -27,7 +24,6 @@ public class SaveGameWidgetPlugin extends GodotPlugin {
         super(godot);
     }
     
-    @NonNull
     @Override
     public String getPluginName() {
         return "SaveGameWidget";
