@@ -9,6 +9,8 @@ var log_label: RichTextLabel
 var toggle_button: Button
 var clear_button: Button
 var copy_button: Button
+var export_sun_button: Button
+var export_sleep_button: Button
 var version_label: Label
 var is_visible: bool = true  # Start visible to catch early logs
 
@@ -48,6 +50,12 @@ func _ready() -> void:
     
     # Create copy button (next to clear)
     _create_copy_button()
+    
+    # Create export sun logs button
+    _create_export_sun_button()
+    
+    # Create export sleep logs button
+    _create_export_sleep_button()
     
     # Create log panel
     _create_log_panel()
@@ -152,6 +160,66 @@ func _create_copy_button() -> void:
     add_child(copy_button)
     _update_button_positions()
 
+func _create_export_sun_button() -> void:
+    export_sun_button = Button.new()
+    export_sun_button.text = "☀"  # Sun emoji for sun lighting logs
+    export_sun_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    export_sun_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    export_sun_button.add_theme_font_size_override("font_size", 20)
+    export_sun_button.focus_mode = Control.FOCUS_NONE
+    export_sun_button.z_index = 100
+    
+    # Style the button
+    var style_normal = StyleBoxFlat.new()
+    style_normal.bg_color = Color(0.8, 0.6, 0.0, 0.8)  # Yellow/gold for sun
+    style_normal.corner_radius_top_left = 5
+    style_normal.corner_radius_top_right = 5
+    style_normal.corner_radius_bottom_left = 5
+    style_normal.corner_radius_bottom_right = 5
+    export_sun_button.add_theme_stylebox_override("normal", style_normal)
+    
+    var style_hover = StyleBoxFlat.new()
+    style_hover.bg_color = Color(0.9, 0.7, 0.1, 0.9)
+    style_hover.corner_radius_top_left = 5
+    style_hover.corner_radius_top_right = 5
+    style_hover.corner_radius_bottom_left = 5
+    style_hover.corner_radius_bottom_right = 5
+    export_sun_button.add_theme_stylebox_override("hover", style_hover)
+    
+    export_sun_button.pressed.connect(_on_export_sun_pressed)
+    add_child(export_sun_button)
+    _update_button_positions()
+
+func _create_export_sleep_button() -> void:
+    export_sleep_button = Button.new()
+    export_sleep_button.text = "🌙"  # Moon emoji for sleep logs
+    export_sleep_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    export_sleep_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    export_sleep_button.add_theme_font_size_override("font_size", 20)
+    export_sleep_button.focus_mode = Control.FOCUS_NONE
+    export_sleep_button.z_index = 100
+    
+    # Style the button
+    var style_normal = StyleBoxFlat.new()
+    style_normal.bg_color = Color(0.4, 0.2, 0.6, 0.8)  # Purple for sleep/moon
+    style_normal.corner_radius_top_left = 5
+    style_normal.corner_radius_top_right = 5
+    style_normal.corner_radius_bottom_left = 5
+    style_normal.corner_radius_bottom_right = 5
+    export_sleep_button.add_theme_stylebox_override("normal", style_normal)
+    
+    var style_hover = StyleBoxFlat.new()
+    style_hover.bg_color = Color(0.5, 0.3, 0.7, 0.9)
+    style_hover.corner_radius_top_left = 5
+    style_hover.corner_radius_top_right = 5
+    style_hover.corner_radius_bottom_left = 5
+    style_hover.corner_radius_bottom_right = 5
+    export_sleep_button.add_theme_stylebox_override("hover", style_hover)
+    
+    export_sleep_button.pressed.connect(_on_export_sleep_pressed)
+    add_child(export_sleep_button)
+    _update_button_positions()
+
 func _update_button_positions() -> void:
     if toggle_button:
         toggle_button.position = Vector2(10, 10)
@@ -159,6 +227,10 @@ func _update_button_positions() -> void:
         clear_button.position = Vector2(10 + BUTTON_SIZE + 5, 10)
     if copy_button:
         copy_button.position = Vector2(10 + (BUTTON_SIZE + 5) * 2, 10)
+    if export_sun_button:
+        export_sun_button.position = Vector2(10 + (BUTTON_SIZE + 5) * 3, 10)
+    if export_sleep_button:
+        export_sleep_button.position = Vector2(10 + (BUTTON_SIZE + 5) * 4, 10)
 
 func _create_log_panel() -> void:
     # Create semi-transparent panel
@@ -251,6 +323,24 @@ func _on_copy_pressed() -> void:
     var clipboard_text = "\n".join(plain_text_lines)
     DisplayServer.clipboard_set(clipboard_text)
     add_log("Logs copied to clipboard!", "green")
+
+func _on_export_sun_pressed() -> void:
+    var filepath = LogExportManager.export_logs(LogExportManager.LogType.SUN_LIGHTING_ISSUE)
+    if filepath != "":
+        var count = LogExportManager.get_log_count(LogExportManager.LogType.SUN_LIGHTING_ISSUE)
+        add_log("Sun lighting logs exported! (%d entries)" % count, "yellow")
+        add_log("File: %s" % filepath, "cyan")
+    else:
+        add_log("Failed to export sun lighting logs", "red")
+
+func _on_export_sleep_pressed() -> void:
+    var filepath = LogExportManager.export_logs(LogExportManager.LogType.SLEEP_STATE_ISSUE)
+    if filepath != "":
+        var count = LogExportManager.get_log_count(LogExportManager.LogType.SLEEP_STATE_ISSUE)
+        add_log("Sleep state logs exported! (%d entries)" % count, "purple")
+        add_log("File: %s" % filepath, "cyan")
+    else:
+        add_log("Failed to export sleep state logs", "red")
 
 # Static method to add logs from anywhere
 static func add_log(message: String, color: String = "white"):

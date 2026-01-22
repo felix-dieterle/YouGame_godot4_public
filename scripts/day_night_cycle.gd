@@ -270,6 +270,15 @@ func _update_lighting() -> void:
     var intensity_curve = 1.0 - abs(time_ratio - 0.5) * 2.0  # 0 at edges, 1 at center
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, MAX_LIGHT_ENERGY, intensity_curve)
     
+    # Log sun degree and lighting data for debugging lighting issues
+    # This helps identify the problem where it stays dark even when sun degree > 80°
+    var sun_position_deg = get_sun_position_degrees()
+    if sun_position_deg > 80.0 or abs(sun_position_deg - 180.0) < 10.0:
+        var log_msg = "Sun Position: %.2f° | Sun Angle: %.2f° | Light Energy: %.2f | Time Ratio: %.2f | Current Time: %.2f" % [
+            sun_position_deg, sun_angle, directional_light.light_energy, time_ratio, current_time
+        ]
+        LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
+    
     # Keep ambient light color white when using Sky as ambient source
     # This allows the PhysicalSkyMaterial's natural blue color to show through
     if world_environment and world_environment.environment:
@@ -301,6 +310,13 @@ func _animate_sunrise(progress: float) -> void:
     
     # Fade in light to match the start-of-day intensity
     directional_light.light_energy = lerp(0.0, MIN_LIGHT_ENERGY, progress)
+    
+    # Log sunrise animation for debugging
+    var sun_position_deg = get_sun_position_degrees()
+    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Sun Angle: %.2f° | Light Energy: %.2f" % [
+        progress, sun_position_deg, sun_angle, directional_light.light_energy
+    ]
+    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
     # Keep sky blue during sunrise when using Sky as ambient source
     if world_environment and world_environment.environment:
@@ -335,6 +351,13 @@ func _animate_sunset(progress: float) -> void:
     
     # Fade out light from end-of-day intensity to darkness
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, 0.0, progress)
+    
+    # Log sunset animation for debugging
+    var sun_position_deg = get_sun_position_degrees()
+    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Sun Angle: %.2f° | Light Energy: %.2f" % [
+        progress, sun_position_deg, sun_angle, directional_light.light_energy
+    ]
+    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
     # Keep sky blue during sunset when using Sky as ambient source
     if world_environment and world_environment.environment:
@@ -451,6 +474,17 @@ func _load_state() -> void:
         print("DayNightCycle: Loaded state from SaveGameManager")
         DebugLogOverlay.add_log("Loaded: is_locked_out=%s, current_time=%.2f" % [is_locked_out, current_time], "cyan")
         DebugLogOverlay.add_log("Loaded: lockout_end_time=%.2f, time_scale=%.2f" % [lockout_end_time, time_scale], "cyan")
+        
+        # Log sleep state for debugging problematic state after load
+        var log_msg = LogExportManager.format_sleep_state_log(
+            "DayNightCycle LOAD",
+            is_locked_out,
+            lockout_end_time,
+            current_time,
+            day_count,
+            night_start_time
+        )
+        LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
     
     # Fall back to legacy save file if SaveGameManager didn't have data
     if not loaded_from_manager:

@@ -315,6 +315,18 @@ func load_game() -> bool:
     save_data["day_night"]["day_count"] = config.get_value("day_night", "day_count", 1)
     save_data["day_night"]["night_start_time"] = config.get_value("day_night", "night_start_time", 0.0)
     
+    # Log sleep state information for debugging
+    var day_night_data = save_data["day_night"]
+    var log_msg = LogExportManager.format_sleep_state_log(
+        "LOAD",
+        day_night_data["is_locked_out"],
+        day_night_data["lockout_end_time"],
+        day_night_data["current_time"],
+        day_night_data["day_count"],
+        day_night_data["night_start_time"]
+    )
+    LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
+    
     # Load settings data
     save_data["settings"]["master_volume"] = config.get_value("settings", "master_volume", 80.0)
     save_data["settings"]["ruler_visible"] = config.get_value("settings", "ruler_visible", true)

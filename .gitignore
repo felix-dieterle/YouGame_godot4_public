@@ -42,6 +42,9 @@ android/plugins/**/local.properties
 android/plugins/**/gradle/
 android/plugins/**/gradlew
 android/plugins/**/gradlew.bat
+android/.gradle/
+android/build/
+android/local.properties
 
 # Temporary files
 /tmp/
