@@ -111,6 +111,11 @@ func _ready() -> void:
     # Configure CharacterBody3D slope handling
     floor_max_angle = deg_to_rad(max_slope_angle)
     
+    # Configure physics properties to prevent tunneling through walls
+    # Safe margin creates a small buffer zone around the collision shape
+    # This prevents high-speed movement from pushing through thin geometry
+    safe_margin = 0.08
+    
     # Setup camera
     camera = Camera3D.new()
     add_child(camera)
@@ -312,14 +317,17 @@ func _physics_process(delta) -> void:
         
         # Only snap to terrain when jetpack is not active and not gliding
         if not _is_jetpack_active() and not is_gliding:
-            # Sink into water (knee-deep means player height is reduced)
-            global_position.y = terrain_level
+            # Use collision-aware snapping to prevent sinking into ground
+            _safe_snap_to_terrain(terrain_level)
         elif is_gliding:
             # Check if player has reached or gone below terrain level while gliding
             if global_position.y <= terrain_level:
-                # Stop gliding and snap to terrain
+                # Stop gliding and perform safe landing
                 is_gliding = false
-                global_position.y = terrain_level
+                # Dampen velocity for smooth landing
+                velocity.y = max(velocity.y * 0.1, -0.5)
+                # Use collision-aware snapping to prevent clipping through terrain/walls
+                _safe_snap_to_terrain(terrain_level)
                 velocity.y = 0.0
     
     # Update air and health bars
@@ -641,6 +649,40 @@ func _get_terrain_level() -> float:
     var terrain_height = world_manager.get_height_at_position(global_position)
     var water_depth = world_manager.get_water_depth_at_position(global_position)
     return terrain_height + 1.0 - water_depth
+
+## Safely snap player to terrain level while respecting collisions
+## This prevents the player from sinking into ground or clipping through walls
+func _safe_snap_to_terrain(terrain_level: float) -> void:
+    var target_position = global_position
+    target_position.y = terrain_level
+    
+    # Calculate the movement needed to reach terrain level
+    var motion = target_position - global_position
+    
+    # Test if we can move to the target position without colliding
+    var collision = test_move(global_transform, motion)
+    
+    if not collision:
+        # Safe to move - no collision detected
+        global_position.y = terrain_level
+    else:
+        # Collision detected - find the closest safe position
+        # Use a binary search approach to find the maximum safe distance
+        var safe_fraction = 0.5
+        var step = 0.25
+        
+        for i in range(4):  # 4 iterations gives us 1/16 precision
+            var test_motion = motion * safe_fraction
+            if test_move(global_transform, test_motion):
+                # Collision - try closer position
+                safe_fraction -= step
+            else:
+                # No collision - can go further
+                safe_fraction += step
+            step *= 0.5
+        
+        # Apply the safe movement
+        global_position += motion * max(0.0, safe_fraction - 0.05)  # Small safety margin
 
 ## Check if jetpack is currently active from any input source
 func _is_jetpack_active() -> bool:
