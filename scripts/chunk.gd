@@ -83,6 +83,16 @@ const FISHING_BOAT_PLACEMENT_RADIUS = 96.0  # Only place boat near starting area
 const FISHING_BOAT_SELECTION_MODULO = 7  # Hash modulo for deterministic boat chunk selection
 const FISHING_BOAT_SELECTION_VALUE = 3  # Target value for boat chunk selection
 
+# Stone animal gravel area constants
+const GRAVEL_AREA_SEED_OFFSET = 99999  # Offset for gravel area placement seed
+const GRAVEL_AREA_PLACEMENT_RADIUS = 128.0  # Place gravel area at limited distance from spawn (4 chunks = 128 units)
+const GRAVEL_AREA_SELECTION_MODULO = 11  # Hash modulo for deterministic gravel area chunk selection
+const GRAVEL_AREA_SELECTION_VALUE = 7  # Target value for gravel area chunk selection
+const GRAVEL_AREA_RADIUS = 8.0  # Radius of the gravel area in world units
+const GRAVEL_PEBBLE_DENSITY = 150  # Number of pebbles to place in gravel area
+const STONE_ANIMAL_COUNT_MIN = 4  # Minimum number of stone animals
+const STONE_ANIMAL_COUNT_MAX = 8  # Maximum number of stone animals
+
 # Woodpecker ambient sound constants
 const WOODPECKER_SOUND_DURATION = 1.5  # Duration of woodpecker sound in seconds
 const WOODPECKER_FREQUENCY = 800.0  # Frequency of woodpecker knock sound in Hz
@@ -143,6 +153,12 @@ var placed_lighthouses: Array = []  # Array of lighthouse MeshInstance3D
 
 # Fishing boat data
 var placed_fishing_boat: MeshInstance3D = null  # Single fishing boat if placed
+
+# Stone animal gravel area data
+var has_gravel_area: bool = false  # True if this chunk has the gravel area
+var gravel_area_center: Vector2 = Vector2.ZERO  # Center of gravel area in local chunk coordinates
+var placed_stone_animals: Array = []  # Array of stone animal MeshInstance3D
+var placed_gravel_pebbles: Array = []  # Array of gravel pebble MeshInstance3D
 
 # Unique mountain chunk data
 var is_unique_mountain: bool = false  # True if this is the unique high mountain chunk
@@ -211,6 +227,7 @@ func generate() -> void:
     _generate_caves_if_unique_mountain()  # Generate caves for unique mountain
     _place_lighthouses_if_coastal()
     _place_fishing_boat_if_coastal()
+    _place_gravel_area_with_stone_animals()  # Place unique gravel area with stone animals
     _setup_ambient_sounds()  # Setup ambient sounds for dense forests
 
 # ============================================================================
@@ -1705,6 +1722,156 @@ func _place_fishing_boat(pos: Vector3, rng: RandomNumberGenerator, ocean_directi
     placed_fishing_boat.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
     
     add_child(placed_fishing_boat)
+
+# ============================================================================
+# STONE ANIMAL GRAVEL AREA SYSTEM
+# ============================================================================
+
+## Place unique gravel area with stone animals at limited distance from spawn
+func _place_gravel_area_with_stone_animals() -> void:
+    # Check distance from origin (starting area at 0,0)
+    var distance_from_origin = Vector2(chunk_x, chunk_z).length() * CHUNK_SIZE
+    
+    # Only place gravel area at limited distance from spawn
+    # Should be further than fishing boat (96) but not too far
+    if distance_from_origin < FISHING_BOAT_PLACEMENT_RADIUS or distance_from_origin > GRAVEL_AREA_PLACEMENT_RADIUS:
+        return
+    
+    # Don't place in ocean chunks
+    if is_ocean:
+        return
+    
+    # Don't place in lake areas
+    if has_lake:
+        return
+    
+    # Don't place in unique mountain areas (too rocky)
+    if is_unique_mountain:
+        return
+    
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ GRAVEL_AREA_SEED_OFFSET
+    
+    # Only place one gravel area in the entire game world
+    # Use a deterministic check to ensure only one chunk gets the gravel area
+    var gravel_chunk_hash = hash(Vector2i(chunk_x, chunk_z))
+    # Hash-based selection ensures only one chunk matches this condition
+    if (gravel_chunk_hash % GRAVEL_AREA_SELECTION_MODULO) != GRAVEL_AREA_SELECTION_VALUE:
+        return
+    
+    # Find suitable location for gravel area (relatively flat area)
+    var gravel_pos = _find_gravel_area_position(rng)
+    
+    if gravel_pos:
+        has_gravel_area = true
+        gravel_area_center = Vector2(gravel_pos.x, gravel_pos.z)
+        _create_gravel_area(gravel_pos, rng)
+        _place_stone_animals_in_gravel_area(gravel_pos, rng)
+
+## Find a suitable position for the gravel area (relatively flat terrain)
+func _find_gravel_area_position(rng: RandomNumberGenerator) -> Vector3:
+    # Try to find a relatively flat area in the chunk
+    var best_pos = Vector3.ZERO
+    var best_flatness = 999.0  # Lower is better (less slope variation)
+    
+    # Sample several random positions
+    for i in range(10):
+        var local_x = rng.randf_range(GRAVEL_AREA_RADIUS + 2.0, CHUNK_SIZE - GRAVEL_AREA_RADIUS - 2.0)
+        var local_z = rng.randf_range(GRAVEL_AREA_RADIUS + 2.0, CHUNK_SIZE - GRAVEL_AREA_RADIUS - 2.0)
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Check flatness by sampling nearby heights
+        var height_variance = 0.0
+        var sample_count = 8
+        for j in range(sample_count):
+            var angle = (float(j) / sample_count) * TAU
+            var offset = 3.0
+            var sample_x = world_x + cos(angle) * offset
+            var sample_z = world_z + sin(angle) * offset
+            var sample_height = get_height_at_world_pos(sample_x, sample_z)
+            height_variance += abs(sample_height - height)
+        
+        if height_variance < best_flatness:
+            best_flatness = height_variance
+            best_pos = Vector3(local_x, height, local_z)
+    
+    return best_pos
+
+## Create the gravel area with pebbles
+func _create_gravel_area(center_pos: Vector3, rng: RandomNumberGenerator) -> void:
+    # Place many small pebbles to create a gravel floor
+    for i in range(GRAVEL_PEBBLE_DENSITY):
+        # Random position within the gravel area radius
+        var angle = rng.randf() * TAU
+        var radius = rng.randf() * GRAVEL_AREA_RADIUS
+        var local_x = center_pos.x + cos(angle) * radius
+        var local_z = center_pos.z + sin(angle) * radius
+        
+        # Make sure we stay within chunk bounds
+        if local_x < 0 or local_x >= CHUNK_SIZE or local_z < 0 or local_z >= CHUNK_SIZE:
+            continue
+        
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Create pebble instance
+        var pebble_seed = rng.randi()
+        var pebble_instance = MeshInstance3D.new()
+        pebble_instance.mesh = ProceduralModels.create_gravel_pebble_mesh(pebble_seed)
+        pebble_instance.material_override = ProceduralModels.create_gravel_material()
+        pebble_instance.position = Vector3(local_x, height, local_z)
+        pebble_instance.rotation.y = rng.randf() * TAU
+        pebble_instance.rotation.x = rng.randf_range(-0.2, 0.2)
+        pebble_instance.rotation.z = rng.randf_range(-0.2, 0.2)
+        pebble_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # Too small for shadows
+        
+        add_child(pebble_instance)
+        placed_gravel_pebbles.append(pebble_instance)
+
+## Place stone animals in the gravel area
+func _place_stone_animals_in_gravel_area(center_pos: Vector3, rng: RandomNumberGenerator) -> void:
+    var num_animals = rng.randi_range(STONE_ANIMAL_COUNT_MIN, STONE_ANIMAL_COUNT_MAX)
+    
+    # Ensure we have a variety of animal types
+    var animal_types = [
+        ProceduralModels.StoneAnimalType.BIRD,
+        ProceduralModels.StoneAnimalType.RABBIT,
+        ProceduralModels.StoneAnimalType.DEER,
+        ProceduralModels.StoneAnimalType.FOX
+    ]
+    
+    for i in range(num_animals):
+        # Random position within the gravel area (closer to center)
+        var angle = rng.randf() * TAU
+        var radius = rng.randf() * (GRAVEL_AREA_RADIUS * 0.7)  # Keep animals more central
+        var local_x = center_pos.x + cos(angle) * radius
+        var local_z = center_pos.z + sin(angle) * radius
+        
+        # Make sure we stay within chunk bounds
+        if local_x < 0 or local_x >= CHUNK_SIZE or local_z < 0 or local_z >= CHUNK_SIZE:
+            continue
+        
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Select animal type (ensure variety)
+        var animal_type = animal_types[i % animal_types.size()]
+        
+        # Create stone animal instance
+        var animal_seed = rng.randi()
+        var animal_instance = MeshInstance3D.new()
+        animal_instance.mesh = ProceduralModels.create_stone_animal_mesh(animal_type, animal_seed)
+        animal_instance.material_override = ProceduralModels.create_stone_animal_material()
+        animal_instance.position = Vector3(local_x, height, local_z)
+        animal_instance.rotation.y = rng.randf() * TAU  # Random facing direction
+        animal_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+        
+        add_child(animal_instance)
+        placed_stone_animals.append(animal_instance)
 
 # ============================================================================
 # AMBIENT SOUND SYSTEM
