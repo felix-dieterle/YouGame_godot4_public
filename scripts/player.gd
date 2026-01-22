@@ -832,6 +832,16 @@ func _load_saved_state():
             if flashlight:
                 flashlight.visible = flashlight_enabled
         
+        # Check if we're loading during night lockout and disable input if so
+        var day_night_data = SaveGameManager.get_day_night_data()
+        if day_night_data.get("is_locked_out", false):
+            var current_unix_time = Time.get_unix_time_from_system()
+            var lockout_end_time = day_night_data.get("lockout_end_time", 0.0)
+            # Only disable input if lockout hasn't expired yet
+            if current_unix_time < lockout_end_time:
+                input_enabled = false
+                print("Player: Input disabled - loading during night lockout (%.1f seconds remaining)" % (lockout_end_time - current_unix_time))
+        
         print("Player: Loaded saved position: ", global_position)
 
 ## Place a torch at the player's current position
