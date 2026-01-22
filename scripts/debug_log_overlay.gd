@@ -11,6 +11,7 @@ var clear_button: Button
 var copy_button: Button
 var export_sun_button: Button
 var export_sleep_button: Button
+var export_zip_button: Button
 var version_label: Label
 var is_visible: bool = true  # Start visible to catch early logs
 
@@ -56,6 +57,9 @@ func _ready() -> void:
     
     # Create export sleep logs button
     _create_export_sleep_button()
+    
+    # Create export ZIP button
+    _create_export_zip_button()
     
     # Create log panel
     _create_log_panel()
@@ -220,6 +224,36 @@ func _create_export_sleep_button() -> void:
     add_child(export_sleep_button)
     _update_button_positions()
 
+func _create_export_zip_button() -> void:
+    export_zip_button = Button.new()
+    export_zip_button.text = "📦"  # Package/box emoji for ZIP export
+    export_zip_button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    export_zip_button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+    export_zip_button.add_theme_font_size_override("font_size", 20)
+    export_zip_button.focus_mode = Control.FOCUS_NONE
+    export_zip_button.z_index = 100
+    
+    # Style the button
+    var style_normal = StyleBoxFlat.new()
+    style_normal.bg_color = Color(0.8, 0.4, 0.0, 0.8)  # Orange for ZIP/package
+    style_normal.corner_radius_top_left = 5
+    style_normal.corner_radius_top_right = 5
+    style_normal.corner_radius_bottom_left = 5
+    style_normal.corner_radius_bottom_right = 5
+    export_zip_button.add_theme_stylebox_override("normal", style_normal)
+    
+    var style_hover = StyleBoxFlat.new()
+    style_hover.bg_color = Color(0.9, 0.5, 0.1, 0.9)
+    style_hover.corner_radius_top_left = 5
+    style_hover.corner_radius_top_right = 5
+    style_hover.corner_radius_bottom_left = 5
+    style_hover.corner_radius_bottom_right = 5
+    export_zip_button.add_theme_stylebox_override("hover", style_hover)
+    
+    export_zip_button.pressed.connect(_on_export_zip_pressed)
+    add_child(export_zip_button)
+    _update_button_positions()
+
 func _update_button_positions() -> void:
     if toggle_button:
         toggle_button.position = Vector2(10, 10)
@@ -231,6 +265,8 @@ func _update_button_positions() -> void:
         export_sun_button.position = Vector2(10 + (BUTTON_SIZE + 5) * 3, 10)
     if export_sleep_button:
         export_sleep_button.position = Vector2(10 + (BUTTON_SIZE + 5) * 4, 10)
+    if export_zip_button:
+        export_zip_button.position = Vector2(10 + (BUTTON_SIZE + 5) * 5, 10)
 
 func _create_log_panel() -> void:
     # Create semi-transparent panel
@@ -341,6 +377,18 @@ func _on_export_sleep_pressed() -> void:
         add_log("File: %s" % filepath, "cyan")
     else:
         add_log("Failed to export sleep state logs", "red")
+
+func _on_export_zip_pressed() -> void:
+    var filepath = LogExportManager.export_all_logs_as_zip()
+    if filepath != "":
+        var sun_count = LogExportManager.get_log_count(LogExportManager.LogType.SUN_LIGHTING_ISSUE)
+        var sleep_count = LogExportManager.get_log_count(LogExportManager.LogType.SLEEP_STATE_ISSUE)
+        var error_count = LogExportManager.get_log_count(LogExportManager.LogType.ERROR_LOGS)
+        add_log("All logs exported to ZIP!", "orange")
+        add_log("Sun: %d | Sleep: %d | Errors: %d" % [sun_count, sleep_count, error_count], "cyan")
+        add_log("File: %s" % filepath, "cyan")
+    else:
+        add_log("Failed to export logs to ZIP", "red")
 
 # Static method to add logs from anywhere
 static func add_log(message: String, color: String = "white"):
