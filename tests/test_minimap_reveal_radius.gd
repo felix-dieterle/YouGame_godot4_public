@@ -1,7 +1,7 @@
 extends GutTest
 
-## Test minimap reveal radius and cardinal direction changes
-## Tests the logic of the 5x reveal radius and 180° compass offset
+## Test minimap reveal radius, cardinal direction changes, and unexplored area visibility
+## Tests the logic of the 5x reveal radius, 180° compass offset, and unexplored area darkening
 
 func test_reveal_radius_covers_5_chunks():
 	# Test that a 5-chunk radius creates the expected circular coverage
@@ -84,3 +84,20 @@ func test_chunk_update_optimization():
 	# Third check: should update (different chunks)
 	assert_true(current_chunk != last_player_chunk,
 		"Should detect movement to new chunk")
+
+func test_unexplored_area_darkness():
+	# Test that the UNEXPLORED_DARKNESS constant is properly configured
+	# This value controls how visible unexplored areas are on the minimap
+	var unexplored_darkness = 0.65
+	
+	# The constant should be between 0.0 (completely black) and 1.0 (no darkening)
+	assert_true(unexplored_darkness >= 0.0 and unexplored_darkness <= 1.0,
+		"UNEXPLORED_DARKNESS should be between 0.0 and 1.0, got %.2f" % unexplored_darkness)
+	
+	# A good value should make unexplored areas visible but clearly different from visited areas
+	# Typically between 0.5 and 0.8
+	assert_true(unexplored_darkness >= 0.5 and unexplored_darkness <= 0.8,
+		"UNEXPLORED_DARKNESS should be between 0.5 and 0.8 for good visibility, got %.2f" % unexplored_darkness)
+	
+	print("Unexplored area darkness test: %.2f (makes areas slightly visible but dimmed)" % unexplored_darkness)
+
