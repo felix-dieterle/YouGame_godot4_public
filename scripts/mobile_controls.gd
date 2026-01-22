@@ -659,9 +659,9 @@ func _update_button_position() -> void:
     
     # Position button in top-left corner, next to debug buttons
     # Place it to the right of the debug overlay buttons (which are at the very left)
-    # Debug buttons: 3 buttons of 40px each with 5px spacing = 10 (margin) + 40 + 5 + 40 + 5 + 40 = 140px
+    # Debug buttons: 5 buttons of 40px each with 5px spacing = 10 (margin) + 40 + 5 + 40 + 5 + 40 + 5 + 40 + 5 + 40 = 230px
     var viewport_size = get_viewport_rect().size
-    var button_x = 150.0  # Position to the right of debug buttons (10 + 40 + 5 + 40 + 5 + 40 = 140px, plus 10px spacing)
+    var button_x = 240.0  # Position to the right of debug buttons (10 + 40 + 5 + 40 + 5 + 40 + 5 + 40 + 5 + 40 = 230px, plus 10px spacing)
     var button_y = 10.0   # Small margin from top
     menu_button.position = Vector2(button_x, button_y)
     
