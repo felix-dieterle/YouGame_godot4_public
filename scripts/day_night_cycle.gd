@@ -257,7 +257,7 @@ func _update_lighting() -> void:
     # NOTE: Sun offset is NOT applied to sun position - it only affects displayed time
     # This prevents discontinuities when offset wraps around day boundaries
     
-    # Sun moves from sunrise angle (-60°) to sunset angle (60°) over the course of the day
+    # Sun moves from sunrise angle (-20°) to sunset angle (20°) over the course of the day
     # At noon, sun is directly overhead (0°)
     var sun_angle = lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
     
