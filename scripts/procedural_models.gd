@@ -64,6 +64,12 @@ const STONE_COLOR = Color(0.5, 0.5, 0.55)  # Gray stone color
 # Gravel/pebble generation constants
 const GRAVEL_PEBBLE_MIN_SIZE = 0.05
 const GRAVEL_PEBBLE_MAX_SIZE = 0.15
+const GRAVEL_PEBBLE_SIZE_VARIANCE_X_MIN = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_X_MAX = 1.2
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MIN = 0.4
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MAX = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MIN = 0.8
+const GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MAX = 1.2
 
 # Tree type enum
 enum TreeType {
@@ -685,10 +691,10 @@ static func create_fishing_boat_material() -> StandardMaterial3D:
 
 ## Stone animal type enum
 enum StoneAnimalType {
-    BIRD = 0,
-    RABBIT = 1,
-    DEER = 2,
-    FOX = 3
+    BIRD,
+    RABBIT,
+    DEER,
+    FOX
 }
 
 ## Create a stone animal mesh
@@ -834,9 +840,9 @@ static func create_gravel_pebble_mesh(seed_val: int = 0) -> ArrayMesh:
     # Create a small irregular pebble
     var size = rng.randf_range(GRAVEL_PEBBLE_MIN_SIZE, GRAVEL_PEBBLE_MAX_SIZE)
     var pebble_size = Vector3(
-        size * rng.randf_range(0.8, 1.2),
-        size * rng.randf_range(0.4, 0.8),
-        size * rng.randf_range(0.8, 1.2)
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_X_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_X_MAX),
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_Y_MAX),
+        size * rng.randf_range(GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MIN, GRAVEL_PEBBLE_SIZE_VARIANCE_Z_MAX)
     )
     
     # Varied pebble colors (gray tones)

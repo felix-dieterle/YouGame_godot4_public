@@ -92,6 +92,8 @@ const GRAVEL_AREA_RADIUS = 8.0  # Radius of the gravel area in world units
 const GRAVEL_PEBBLE_DENSITY = 150  # Number of pebbles to place in gravel area
 const STONE_ANIMAL_COUNT_MIN = 4  # Minimum number of stone animals
 const STONE_ANIMAL_COUNT_MAX = 8  # Maximum number of stone animals
+const GRAVEL_AREA_FLATNESS_SAMPLE_COUNT = 8  # Number of samples for flatness check
+const STONE_ANIMAL_PLACEMENT_RATIO = 0.7  # Animals placed within 70% of gravel area radius
 
 # Woodpecker ambient sound constants
 const WOODPECKER_SOUND_DURATION = 1.5  # Duration of woodpecker sound in seconds
@@ -1733,7 +1735,7 @@ func _place_gravel_area_with_stone_animals() -> void:
     var distance_from_origin = Vector2(chunk_x, chunk_z).length() * CHUNK_SIZE
     
     # Only place gravel area at limited distance from spawn
-    # Should be further than fishing boat (96) but not too far
+    # Should be further than FISHING_BOAT_PLACEMENT_RADIUS but not too far
     if distance_from_origin < FISHING_BOAT_PLACEMENT_RADIUS or distance_from_origin > GRAVEL_AREA_PLACEMENT_RADIUS:
         return
     
@@ -1784,9 +1786,8 @@ func _find_gravel_area_position(rng: RandomNumberGenerator) -> Vector3:
         
         # Check flatness by sampling nearby heights
         var height_variance = 0.0
-        var sample_count = 8
-        for j in range(sample_count):
-            var angle = (float(j) / sample_count) * TAU
+        for j in range(GRAVEL_AREA_FLATNESS_SAMPLE_COUNT):
+            var angle = (float(j) / GRAVEL_AREA_FLATNESS_SAMPLE_COUNT) * TAU
             var offset = 3.0
             var sample_x = world_x + cos(angle) * offset
             var sample_z = world_z + sin(angle) * offset
@@ -1846,7 +1847,7 @@ func _place_stone_animals_in_gravel_area(center_pos: Vector3, rng: RandomNumberG
     for i in range(num_animals):
         # Random position within the gravel area (closer to center)
         var angle = rng.randf() * TAU
-        var radius = rng.randf() * (GRAVEL_AREA_RADIUS * 0.7)  # Keep animals more central
+        var radius = rng.randf() * (GRAVEL_AREA_RADIUS * STONE_ANIMAL_PLACEMENT_RATIO)  # Keep animals more central
         var local_x = center_pos.x + cos(angle) * radius
         var local_z = center_pos.z + sin(angle) * radius
         
