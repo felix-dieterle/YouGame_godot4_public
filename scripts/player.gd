@@ -62,6 +62,8 @@ var footstep_interval: float = 0.5  # Time between footsteps when moving
 @export var sprint_footstep_multiplier: float = 0.5  # Multiplier for footstep interval when sprinting
 var last_terrain_material: String = "grass"
 const FOOTSTEP_DURATION: float = 0.15  # Sound duration in seconds
+const JET_SOUND_INTERVAL_MULTIPLIER: float = 0.3  # Multiplier for jet sound interval (faster than footsteps)
+const JET_HARMONIC_RATIO: float = 1.5  # Harmonic frequency multiplier for jet sound
 
 # World reference
 var world_manager  # WorldManager - type hint removed to avoid preload dependency
@@ -559,7 +561,7 @@ func _update_footsteps(delta: float) -> void:
     # Check if jetpack is active - play jet sounds instead of footsteps
     if _is_jetpack_active():
         # Play jet sound at regular intervals
-        var jet_interval = footstep_interval * 0.3  # Faster for continuous jet sound
+        var jet_interval = footstep_interval * JET_SOUND_INTERVAL_MULTIPLIER  # Faster for continuous jet sound
         if footstep_timer >= jet_interval:
             footstep_timer = 0.0
             _play_jet_sound()
@@ -656,7 +658,7 @@ func _play_jet_sound() -> void:
         
         # Mix low frequency rumble with heavy noise
         var rumble = sin(2.0 * PI * base_frequency * t) * 0.3
-        var rumble2 = sin(2.0 * PI * base_frequency * 1.5 * t) * 0.2  # Add harmonic
+        var rumble2 = sin(2.0 * PI * base_frequency * JET_HARMONIC_RATIO * t) * 0.2  # Add harmonic
         var noise_val = (randf() * 2.0 - 1.0) * noise_amount
         var sample = (rumble + rumble2 + noise_val) * envelope * 0.4
         
