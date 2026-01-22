@@ -17,17 +17,17 @@ var player: Node3D = null
 var world_manager: Node3D = null
 var camera: Camera3D = null
 
-# Cached camera vectors for performance
+# Cached camera vectors for performance (updated every UPDATE_INTERVAL)
 var cached_cam_forward_h: Vector3 = Vector3.ZERO
 var cached_cam_right_h: Vector3 = Vector3.ZERO
-var need_camera_update: bool = true
 
 # Arrow settings
 const ARROW_DISTANCE_FROM_CENTER: float = 150.0  # Distance from screen center in pixels (avoids minimap in top-right)
 const ARROW_SIZE: float = 30.0  # Size of arrow triangle
 const ARROW_LINE_WIDTH: float = 3.0  # Width of arrow line
 const MIN_DISTANCE_TO_SHOW: float = 10.0  # Don't show arrows for targets closer than 10m
-const INVALID_CHUNK_COORDINATE: int = 999999  # Same as used in Chunk class for invalid coordinates
+# Note: This value must match Chunk.mountain_center_chunk_x/z initialization value
+const INVALID_CHUNK_COORDINATE: int = 999999  # Marker for uninitialized chunk coordinates
 
 # Arrow colors
 const WATER_ARROW_COLOR: Color = Color(0.2, 0.5, 1.0, 0.8)  # Blue for water
@@ -69,15 +69,13 @@ func _process(delta: float) -> void:
 	if not arrows_visible:
 		return
 	
-	# Update camera vectors if needed
-	if camera and need_camera_update:
-		_update_camera_vectors()
-		need_camera_update = false
-	
 	update_timer += delta
 	if update_timer >= UPDATE_INTERVAL:
 		update_timer = 0.0
 		_update_targets()
+		# Also update camera vectors on the same interval
+		if camera:
+			_update_camera_vectors()
 	
 	queue_redraw()
 
@@ -109,9 +107,6 @@ func _draw_arrow_to_target(target_pos: Vector3, color: Color, screen_center: Vec
 		return
 	
 	var direction_3d = (target_pos - player_pos).normalized()
-	
-	# Update camera vectors if needed (e.g., after camera rotation)
-	need_camera_update = true
 	
 	# Project to screen space - we only care about horizontal direction
 	# Use cached camera vectors
