@@ -16,7 +16,7 @@ var save_data: Dictionary = {
         "torch_count": 100,  # Number of torches in inventory
         "selected_item": "torch",  # Currently selected item
         "current_air": 100.0,  # Current air level
-        "current_health": 100.0  # Current health
+        "current_health": 100.0,  # Current health
         "flint_stone_count": 2,  # Number of flint stones in inventory
         "mushroom_count": 0,  # Number of mushrooms in inventory
         "bottle_fill_level": 100.0  # Drinking bottle fill level (0-100)
@@ -95,7 +95,7 @@ func _auto_save_on_exit() -> void:
             torch_count,
             selected_item,
             current_air,
-            current_health
+            current_health,
             flint_stone_count,
             mushroom_count,
             bottle_fill_level
@@ -317,8 +317,7 @@ func load_game() -> bool:
     return true
 
 # Update player data for saving
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0) -> void:
-func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0) -> void:
+func update_player_data(position: Vector3, rotation_y: float, is_first_person: bool, inventory: Dictionary = {}, torch_count: int = 100, selected_item: String = "torch", current_air: float = 100.0, current_health: float = 100.0, flint_stone_count: int = 2, mushroom_count: int = 0, bottle_fill_level: float = 100.0) -> void:
     save_data["player"]["position"] = position
     save_data["player"]["rotation_y"] = rotation_y
     save_data["player"]["is_first_person"] = is_first_person

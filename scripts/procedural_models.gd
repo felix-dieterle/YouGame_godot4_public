@@ -863,6 +863,14 @@ static func create_gravel_pebble_mesh(seed_val: int = 0) -> ArrayMesh:
 
 ## Create a material for gravel/pebbles
 static func create_gravel_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.95  # Gravel/pebbles are very rough
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
 ## Create a simple wooden fence post mesh
 static func create_fence_post_mesh(seed_val: int = 0) -> ArrayMesh:
     var rng = RandomNumberGenerator.new()
