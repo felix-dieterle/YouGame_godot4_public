@@ -40,13 +40,36 @@ The log export system allows developers to capture and export specific types of 
 - When save game is loaded (in SaveGameManager)
 - When day/night cycle loads state from SaveGameManager
 
+### 3. Error Logs
+**Purpose:** Captures error messages and exceptions that occur during gameplay.
+
+**What it logs:**
+- Error messages from LogExportManager.add_error()
+- Runtime errors and exceptions
+- Failed operations
+
+**Logged during:**
+- When errors are explicitly logged
+- When operations fail
+
 ## How to Use
 
 ### In-Game Export
+
+#### Export Individual Logs
 1. Open the debug log overlay (click the 📋 button in the top-left corner)
 2. Click the ☀ button to export Sun Lighting Issue logs
 3. Click the 🌙 button to export Sleep State Issue logs
 4. Logs are saved to `user://logs/` directory with timestamped filenames
+
+#### Export All Logs to ZIP (Recommended)
+1. Click the 📦 button in the top-left corner
+2. A ZIP file will be created containing:
+   - `0_metadata.txt` - System information and summary
+   - `1_sun_lighting_issue.log` - Brightness/sun problem logs
+   - `2_sleep_state_issue.log` - Sleep state debugging logs
+   - `3_error_logs.log` - Error messages and exceptions
+3. ZIP file is saved to `user://logs/` directory with timestamped filename
 
 ### Programmatic Usage
 
@@ -55,8 +78,14 @@ The log export system allows developers to capture and export specific types of 
 LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, "Your log message here")
 LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, "Your log message here")
 
-# Export logs to file
+# Add an error log entry
+LogExportManager.add_error("Error message here")
+
+# Export individual logs to file
 var filepath = LogExportManager.export_logs(LogExportManager.LogType.SUN_LIGHTING_ISSUE)
+
+# Export all logs to ZIP
+var zip_path = LogExportManager.export_all_logs_as_zip()
 
 # Get log count
 var count = LogExportManager.get_log_count(LogExportManager.LogType.SUN_LIGHTING_ISSUE)

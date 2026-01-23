@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://csjgypsvtnbqx"]
+
+[ext_resource type="Script" path="res://tests/test_log_export_zip.gd" id="1_z7d8k"]
+
+[node name="TestLogExportZip" type="Node"]
+script = ExtResource("1_z7d8k")
