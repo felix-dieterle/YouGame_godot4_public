@@ -66,11 +66,12 @@ Two export presets are configured in `export_presets.cfg`:
 
 ### Widget APK build fails
 
-If the widget APK build fails with "Android build template not installed":
+If the widget APK build fails with "Android build template not installed" or "no version info for it exists":
 
 1. Run the installation script: `./install_android_build_template.sh`
 2. Ensure Godot 4.3.0 export templates are installed
-3. Try the build again
+3. Verify that `android/build/.gradle.build.version` file exists and contains "4.3.0.stable"
+4. Try the build again
 
 ### Android build template installation fails
 
@@ -78,3 +79,4 @@ Ensure:
 - Godot 4.3.0 is installed
 - Export templates are downloaded (Editor -> Manage Export Templates)
 - You're running from the repository root directory
+- The `.gradle.build.version` file is created in `android/build/` directory
