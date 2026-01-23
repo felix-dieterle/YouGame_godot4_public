@@ -79,7 +79,8 @@ fi
 if [ -f "$ANDROID_BUILD_DIR/build.gradle" ]; then
     # Create .gradle.build.version file required by Godot
     # This file tells Godot which version of templates was used to build the template
-    echo "$GODOT_VERSION" > "$ANDROID_BUILD_DIR/.gradle.build.version"
+    # Use echo -n to avoid adding a newline which could cause version mismatch
+    echo -n "$GODOT_VERSION" > "$ANDROID_BUILD_DIR/.gradle.build.version"
     
     echo "✓ Android build template installed successfully!"
     echo "Location: $ANDROID_BUILD_DIR"
