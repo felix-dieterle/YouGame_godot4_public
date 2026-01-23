@@ -115,8 +115,8 @@ jobs:
             # The .tpz file contains a templates/ directory with version.txt
             # Extract the version from version.txt to use in .gradle.build.version
             VERSION_FILE=$(find /tmp/godot_templates -name "version.txt" | head -n 1)
-            if [ -n "$VERSION_FILE" ] && [ -f "$VERSION_FILE" ]; then
-              TEMPLATE_VERSION=$(cat "$VERSION_FILE" | tr -d '\r\n')
+            if [ -n "$VERSION_FILE" ]; then
+              TEMPLATE_VERSION=$(tr -d '\r\n' < "$VERSION_FILE")
               echo "Found template version from version.txt: $TEMPLATE_VERSION"
             else
               # Fallback to 4.3.stable if version.txt not found
@@ -466,8 +466,8 @@ jobs:
             # The .tpz file contains a templates/ directory with version.txt
             # Extract the version from version.txt to use in .gradle.build.version
             VERSION_FILE=$(find /tmp/godot_templates -name "version.txt" | head -n 1)
-            if [ -n "$VERSION_FILE" ] && [ -f "$VERSION_FILE" ]; then
-              TEMPLATE_VERSION=$(cat "$VERSION_FILE" | tr -d '\r\n')
+            if [ -n "$VERSION_FILE" ]; then
+              TEMPLATE_VERSION=$(tr -d '\r\n' < "$VERSION_FILE")
               echo "Found template version from version.txt: $TEMPLATE_VERSION"
             else
               # Fallback to 4.3.stable if version.txt not found
