@@ -336,34 +336,67 @@ jobs:
           git push origin main || echo "Push failed - version bump may need manual intervention"
         fi
     
+    - name: Generate Release Body
+      id: release_body
+      run: |
+        VERSION="${{ steps.version.outputs.new_version }}"
+        
+        # Check if widget build was successful and generate appropriate release body
+        if [ "$WIDGET_BUILD_SUCCESS" = "true" ]; then
+          # Both APKs available
+          cat > /tmp/release_body.txt <<EOF
+        Automated release for YouGame
+        
+        Version: ${VERSION}
+        
+        ## Changes
+        This release was automatically created from the latest merge to main.
+        
+        ## Download
+        Two APK variants are available:
+        
+        - **YouGame-${VERSION}.apk** - Standard game APK (lighter, no widget)
+        - **YouGame-Widget-${VERSION}.apk** - Game APK with home screen widget support
+        
+        ### Widget APK Features
+        The widget-enabled APK includes a home screen widget that displays:
+        - Last saved timestamp
+        - Current game day
+        - Player health
+        - Torch count
+        - Player position
+        
+        Choose the widget APK if you want to see your game status without opening the app!
+        EOF
+        else
+          # Only standard APK available
+          cat > /tmp/release_body.txt <<EOF
+        Automated release for YouGame
+        
+        Version: ${VERSION}
+        
+        ## Changes
+        This release was automatically created from the latest merge to main.
+        
+        ## Download
+        Download the APK below to install on Android devices.
+        
+        - **YouGame-${VERSION}.apk** - Standard game APK
+        
+        **Note:** Widget-enabled APK build was not available for this release.
+        EOF
+        fi
+        
+        # Output for debugging
+        echo "Generated release body:"
+        cat /tmp/release_body.txt
+    
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.version.outputs.new_version }}
         name: Release ${{ steps.version.outputs.new_version }}
-        body: |
-          Automated release for YouGame
-          
-          Version: ${{ steps.version.outputs.new_version }}
-          
-          ## Changes
-          This release was automatically created from the latest merge to main.
-          
-          ## Download
-          Two APK variants are available:
-          
-          - **YouGame-${{ steps.version.outputs.new_version }}.apk** - Standard game APK (lighter, no widget)
-          - **YouGame-Widget-${{ steps.version.outputs.new_version }}.apk** - Game APK with home screen widget support
-          
-          ### Widget APK Features
-          The widget-enabled APK includes a home screen widget that displays:
-          - Last saved timestamp
-          - Current game day
-          - Player health
-          - Torch count
-          - Player position
-          
-          Choose the widget APK if you want to see your game status without opening the app!
+        body_path: /tmp/release_body.txt
         files: |
           ./release/*.apk
         draft: false
