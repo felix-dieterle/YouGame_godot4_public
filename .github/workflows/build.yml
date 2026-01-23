@@ -184,15 +184,14 @@ jobs:
         VERSION_NUMBER=${VERSION_NUMBER#v}  # Remove 'v' prefix
         
         # Update version/name in export_presets.cfg for both presets
-        # First occurrence (preset.0)
-        if ! sed -i "0,/^version\/name=\"[^\"]*\"/{s#^version/name=\"[^\"]*\"#version/name=\"${VERSION_NUMBER}\"#}" export_presets.cfg; then
-          echo "Error: Failed to update version/name for preset.0 in export_presets.cfg"
-          exit 1
-        fi
+        # Use awk to update all version/name occurrences
+        awk -v new_ver="$VERSION_NUMBER" '
+          /^version\/name=/ { print "version/name=\"" new_ver "\""; next }
+          { print }
+        ' export_presets.cfg > export_presets.cfg.tmp && mv export_presets.cfg.tmp export_presets.cfg
         
-        # Second occurrence (preset.1)
-        if ! sed -i "0,/^version\/name=\"[^\"]*\"/! {0,/^version\/name=\"[^\"]*\"/{s#^version/name=\"[^\"]*\"#version/name=\"${VERSION_NUMBER}\"#}}" export_presets.cfg; then
-          echo "Error: Failed to update version/name for preset.1 in export_presets.cfg"
+        if ! grep -q "version/name=\"${VERSION_NUMBER}\"" export_presets.cfg; then
+          echo "Error: Failed to update version/name in export_presets.cfg"
           exit 1
         fi
         
@@ -204,8 +203,13 @@ jobs:
         fi
         NEW_CODE=$((CURRENT_CODE + 1))
         
-        # Update version/code for both presets
-        if ! sed -i "s#^version/code=${CURRENT_CODE}#version/code=${NEW_CODE}#g" export_presets.cfg; then
+        # Update version/code for both presets using awk
+        awk -v old_code="$CURRENT_CODE" -v new_code="$NEW_CODE" '
+          /^version\/code=/ && $0 ~ ("version/code=" old_code) { print "version/code=" new_code; next }
+          { print }
+        ' export_presets.cfg > export_presets.cfg.tmp && mv export_presets.cfg.tmp export_presets.cfg
+        
+        if ! grep -q "version/code=${NEW_CODE}" export_presets.cfg; then
           echo "Error: Failed to update version/code in export_presets.cfg"
           exit 1
         fi

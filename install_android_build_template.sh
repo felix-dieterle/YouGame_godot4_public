@@ -43,7 +43,12 @@ mkdir -p "$ANDROID_BUILD_DIR"
 
 # Extract android_source.zip to android/build
 echo "Extracting Android build template..."
-unzip -q "$ANDROID_SOURCE_ZIP" -d "$ANDROID_BUILD_DIR"
+if ! unzip -q "$ANDROID_SOURCE_ZIP" -d "$ANDROID_BUILD_DIR"; then
+    echo "Error: Failed to extract android_source.zip"
+    echo "Source: $ANDROID_SOURCE_ZIP"
+    echo "Destination: $ANDROID_BUILD_DIR"
+    exit 1
+fi
 
 # Verify extraction
 if [ -f "$ANDROID_BUILD_DIR/build.gradle" ]; then
@@ -53,8 +58,9 @@ if [ -f "$ANDROID_BUILD_DIR/build.gradle" ]; then
     echo "You can now build APKs with gradle_build=true"
     echo "The widget-enabled APK will now work properly."
 else
-    echo "Error: Build template extraction may have failed"
-    echo "Please check $ANDROID_BUILD_DIR"
+    echo "Error: Build template extraction completed but expected files not found"
+    echo "Please check $ANDROID_BUILD_DIR for contents"
+    ls -la "$ANDROID_BUILD_DIR" || true
     exit 1
 fi
 
