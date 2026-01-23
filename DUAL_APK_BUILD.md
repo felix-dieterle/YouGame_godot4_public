@@ -50,8 +50,10 @@ godot --headless --export-debug "Android Widget" export/YouGame-Widget.apk
 The GitHub Actions workflow automatically:
 1. Builds the standard APK (always succeeds)
 2. Installs the Android build template
-3. Builds the widget APK (requires build template)
-4. Creates releases with both APKs (if widget build succeeds)
+3. Builds the widget APK (requires build template, may fail)
+4. Creates releases with available APKs:
+   - If widget build succeeds: Both APKs are uploaded and mentioned in release notes
+   - If widget build fails: Only standard APK is uploaded, release notes indicate widget is not available
 
 ## Export Presets
 
