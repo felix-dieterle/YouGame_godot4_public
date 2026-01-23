@@ -68,6 +68,9 @@ jobs:
     permissions:
       contents: read
     
+    env:
+      GODOT_RELEASE_VERSION: "4.3-stable"  # Used for downloading templates from GitHub releases
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -95,11 +98,11 @@ jobs:
           echo "⚠️ Install script failed, trying direct download from Godot releases..."
           
           # Download android_source.zip directly from Godot GitHub releases
-          GODOT_VERSION="4.3-stable"
-          ANDROID_SOURCE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          # Use GODOT_RELEASE_VERSION from job env
+          ANDROID_SOURCE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_VERSION}/Godot_v${GODOT_RELEASE_VERSION}_export_templates.tpz"
           
           echo "Downloading export templates from: $ANDROID_SOURCE_URL"
-          wget -q "$ANDROID_SOURCE_URL" -O /tmp/export_templates.tpz
+          wget -nv "$ANDROID_SOURCE_URL" -O /tmp/export_templates.tpz
           
           if [ -f /tmp/export_templates.tpz ]; then
             echo "Downloaded export templates successfully"
@@ -194,6 +197,9 @@ jobs:
     
     permissions:
       contents: write
+    
+    env:
+      GODOT_RELEASE_VERSION: "4.3-stable"  # Used for downloading templates from GitHub releases
     
     steps:
     - name: Checkout code
@@ -327,11 +333,11 @@ jobs:
           echo "⚠️ Install script failed, trying direct download from Godot releases..."
           
           # Download android_source.zip directly from Godot GitHub releases
-          GODOT_VERSION="4.3-stable"
-          ANDROID_SOURCE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          # Use GODOT_RELEASE_VERSION from job env
+          ANDROID_SOURCE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_VERSION}/Godot_v${GODOT_RELEASE_VERSION}_export_templates.tpz"
           
           echo "Downloading export templates from: $ANDROID_SOURCE_URL"
-          wget -q "$ANDROID_SOURCE_URL" -O /tmp/export_templates.tpz
+          wget -nv "$ANDROID_SOURCE_URL" -O /tmp/export_templates.tpz
           
           if [ -f /tmp/export_templates.tpz ]; then
             echo "Downloaded export templates successfully"
