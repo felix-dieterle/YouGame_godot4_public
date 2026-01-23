@@ -257,11 +257,27 @@ jobs:
           
           Version: ${{ steps.version.outputs.new_version }}
           
+          ## Download
+          
+          **YouGame-${{ steps.version.outputs.new_version }}.apk** - Standard Android build
+          - Recommended for most users
+          - Install on Android devices
+          
+          ## Widget Feature (Optional)
+          
+          The Android home screen widget is available but must be built locally:
+          1. Install Android Build Template in Godot Editor (Project → Install Android Build Template)
+          2. Enable Gradle build in export_presets.cfg (set `gradle_build/use_gradle_build=true`)
+          3. Build APK locally
+          4. Widget will show save game status on home screen
+          
+          See [ANDROID_WIDGET_FIX_DE.md](https://github.com/felix-dieterle/YouGame_godot4_public/blob/main/ANDROID_WIDGET_FIX_DE.md) for detailed instructions (German).
+          
           ## Changes
           This release was automatically created from the latest merge to main.
           
-          ## Download
-          Download the APK below to install on Android devices.
+          ## Installation
+          Download the APK and install on Android devices.
         files: |
           ./release/*.apk
         draft: false

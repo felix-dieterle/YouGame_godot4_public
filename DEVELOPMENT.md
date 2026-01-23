@@ -133,6 +133,8 @@ godot --headless res://tests/test_scene.tscn
 
 The project is configured to build signed APKs that can be installed on Android devices.
 
+#### Standard Build (Default)
+
 ```bash
 ./build.sh
 ```
@@ -148,6 +150,33 @@ The APK will be created in `export/YouGame.apk`
 **Configuration:**
 - Architecture: arm64-v8a
 - Package signing: Enabled (APKs are signed with debug keystore automatically)
+- Gradle build: **Disabled by default** (for CI/CD compatibility)
+
+#### Building with Android Widget Feature (Optional)
+
+The Android home screen widget is available but requires manual activation:
+
+**Prerequisites:**
+1. Open the project in Godot Editor
+2. Go to **Project → Install Android Build Template**
+3. This creates the `android/build/` directory structure (not committed to Git)
+
+**Enable Gradle Build:**
+Edit `export_presets.cfg` and change line 21:
+```ini
+gradle_build/use_gradle_build=true  # Change from false to true
+```
+
+**Important:** Do NOT commit this change to Git, as it breaks CI/CD builds.
+
+**Build:**
+```bash
+./build.sh
+```
+
+The widget will now be included in the APK and visible in Android's widget picker.
+
+See **[ANDROID_WIDGET_FIX_DE.md](ANDROID_WIDGET_FIX_DE.md)** for detailed widget activation instructions (German).
 
 ## Testing
 
