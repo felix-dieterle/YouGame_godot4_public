@@ -105,10 +105,86 @@ jobs:
         path: export/*.apk
         if-no-files-found: warn
 
+  build-android-with-widget:
+    name: Build Android APK with Widget
+    runs-on: ubuntu-latest
+    needs: test
+    
+    permissions:
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Godot
+      uses: chickensoft-games/setup-godot@v1
+      with:
+        version: 4.3.0
+        use-dotnet: false
+        include-templates: true
+    
+    - name: Install Android Build Template
+      run: |
+        echo "Installing Android build template..."
+        # Use Godot's headless mode to install the Android build template
+        # The --install-android-build-template flag installs it non-interactively
+        godot --headless --quit --install-android-build-template 2>&1 || echo "Template installation attempted"
+        
+        # Verify the template was installed
+        if [ -d "android/build" ]; then
+          echo "✅ Android build template installed successfully"
+          ls -la android/build/
+        else
+          echo "⚠️  Build template directory not created, trying alternative method..."
+          # Create the android/build directory structure manually if needed
+          mkdir -p android/build
+          echo "Created android/build directory"
+        fi
+    
+    - name: Enable Gradle Build
+      run: |
+        echo "Enabling Gradle build for widget support..."
+        sed -i 's/gradle_build\/use_gradle_build=false/gradle_build\/use_gradle_build=true/' export_presets.cfg
+        
+        # Verify the change
+        if grep -q "gradle_build/use_gradle_build=true" export_presets.cfg; then
+          echo "✅ Gradle build enabled"
+        else
+          echo "❌ Failed to enable Gradle build"
+          exit 1
+        fi
+    
+    - name: Create export directory
+      run: mkdir -p export
+    
+    - name: Build APK with Widget
+      run: |
+        echo "Building Android APK with Widget support..."
+        echo "Using debug export with automatic debug keystore signing"
+        godot --headless --export-debug "Android" export/YouGame-Widget.apk || { echo "Godot export failed"; exit 1; }
+        
+        # Verify the APK was created
+        if [ -f export/YouGame-Widget.apk ]; then
+          echo "APK with widget created successfully!"
+          ls -lh export/YouGame-Widget.apk
+        else
+          echo "Error: APK was not created"
+          exit 1
+        fi
+    
+    - name: Upload Widget APK artifact
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: YouGame-Widget-APK
+        path: export/*.apk
+        if-no-files-found: warn
+
   release:
     name: Create Release on Merge
     runs-on: ubuntu-latest
-    needs: build-android
+    needs: [build-android, build-android-with-widget]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     permissions:
@@ -213,26 +289,65 @@ jobs:
         use-dotnet: false
         include-templates: true
     
-    - name: Rebuild APK with updated version
+    - name: Rebuild Standard APK with updated version
       run: |
-        echo "Rebuilding Android APK with updated version..."
+        echo "Rebuilding standard Android APK with updated version..."
         mkdir -p release
         godot --headless --export-debug "Android" release/YouGame.apk || { echo "Godot export failed"; exit 1; }
         
         # Verify the APK was created
         if [ -f release/YouGame.apk ]; then
-          echo "APK rebuilt successfully with new version!"
+          echo "Standard APK rebuilt successfully with new version!"
           ls -lh release/YouGame.apk
           
           # Rename APK to include version number
           VERSION="${{ steps.version.outputs.new_version }}"
           mv release/YouGame.apk "release/YouGame-${VERSION}.apk"
-          echo "Renamed APK to YouGame-${VERSION}.apk"
-          ls -lh release/
+          echo "Renamed standard APK to YouGame-${VERSION}.apk"
         else
-          echo "Error: APK was not created"
+          echo "Error: Standard APK was not created"
           exit 1
         fi
+    
+    - name: Install Android Build Template for Widget build
+      run: |
+        echo "Installing Android build template for widget build..."
+        godot --headless --quit --install-android-build-template 2>&1 || echo "Template installation attempted"
+        
+        if [ ! -d "android/build" ]; then
+          mkdir -p android/build
+          echo "Created android/build directory"
+        fi
+    
+    - name: Rebuild Widget APK with updated version
+      run: |
+        echo "Rebuilding widget-enabled Android APK with updated version..."
+        
+        # Enable Gradle build for widget
+        sed -i 's/gradle_build\/use_gradle_build=false/gradle_build\/use_gradle_build=true/' export_presets.cfg
+        
+        # Build widget APK
+        godot --headless --export-debug "Android" release/YouGame-Widget.apk || { echo "Widget APK export failed"; exit 1; }
+        
+        # Verify the APK was created
+        if [ -f release/YouGame-Widget.apk ]; then
+          echo "Widget APK rebuilt successfully with new version!"
+          ls -lh release/YouGame-Widget.apk
+          
+          # Rename APK to include version number
+          VERSION="${{ steps.version.outputs.new_version }}"
+          mv release/YouGame-Widget.apk "release/YouGame-Widget-${VERSION}.apk"
+          echo "Renamed widget APK to YouGame-Widget-${VERSION}.apk"
+        else
+          echo "Error: Widget APK was not created"
+          exit 1
+        fi
+        
+        # Revert Gradle build change (don't commit it)
+        git checkout export_presets.cfg
+        
+        echo "Final release files:"
+        ls -lh release/
     
     - name: Commit version changes
       run: |
@@ -257,11 +372,28 @@ jobs:
           
           Version: ${{ steps.version.outputs.new_version }}
           
+          ## Download Options
+          
+          **YouGame-${{ steps.version.outputs.new_version }}.apk** - Standard version
+          - Standard Android build without widget feature
+          - Recommended for most users
+          - Smaller APK size
+          
+          **YouGame-Widget-${{ steps.version.outputs.new_version }}.apk** - Widget version
+          - Includes Android home screen widget feature
+          - Shows save game status on home screen
+          - Slightly larger APK size due to widget components
+          
           ## Changes
           This release was automatically created from the latest merge to main.
           
-          ## Download
-          Download the APK below to install on Android devices.
+          ## Installation
+          Download the APK of your choice and install on Android devices.
+          
+          For widget functionality in the Widget version:
+          1. Install the APK
+          2. Save your game at least once
+          3. Long-press home screen → Widgets → "YouGame Save Status"
         files: |
           ./release/*.apk
         draft: false
