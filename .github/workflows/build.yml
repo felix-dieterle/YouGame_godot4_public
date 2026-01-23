@@ -72,7 +72,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Godot
+     - name: Setup Godot
       uses: chickensoft-games/setup-godot@v1
       with:
         version: 4.3.0
@@ -82,11 +82,24 @@ jobs:
     - name: Install Android Build Template
       run: |
         echo "Installing Android build template for widget builds..."
+        
+        # Debug: Show where templates are installed
+        echo "Checking for Godot templates..."
+        find ~/.local/share/godot -name "android_source.zip" 2>/dev/null || echo "No android_source.zip found in ~/.local/share/godot"
+        
+        # Run the install script
         chmod +x ./install_android_build_template.sh
-        ./install_android_build_template.sh || {
+        if ./install_android_build_template.sh; then
+          echo "✓ Android build template installed successfully"
+        else
           echo "⚠️ Failed to install Android build template automatically"
           echo "Widget APK build may fail"
-        }
+          
+          # Show template directory structure for debugging
+          echo "Template directory contents:"
+          ls -la ~/.local/share/godot/ 2>/dev/null || echo "No templates directory found"
+          ls -la ~/.local/share/godot/export_templates/ 2>/dev/null || echo "No export_templates subdirectory"
+        fi
     
     - name: Create export directory
       run: mkdir -p export
@@ -268,11 +281,24 @@ jobs:
     - name: Install Android Build Template
       run: |
         echo "Installing Android build template for widget builds..."
+        
+        # Debug: Show where templates are installed
+        echo "Checking for Godot templates..."
+        find ~/.local/share/godot -name "android_source.zip" 2>/dev/null || echo "No android_source.zip found in ~/.local/share/godot"
+        
+        # Run the install script
         chmod +x ./install_android_build_template.sh
-        ./install_android_build_template.sh || {
+        if ./install_android_build_template.sh; then
+          echo "✓ Android build template installed successfully"
+        else
           echo "⚠️ Failed to install Android build template automatically"
           echo "Widget APK build may fail"
-        }
+          
+          # Show template directory structure for debugging
+          echo "Template directory contents:"
+          ls -la ~/.local/share/godot/ 2>/dev/null || echo "No templates directory found"
+          ls -la ~/.local/share/godot/export_templates/ 2>/dev/null || echo "No export_templates subdirectory"
+        fi
     
     - name: Rebuild APKs with updated version
       run: |
