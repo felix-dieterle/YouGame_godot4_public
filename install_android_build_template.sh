@@ -7,8 +7,6 @@ set -e
 echo "=== Installing Android Build Template ==="
 
 GODOT_VERSION="4.3.0.stable"
-TEMPLATES_DIR="$HOME/.local/share/godot/export_templates/$GODOT_VERSION"
-ANDROID_SOURCE_ZIP="$TEMPLATES_DIR/android_source.zip"
 ANDROID_BUILD_DIR="./android/build"
 
 # Check if running from repository root
@@ -17,24 +15,51 @@ if [ ! -f "project.godot" ]; then
     exit 1
 fi
 
-# Check if Godot export templates are installed
-if [ ! -d "$TEMPLATES_DIR" ]; then
-    echo "Error: Godot export templates not found at $TEMPLATES_DIR"
-    echo "Please install Godot 4.3.0 export templates first"
-    echo ""
-    echo "You can install templates by:"
-    echo "1. Opening Godot Editor"
-    echo "2. Going to Editor -> Manage Export Templates"
-    echo "3. Downloading templates for version 4.3.0"
-    exit 1
+# Try to find the export templates in various possible locations
+POSSIBLE_TEMPLATE_DIRS=(
+    "$HOME/.local/share/godot/export_templates/$GODOT_VERSION"
+    "$HOME/.local/share/godot/export_templates/4.3.0"
+    "$HOME/.local/share/godot/templates/$GODOT_VERSION"
+    "$HOME/.local/share/godot/templates/4.3.0"
+    "/home/runner/.local/share/godot/export_templates/$GODOT_VERSION"
+    "/home/runner/.local/share/godot/export_templates/4.3.0"
+)
+
+TEMPLATES_DIR=""
+ANDROID_SOURCE_ZIP=""
+
+# Find the templates directory
+for dir in "${POSSIBLE_TEMPLATE_DIRS[@]}"; do
+    if [ -d "$dir" ]; then
+        if [ -f "$dir/android_source.zip" ]; then
+            TEMPLATES_DIR="$dir"
+            ANDROID_SOURCE_ZIP="$dir/android_source.zip"
+            echo "Found Godot export templates at: $TEMPLATES_DIR"
+            break
+        fi
+    fi
+done
+
+# If not found in standard locations, try to find it using find command
+if [ -z "$ANDROID_SOURCE_ZIP" ]; then
+    echo "Templates not found in standard locations, searching..."
+    FOUND_ZIP=$(find "$HOME/.local/share/godot" -name "android_source.zip" 2>/dev/null | head -n 1)
+    if [ -n "$FOUND_ZIP" ]; then
+        ANDROID_SOURCE_ZIP="$FOUND_ZIP"
+        TEMPLATES_DIR=$(dirname "$FOUND_ZIP")
+        echo "Found android_source.zip at: $ANDROID_SOURCE_ZIP"
+    fi
 fi
 
-echo "Found Godot export templates at: $TEMPLATES_DIR"
-
-# Check if android_source.zip exists
-if [ ! -f "$ANDROID_SOURCE_ZIP" ]; then
-    echo "Error: android_source.zip not found in export templates"
-    echo "Expected at: $ANDROID_SOURCE_ZIP"
+# Final check if we found the templates
+if [ -z "$ANDROID_SOURCE_ZIP" ] || [ ! -f "$ANDROID_SOURCE_ZIP" ]; then
+    echo "Error: Could not find android_source.zip in any known location"
+    echo "Searched locations:"
+    for dir in "${POSSIBLE_TEMPLATE_DIRS[@]}"; do
+        echo "  - $dir"
+    done
+    echo ""
+    echo "Please ensure Godot 4.3.0 export templates are installed"
     exit 1
 fi
 

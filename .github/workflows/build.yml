@@ -68,6 +68,9 @@ jobs:
     permissions:
       contents: read
     
+    env:
+      GODOT_RELEASE_VERSION: "4.3-stable"  # Used for downloading templates from GitHub releases
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -82,11 +85,57 @@ jobs:
     - name: Install Android Build Template
       run: |
         echo "Installing Android build template for widget builds..."
+        
+        # Debug: Show where templates are installed by chickensoft action
+        echo "Checking for Godot templates installed by chickensoft/setup-godot..."
+        find ~/.local/share/godot -name "android_source.zip" 2>/dev/null || echo "No android_source.zip found in ~/.local/share/godot"
+        
+        # Try the install script first
         chmod +x ./install_android_build_template.sh
-        ./install_android_build_template.sh || {
-          echo "⚠️ Failed to install Android build template automatically"
-          echo "Widget APK build may fail"
-        }
+        if ./install_android_build_template.sh; then
+          echo "✓ Android build template installed successfully using install script"
+        else
+          echo "⚠️ Install script failed, trying direct download from Godot releases..."
+          
+          # Download android_source.zip directly from Godot GitHub releases
+          # Use GODOT_RELEASE_VERSION from job env
+          ANDROID_SOURCE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_VERSION}/Godot_v${GODOT_RELEASE_VERSION}_export_templates.tpz"
+          
+          echo "Downloading export templates from: $ANDROID_SOURCE_URL"
+          wget -nv "$ANDROID_SOURCE_URL" -O /tmp/export_templates.tpz
+          
+          if [ -f /tmp/export_templates.tpz ]; then
+            echo "Downloaded export templates successfully"
+            
+            # Extract android_source.zip from the .tpz file (which is actually a zip)
+            echo "Extracting android_source.zip..."
+            mkdir -p /tmp/godot_templates
+            unzip -q /tmp/export_templates.tpz -d /tmp/godot_templates
+            
+            # Find and extract android_source.zip
+            ANDROID_SOURCE=$(find /tmp/godot_templates -name "android_source.zip" | head -n 1)
+            if [ -n "$ANDROID_SOURCE" ]; then
+              echo "Found android_source.zip at: $ANDROID_SOURCE"
+              mkdir -p android/build
+              unzip -q "$ANDROID_SOURCE" -d android/build
+              
+              if [ -f android/build/build.gradle ]; then
+                echo "✓ Android build template installed successfully via direct download"
+              else
+                echo "❌ Failed to extract Android build template properly"
+                ls -la android/build/ || true
+                exit 1
+              fi
+            else
+              echo "❌ Could not find android_source.zip in downloaded templates"
+              ls -la /tmp/godot_templates/ || true
+              exit 1
+            fi
+          else
+            echo "❌ Failed to download export templates"
+            exit 1
+          fi
+        fi
     
     - name: Create export directory
       run: mkdir -p export
@@ -148,6 +197,9 @@ jobs:
     
     permissions:
       contents: write
+    
+    env:
+      GODOT_RELEASE_VERSION: "4.3-stable"  # Used for downloading templates from GitHub releases
     
     steps:
     - name: Checkout code
@@ -268,11 +320,57 @@ jobs:
     - name: Install Android Build Template
       run: |
         echo "Installing Android build template for widget builds..."
+        
+        # Debug: Show where templates are installed by chickensoft action
+        echo "Checking for Godot templates installed by chickensoft/setup-godot..."
+        find ~/.local/share/godot -name "android_source.zip" 2>/dev/null || echo "No android_source.zip found in ~/.local/share/godot"
+        
+        # Try the install script first
         chmod +x ./install_android_build_template.sh
-        ./install_android_build_template.sh || {
-          echo "⚠️ Failed to install Android build template automatically"
-          echo "Widget APK build may fail"
-        }
+        if ./install_android_build_template.sh; then
+          echo "✓ Android build template installed successfully using install script"
+        else
+          echo "⚠️ Install script failed, trying direct download from Godot releases..."
+          
+          # Download android_source.zip directly from Godot GitHub releases
+          # Use GODOT_RELEASE_VERSION from job env
+          ANDROID_SOURCE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_VERSION}/Godot_v${GODOT_RELEASE_VERSION}_export_templates.tpz"
+          
+          echo "Downloading export templates from: $ANDROID_SOURCE_URL"
+          wget -nv "$ANDROID_SOURCE_URL" -O /tmp/export_templates.tpz
+          
+          if [ -f /tmp/export_templates.tpz ]; then
+            echo "Downloaded export templates successfully"
+            
+            # Extract android_source.zip from the .tpz file (which is actually a zip)
+            echo "Extracting android_source.zip..."
+            mkdir -p /tmp/godot_templates
+            unzip -q /tmp/export_templates.tpz -d /tmp/godot_templates
+            
+            # Find and extract android_source.zip
+            ANDROID_SOURCE=$(find /tmp/godot_templates -name "android_source.zip" | head -n 1)
+            if [ -n "$ANDROID_SOURCE" ]; then
+              echo "Found android_source.zip at: $ANDROID_SOURCE"
+              mkdir -p android/build
+              unzip -q "$ANDROID_SOURCE" -d android/build
+              
+              if [ -f android/build/build.gradle ]; then
+                echo "✓ Android build template installed successfully via direct download"
+              else
+                echo "❌ Failed to extract Android build template properly"
+                ls -la android/build/ || true
+                exit 1
+              fi
+            else
+              echo "❌ Could not find android_source.zip in downloaded templates"
+              ls -la /tmp/godot_templates/ || true
+              exit 1
+            fi
+          else
+            echo "❌ Failed to download export templates"
+            exit 1
+          fi
+        fi
     
     - name: Rebuild APKs with updated version
       run: |
