@@ -70,7 +70,7 @@ If the widget APK build fails with "Android build template not installed" or "no
 
 1. Run the installation script: `./install_android_build_template.sh`
 2. Ensure Godot 4.3.0 export templates are installed
-3. Verify that `android/build/.gradle.build.version` file exists and contains "4.3.0.stable"
+3. Verify that `android/build/.gradle.build.version` file exists and contains "4.3.stable"
 4. Try the build again
 
 ### Android build template installation fails

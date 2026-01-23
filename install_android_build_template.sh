@@ -6,7 +6,7 @@ set -e
 
 echo "=== Installing Android Build Template ==="
 
-GODOT_VERSION="4.3.0.stable"
+GODOT_VERSION="4.3.stable"
 ANDROID_BUILD_DIR="./android/build"
 
 # Check if running from repository root

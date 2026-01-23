@@ -30,7 +30,7 @@ The GitHub Actions workflow uses `chickensoft-games/setup-godot@v1` to install G
 
 1. The `install_android_build_template.sh` script looked for templates at:
    ```
-   $HOME/.local/share/godot/export_templates/4.3.0.stable
+   $HOME/.local/share/godot/export_templates/4.3.stable
    ```
 
 2. The chickensoft action may install templates in a different location or format
