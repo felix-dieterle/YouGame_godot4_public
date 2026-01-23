@@ -341,20 +341,18 @@ jobs:
       run: |
         VERSION="${{ steps.version.outputs.new_version }}"
         
-        # Base content for the release
-        BODY="Automated release for YouGame
-
-        Version: ${VERSION}
-
-        ## Changes
-        This release was automatically created from the latest merge to main.
-
-        ## Download"
-        
-        # Check if widget build was successful
+        # Check if widget build was successful and generate appropriate release body
         if [ "$WIDGET_BUILD_SUCCESS" = "true" ]; then
           # Both APKs available
-          BODY="${BODY}
+          cat > /tmp/release_body.txt <<EOF
+        Automated release for YouGame
+        
+        Version: ${VERSION}
+        
+        ## Changes
+        This release was automatically created from the latest merge to main.
+        
+        ## Download
         Two APK variants are available:
         
         - **YouGame-${VERSION}.apk** - Standard game APK (lighter, no widget)
@@ -368,21 +366,28 @@ jobs:
         - Torch count
         - Player position
         
-        Choose the widget APK if you want to see your game status without opening the app!"
+        Choose the widget APK if you want to see your game status without opening the app!
+        EOF
         else
           # Only standard APK available
-          BODY="${BODY}
+          cat > /tmp/release_body.txt <<EOF
+        Automated release for YouGame
+        
+        Version: ${VERSION}
+        
+        ## Changes
+        This release was automatically created from the latest merge to main.
+        
+        ## Download
         Download the APK below to install on Android devices.
         
         - **YouGame-${VERSION}.apk** - Standard game APK
         
-        **Note:** Widget-enabled APK build was not available for this release."
+        **Note:** Widget-enabled APK build was not available for this release.
+        EOF
         fi
         
-        # Save the body to a file to preserve multiline content
-        echo "$BODY" > /tmp/release_body.txt
-        
-        # Also output for debugging
+        # Output for debugging
         echo "Generated release body:"
         cat /tmp/release_body.txt
     
