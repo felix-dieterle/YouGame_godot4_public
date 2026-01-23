@@ -77,8 +77,13 @@ fi
 
 # Verify extraction
 if [ -f "$ANDROID_BUILD_DIR/build.gradle" ]; then
+    # Create .gradle.build.version file required by Godot
+    # This file tells Godot which version of templates was used to build the template
+    echo "$GODOT_VERSION" > "$ANDROID_BUILD_DIR/.gradle.build.version"
+    
     echo "✓ Android build template installed successfully!"
     echo "Location: $ANDROID_BUILD_DIR"
+    echo "Created .gradle.build.version with version: $GODOT_VERSION"
     echo ""
     echo "You can now build APKs with gradle_build=true"
     echo "The widget-enabled APK will now work properly."
