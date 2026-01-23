@@ -79,29 +79,64 @@ jobs:
         use-dotnet: false
         include-templates: true
     
+    - name: Install Android Build Template
+      run: |
+        echo "Installing Android build template for widget builds..."
+        chmod +x ./install_android_build_template.sh
+        ./install_android_build_template.sh || {
+          echo "⚠️ Failed to install Android build template automatically"
+          echo "Widget APK build may fail"
+        }
+    
     - name: Create export directory
       run: mkdir -p export
     
-    - name: Build APK
+    - name: Build Standard APK
       run: |
-        echo "Building Android APK..."
+        echo "Building Standard Android APK (without widget)..."
         echo "Using debug export with automatic debug keystore signing"
         godot --headless --export-debug "Android" export/YouGame.apk || { echo "Godot export failed"; exit 1; }
         
         # Verify the APK was created
         if [ -f export/YouGame.apk ]; then
-          echo "APK created successfully!"
+          echo "Standard APK created successfully!"
           ls -lh export/YouGame.apk
         else
-          echo "Error: APK was not created"
+          echo "Error: Standard APK was not created"
           exit 1
         fi
     
-    - name: Upload APK artifact
+    - name: Build Widget APK  
+      continue-on-error: true
+      id: widget_build
+      run: |
+        echo "Building Widget-enabled Android APK..."
+        echo "Using debug export with automatic debug keystore signing"
+        godot --headless --export-debug "Android Widget" export/YouGame-Widget.apk
+        
+        # Check if APK was created
+        if [ -f export/YouGame-Widget.apk ]; then
+          echo "Widget APK created successfully!"
+          ls -lh export/YouGame-Widget.apk
+          echo "success=true" >> $GITHUB_OUTPUT
+        else
+          echo "Widget APK was not created"
+          echo "success=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+    
+    - name: Report Widget Build Status
+      if: steps.widget_build.outcome == 'failure'
+      run: |
+        echo "⚠️ Widget APK build failed"
+        echo "This may be due to missing Android build template"
+        echo "Only the standard APK will be available for this build"
+    
+    - name: Upload APK artifacts
       uses: actions/upload-artifact@v4
       if: success()
       with:
-        name: YouGame-APK
+        name: YouGame-APKs
         path: export/*.apk
         if-no-files-found: warn
 
@@ -148,35 +183,52 @@ jobs:
         VERSION_NUMBER="${{ steps.version.outputs.new_version }}"
         VERSION_NUMBER=${VERSION_NUMBER#v}  # Remove 'v' prefix
         
-        # Update version/name in export_presets.cfg (matches line starting with version/name=)
-        if ! sed -i "s#^version/name=\"[^\"]*\"#version/name=\"${VERSION_NUMBER}\"#" export_presets.cfg; then
+        # Update version/name in export_presets.cfg for both presets
+        # Use awk to update all version/name occurrences
+        awk -v new_ver="$VERSION_NUMBER" '
+          /^version\/name=/ { print "version/name=\"" new_ver "\""; next }
+          { print }
+        ' export_presets.cfg > export_presets.cfg.tmp && mv export_presets.cfg.tmp export_presets.cfg
+        
+        if ! grep -q "version/name=\"${VERSION_NUMBER}\"" export_presets.cfg; then
           echo "Error: Failed to update version/name in export_presets.cfg"
           exit 1
         fi
         
-        # Bump version code (extract current code and increment, use -m 1 for first match only)
+        # Bump version code (extract current code from first preset and increment)
         CURRENT_CODE=$(grep -m 1 "^version/code=" export_presets.cfg | sed 's#version/code=##')
         if [ -z "$CURRENT_CODE" ]; then
           echo "Error: Could not find version/code in export_presets.cfg"
           exit 1
         fi
         NEW_CODE=$((CURRENT_CODE + 1))
-        if ! sed -i "s#^version/code=${CURRENT_CODE}#version/code=${NEW_CODE}#" export_presets.cfg; then
+        
+        # Update version/code for both presets using awk
+        awk -v old_code="$CURRENT_CODE" -v new_code="$NEW_CODE" '
+          /^version\/code=/ && $0 ~ ("version/code=" old_code) { print "version/code=" new_code; next }
+          { print }
+        ' export_presets.cfg > export_presets.cfg.tmp && mv export_presets.cfg.tmp export_presets.cfg
+        
+        if ! grep -q "version/code=${NEW_CODE}" export_presets.cfg; then
           echo "Error: Failed to update version/code in export_presets.cfg"
           exit 1
         fi
         
         # Verify the updates were successful
-        if ! grep -qF "version/name=\"${VERSION_NUMBER}\"" export_presets.cfg; then
-          echo "Error: Version name update verification failed in export_presets.cfg"
-          exit 1
-        fi
-        if ! grep -qF "version/code=${NEW_CODE}" export_presets.cfg; then
-          echo "Error: Version code update verification failed in export_presets.cfg"
+        VERSION_COUNT=$(grep -c "version/name=\"${VERSION_NUMBER}\"" export_presets.cfg)
+        CODE_COUNT=$(grep -c "version/code=${NEW_CODE}" export_presets.cfg)
+        
+        if [ "$VERSION_COUNT" -ne 2 ]; then
+          echo "Error: Expected 2 version/name updates, found ${VERSION_COUNT}"
           exit 1
         fi
         
-        echo "Updated version/name to ${VERSION_NUMBER} and version/code to ${NEW_CODE}"
+        if [ "$CODE_COUNT" -ne 2 ]; then
+          echo "Error: Expected 2 version/code updates, found ${CODE_COUNT}"
+          exit 1
+        fi
+        
+        echo "Updated version/name to ${VERSION_NUMBER} and version/code to ${NEW_CODE} for both presets"
         
         # Show the changes
         grep "version/" export_presets.cfg
@@ -213,26 +265,63 @@ jobs:
         use-dotnet: false
         include-templates: true
     
-    - name: Rebuild APK with updated version
+    - name: Install Android Build Template
       run: |
-        echo "Rebuilding Android APK with updated version..."
+        echo "Installing Android build template for widget builds..."
+        chmod +x ./install_android_build_template.sh
+        ./install_android_build_template.sh || {
+          echo "⚠️ Failed to install Android build template automatically"
+          echo "Widget APK build may fail"
+        }
+    
+    - name: Rebuild APKs with updated version
+      run: |
+        echo "Rebuilding Android APKs with updated version..."
         mkdir -p release
-        godot --headless --export-debug "Android" release/YouGame.apk || { echo "Godot export failed"; exit 1; }
         
-        # Verify the APK was created
+        # Build standard APK
+        echo "Building standard APK..."
+        godot --headless --export-debug "Android" release/YouGame.apk || { echo "Godot standard export failed"; exit 1; }
+        
+        # Verify the standard APK was created
         if [ -f release/YouGame.apk ]; then
-          echo "APK rebuilt successfully with new version!"
+          echo "Standard APK rebuilt successfully with new version!"
           ls -lh release/YouGame.apk
           
           # Rename APK to include version number
           VERSION="${{ steps.version.outputs.new_version }}"
           mv release/YouGame.apk "release/YouGame-${VERSION}.apk"
-          echo "Renamed APK to YouGame-${VERSION}.apk"
-          ls -lh release/
+          echo "Renamed standard APK to YouGame-${VERSION}.apk"
         else
-          echo "Error: APK was not created"
+          echo "Error: Standard APK was not created"
           exit 1
         fi
+        
+        # Build widget APK - allow failure
+        echo "Building widget-enabled APK..."
+        if godot --headless --export-debug "Android Widget" release/YouGame-Widget.apk 2>&1; then
+          # Verify the widget APK was created
+          if [ -f release/YouGame-Widget.apk ]; then
+            echo "Widget APK rebuilt successfully with new version!"
+            ls -lh release/YouGame-Widget.apk
+            
+            # Rename APK to include version number
+            VERSION="${{ steps.version.outputs.new_version }}"
+            mv release/YouGame-Widget.apk "release/YouGame-Widget-${VERSION}.apk"
+            echo "Renamed widget APK to YouGame-Widget-${VERSION}.apk"
+            echo "WIDGET_BUILD_SUCCESS=true" >> $GITHUB_ENV
+          else
+            echo "⚠️ Widget APK build completed but file not found"
+            echo "WIDGET_BUILD_SUCCESS=false" >> $GITHUB_ENV
+          fi
+        else
+          echo "⚠️ Widget APK build failed - this may be due to missing Android build template"
+          echo "Only the standard APK will be included in the release"
+          echo "WIDGET_BUILD_SUCCESS=false" >> $GITHUB_ENV
+        fi
+        
+        echo "Build process completed!"
+        ls -lh release/
     
     - name: Commit version changes
       run: |
@@ -261,7 +350,20 @@ jobs:
           This release was automatically created from the latest merge to main.
           
           ## Download
-          Download the APK below to install on Android devices.
+          Two APK variants are available:
+          
+          - **YouGame-${{ steps.version.outputs.new_version }}.apk** - Standard game APK (lighter, no widget)
+          - **YouGame-Widget-${{ steps.version.outputs.new_version }}.apk** - Game APK with home screen widget support
+          
+          ### Widget APK Features
+          The widget-enabled APK includes a home screen widget that displays:
+          - Last saved timestamp
+          - Current game day
+          - Player health
+          - Torch count
+          - Player position
+          
+          Choose the widget APK if you want to see your game status without opening the app!
         files: |
           ./release/*.apk
         draft: false

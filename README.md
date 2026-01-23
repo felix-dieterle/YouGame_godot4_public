@@ -25,11 +25,15 @@ _*Widget requires Android build template installation - see [ANDROID_WIDGET_IMPL
 
 ### For Players
 
-1. **Download** the APK from releases
+1. **Download** the APK from releases:
+   - **Standard APK** (`YouGame-{version}.apk`) - Recommended for most users
+   - **Widget APK** (`YouGame-Widget-{version}.apk`) - Includes home screen widget feature
 2. **Install** on your Android device
 3. **Play** - Use on-screen joysticks to move and look around
-4. **Add home screen widget** (optional) - Long-press home screen → Widgets → "YouGame Save Status"
+4. **Add home screen widget** (widget APK only) - Long-press home screen → Widgets → "YouGame Save Status"
 5. **Toggle camera** with the V key (if using keyboard)
+
+See **[DUAL_APK_BUILD.md](DUAL_APK_BUILD.md)** for details about the two APK variants.
 
 ### For Developers
 
