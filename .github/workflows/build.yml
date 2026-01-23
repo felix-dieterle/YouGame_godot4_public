@@ -121,7 +121,7 @@ jobs:
               
               if [ -f android/build/build.gradle ]; then
                 # Create .gradle.build.version file required by Godot
-                echo "4.3.0.stable" > android/build/.gradle.build.version
+                echo "4.3.stable" > android/build/.gradle.build.version
                 echo "✓ Android build template installed successfully via direct download"
                 echo "Created .gradle.build.version file"
               else
@@ -175,9 +175,9 @@ jobs:
         
         # Verify it matches expected version format
         VERSION_CONTENT=$(cat android/build/.gradle.build.version)
-        if [[ ! "$VERSION_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.stable$ ]]; then
+        if [[ ! "$VERSION_CONTENT" =~ ^[0-9]+\.[0-9]+\.stable$ ]]; then
           echo "⚠️  WARNING: Version format may be incorrect: $VERSION_CONTENT"
-          echo "Expected format: X.Y.Z.stable (e.g., 4.3.0.stable)"
+          echo "Expected format: X.Y.stable (e.g., 4.3.stable)"
         fi
         
         echo "✓ All required files are present"
@@ -459,7 +459,7 @@ jobs:
               
               if [ -f android/build/build.gradle ]; then
                 # Create .gradle.build.version file required by Godot
-                echo "4.3.0.stable" > android/build/.gradle.build.version
+                echo "4.3.stable" > android/build/.gradle.build.version
                 echo "✓ Android build template installed successfully via direct download"
                 echo "Created .gradle.build.version file"
               else
@@ -513,9 +513,9 @@ jobs:
         
         # Verify it matches expected version format
         VERSION_CONTENT=$(cat android/build/.gradle.build.version)
-        if [[ ! "$VERSION_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.stable$ ]]; then
+        if [[ ! "$VERSION_CONTENT" =~ ^[0-9]+\.[0-9]+\.stable$ ]]; then
           echo "⚠️  WARNING: Version format may be incorrect: $VERSION_CONTENT"
-          echo "Expected format: X.Y.Z.stable (e.g., 4.3.0.stable)"
+          echo "Expected format: X.Y.stable (e.g., 4.3.stable)"
         fi
         
         echo "✓ All required files are present"
