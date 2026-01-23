@@ -140,6 +140,50 @@ jobs:
           fi
         fi
     
+    - name: Verify Android Build Template Installation
+      run: |
+        echo "========================================="
+        echo "Verifying Android Build Template Setup"
+        echo "========================================="
+        
+        # Check if android/build directory exists
+        if [ ! -d "android/build" ]; then
+          echo "❌ CRITICAL: android/build directory does not exist!"
+          exit 1
+        fi
+        
+        # Check for build.gradle
+        if [ ! -f "android/build/build.gradle" ]; then
+          echo "❌ CRITICAL: android/build/build.gradle not found!"
+          echo "Directory contents:"
+          ls -la android/build/ || true
+          exit 1
+        fi
+        
+        # Check for .gradle.build.version file (required by Godot)
+        if [ ! -f "android/build/.gradle.build.version" ]; then
+          echo "❌ CRITICAL: android/build/.gradle.build.version file is MISSING!"
+          echo "This file is REQUIRED for Godot to recognize the gradle build template."
+          echo "Directory contents:"
+          ls -la android/build/ || true
+          exit 1
+        fi
+        
+        # Display .gradle.build.version content
+        echo "✓ .gradle.build.version file exists"
+        echo "Content: $(cat android/build/.gradle.build.version)"
+        
+        # Verify it matches expected version format
+        VERSION_CONTENT=$(cat android/build/.gradle.build.version)
+        if [[ ! "$VERSION_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.stable$ ]]; then
+          echo "⚠️  WARNING: Version format may be incorrect: $VERSION_CONTENT"
+          echo "Expected format: X.Y.Z.stable (e.g., 4.3.0.stable)"
+        fi
+        
+        echo "✓ All required files are present"
+        echo "Template verification complete!"
+        echo "========================================="
+    
     - name: Create export directory
       run: mkdir -p export
     
@@ -162,17 +206,62 @@ jobs:
       continue-on-error: true
       id: widget_build
       run: |
+        echo "========================================="
         echo "Building Widget-enabled Android APK..."
+        echo "========================================="
         echo "Using debug export with automatic debug keystore signing"
-        godot --headless --export-debug "Android Widget" export/YouGame-Widget.apk
+        echo ""
+        
+        # Capture both stdout and stderr from godot export
+        set +e  # Don't exit on error so we can capture the output
+        godot --headless --export-debug "Android Widget" export/YouGame-Widget.apk 2>&1 | tee /tmp/widget_build.log
+        EXPORT_EXIT_CODE=${PIPESTATUS[0]}
+        set -e
+        
+        echo ""
+        echo "========================================="
+        echo "Widget Build Result Analysis"
+        echo "========================================="
         
         # Check if APK was created
         if [ -f export/YouGame-Widget.apk ]; then
-          echo "Widget APK created successfully!"
+          echo "✅ SUCCESS: Widget APK created successfully!"
           ls -lh export/YouGame-Widget.apk
           echo "success=true" >> $GITHUB_OUTPUT
         else
-          echo "Widget APK was not created"
+          echo "❌ FAILURE: Widget APK was not created"
+          echo "Godot exit code: $EXPORT_EXIT_CODE"
+          echo ""
+          echo "Error Analysis:"
+          
+          # Check for specific error patterns
+          if grep -q "no version info for it exists" /tmp/widget_build.log; then
+            echo "🔍 DETECTED: Missing version info error"
+            echo "   The .gradle.build.version file may be missing or has incorrect content."
+            echo "   Expected location: android/build/.gradle.build.version"
+            if [ -f "android/build/.gradle.build.version" ]; then
+              echo "   File exists with content: $(cat android/build/.gradle.build.version)"
+            else
+              echo "   ❌ File does NOT exist!"
+            fi
+          fi
+          
+          if grep -q "Android build template not installed" /tmp/widget_build.log; then
+            echo "🔍 DETECTED: Android build template not installed"
+            echo "   The android/build directory may be missing or incomplete."
+          fi
+          
+          if grep -q "Could not find version of build tools" /tmp/widget_build.log; then
+            echo "🔍 DETECTED: Build tools version mismatch"
+            echo "   This is usually a warning and shouldn't prevent the build."
+          fi
+          
+          echo ""
+          echo "Full build output (last 50 lines):"
+          echo "-----------------------------------"
+          tail -50 /tmp/widget_build.log
+          echo "-----------------------------------"
+          
           echo "success=false" >> $GITHUB_OUTPUT
           exit 1
         fi
@@ -180,9 +269,20 @@ jobs:
     - name: Report Widget Build Status
       if: steps.widget_build.outcome == 'failure'
       run: |
-        echo "⚠️ Widget APK build failed"
-        echo "This may be due to missing Android build template"
-        echo "Only the standard APK will be available for this build"
+        echo "========================================="
+        echo "⚠️⚠️⚠️  WIDGET BUILD FAILED  ⚠️⚠️⚠️"
+        echo "========================================="
+        echo ""
+        echo "The widget-enabled APK could not be built."
+        echo "Only the standard APK will be available for this build."
+        echo ""
+        echo "Common causes:"
+        echo "  1. Missing or incorrect .gradle.build.version file"
+        echo "  2. Incomplete Android build template installation"
+        echo "  3. Gradle build configuration issues"
+        echo ""
+        echo "See the 'Build Widget APK' step above for detailed error information."
+        echo "========================================="
     
     - name: Upload APK artifacts
       uses: actions/upload-artifact@v4
@@ -378,6 +478,50 @@ jobs:
           fi
         fi
     
+    - name: Verify Android Build Template Installation
+      run: |
+        echo "========================================="
+        echo "Verifying Android Build Template Setup"
+        echo "========================================="
+        
+        # Check if android/build directory exists
+        if [ ! -d "android/build" ]; then
+          echo "❌ CRITICAL: android/build directory does not exist!"
+          exit 1
+        fi
+        
+        # Check for build.gradle
+        if [ ! -f "android/build/build.gradle" ]; then
+          echo "❌ CRITICAL: android/build/build.gradle not found!"
+          echo "Directory contents:"
+          ls -la android/build/ || true
+          exit 1
+        fi
+        
+        # Check for .gradle.build.version file (required by Godot)
+        if [ ! -f "android/build/.gradle.build.version" ]; then
+          echo "❌ CRITICAL: android/build/.gradle.build.version file is MISSING!"
+          echo "This file is REQUIRED for Godot to recognize the gradle build template."
+          echo "Directory contents:"
+          ls -la android/build/ || true
+          exit 1
+        fi
+        
+        # Display .gradle.build.version content
+        echo "✓ .gradle.build.version file exists"
+        echo "Content: $(cat android/build/.gradle.build.version)"
+        
+        # Verify it matches expected version format
+        VERSION_CONTENT=$(cat android/build/.gradle.build.version)
+        if [[ ! "$VERSION_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.stable$ ]]; then
+          echo "⚠️  WARNING: Version format may be incorrect: $VERSION_CONTENT"
+          echo "Expected format: X.Y.Z.stable (e.g., 4.3.0.stable)"
+        fi
+        
+        echo "✓ All required files are present"
+        echo "Template verification complete!"
+        echo "========================================="
+    
     - name: Rebuild APKs with updated version
       run: |
         echo "Rebuilding Android APKs with updated version..."
@@ -402,25 +546,59 @@ jobs:
         fi
         
         # Build widget APK - allow failure
+        echo ""
+        echo "========================================="
         echo "Building widget-enabled APK..."
-        if godot --headless --export-debug "Android Widget" release/YouGame-Widget.apk 2>&1; then
-          # Verify the widget APK was created
-          if [ -f release/YouGame-Widget.apk ]; then
-            echo "Widget APK rebuilt successfully with new version!"
-            ls -lh release/YouGame-Widget.apk
-            
-            # Rename APK to include version number
-            VERSION="${{ steps.version.outputs.new_version }}"
-            mv release/YouGame-Widget.apk "release/YouGame-Widget-${VERSION}.apk"
-            echo "Renamed widget APK to YouGame-Widget-${VERSION}.apk"
-            echo "WIDGET_BUILD_SUCCESS=true" >> $GITHUB_ENV
-          else
-            echo "⚠️ Widget APK build completed but file not found"
-            echo "WIDGET_BUILD_SUCCESS=false" >> $GITHUB_ENV
-          fi
+        echo "========================================="
+        
+        # Capture both stdout and stderr from godot export
+        set +e  # Don't exit on error so we can capture the output
+        godot --headless --export-debug "Android Widget" release/YouGame-Widget.apk 2>&1 | tee /tmp/widget_build_release.log
+        WIDGET_EXIT_CODE=${PIPESTATUS[0]}
+        set -e
+        
+        echo ""
+        echo "========================================="
+        echo "Widget Build Result Analysis (Release)"
+        echo "========================================="
+        
+        if [ $WIDGET_EXIT_CODE -eq 0 ] && [ -f release/YouGame-Widget.apk ]; then
+          echo "✅ SUCCESS: Widget APK rebuilt successfully with new version!"
+          ls -lh release/YouGame-Widget.apk
+          
+          # Rename APK to include version number
+          VERSION="${{ steps.version.outputs.new_version }}"
+          mv release/YouGame-Widget.apk "release/YouGame-Widget-${VERSION}.apk"
+          echo "Renamed widget APK to YouGame-Widget-${VERSION}.apk"
+          echo "WIDGET_BUILD_SUCCESS=true" >> $GITHUB_ENV
         else
-          echo "⚠️ Widget APK build failed - this may be due to missing Android build template"
-          echo "Only the standard APK will be included in the release"
+          echo "❌ FAILURE: Widget APK build failed or file not created"
+          echo "Godot exit code: $WIDGET_EXIT_CODE"
+          echo ""
+          echo "Error Analysis:"
+          
+          # Check for specific error patterns
+          if grep -q "no version info for it exists" /tmp/widget_build_release.log; then
+            echo "🔍 DETECTED: Missing version info error"
+            echo "   The .gradle.build.version file may be missing or has incorrect content."
+            if [ -f "android/build/.gradle.build.version" ]; then
+              echo "   File exists with content: $(cat android/build/.gradle.build.version)"
+            else
+              echo "   ❌ File does NOT exist!"
+            fi
+          fi
+          
+          if grep -q "Android build template not installed" /tmp/widget_build_release.log; then
+            echo "🔍 DETECTED: Android build template not installed"
+          fi
+          
+          echo ""
+          echo "Full build output (last 50 lines):"
+          echo "-----------------------------------"
+          tail -50 /tmp/widget_build_release.log
+          echo "-----------------------------------"
+          
+          echo "⚠️ Only the standard APK will be included in the release"
           echo "WIDGET_BUILD_SUCCESS=false" >> $GITHUB_ENV
         fi
         
