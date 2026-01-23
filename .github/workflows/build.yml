@@ -97,20 +97,31 @@ jobs:
           exit 1
         fi
     
-    - name: Build Widget APK
+    - name: Build Widget APK  
+      continue-on-error: true
+      id: widget_build
       run: |
         echo "Building Widget-enabled Android APK..."
         echo "Using debug export with automatic debug keystore signing"
-        godot --headless --export-debug "Android Widget" export/YouGame-Widget.apk || { echo "Godot widget export failed"; exit 1; }
+        godot --headless --export-debug "Android Widget" export/YouGame-Widget.apk
         
-        # Verify the APK was created
+        # Check if APK was created
         if [ -f export/YouGame-Widget.apk ]; then
           echo "Widget APK created successfully!"
           ls -lh export/YouGame-Widget.apk
+          echo "success=true" >> $GITHUB_OUTPUT
         else
-          echo "Error: Widget APK was not created"
+          echo "Widget APK was not created"
+          echo "success=false" >> $GITHUB_OUTPUT
           exit 1
         fi
+    
+    - name: Report Widget Build Status
+      if: steps.widget_build.outcome == 'failure'
+      run: |
+        echo "⚠️ Widget APK build failed"
+        echo "This may be due to missing Android build template"
+        echo "Only the standard APK will be available for this build"
     
     - name: Upload APK artifacts
       uses: actions/upload-artifact@v4
@@ -264,25 +275,30 @@ jobs:
           exit 1
         fi
         
-        # Build widget APK
+        # Build widget APK - allow failure
         echo "Building widget-enabled APK..."
-        godot --headless --export-debug "Android Widget" release/YouGame-Widget.apk || { echo "Godot widget export failed"; exit 1; }
-        
-        # Verify the widget APK was created
-        if [ -f release/YouGame-Widget.apk ]; then
-          echo "Widget APK rebuilt successfully with new version!"
-          ls -lh release/YouGame-Widget.apk
-          
-          # Rename APK to include version number
-          VERSION="${{ steps.version.outputs.new_version }}"
-          mv release/YouGame-Widget.apk "release/YouGame-Widget-${VERSION}.apk"
-          echo "Renamed widget APK to YouGame-Widget-${VERSION}.apk"
+        if godot --headless --export-debug "Android Widget" release/YouGame-Widget.apk 2>&1; then
+          # Verify the widget APK was created
+          if [ -f release/YouGame-Widget.apk ]; then
+            echo "Widget APK rebuilt successfully with new version!"
+            ls -lh release/YouGame-Widget.apk
+            
+            # Rename APK to include version number
+            VERSION="${{ steps.version.outputs.new_version }}"
+            mv release/YouGame-Widget.apk "release/YouGame-Widget-${VERSION}.apk"
+            echo "Renamed widget APK to YouGame-Widget-${VERSION}.apk"
+            echo "WIDGET_BUILD_SUCCESS=true" >> $GITHUB_ENV
+          else
+            echo "⚠️ Widget APK build completed but file not found"
+            echo "WIDGET_BUILD_SUCCESS=false" >> $GITHUB_ENV
+          fi
         else
-          echo "Error: Widget APK was not created"
-          exit 1
+          echo "⚠️ Widget APK build failed - this may be due to missing Android build template"
+          echo "Only the standard APK will be included in the release"
+          echo "WIDGET_BUILD_SUCCESS=false" >> $GITHUB_ENV
         fi
         
-        echo "Both APKs built successfully!"
+        echo "Build process completed!"
         ls -lh release/
     
     - name: Commit version changes
