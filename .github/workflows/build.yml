@@ -120,7 +120,10 @@ jobs:
               unzip -q "$ANDROID_SOURCE" -d android/build
               
               if [ -f android/build/build.gradle ]; then
+                # Create .gradle.build.version file required by Godot
+                echo "4.3.0.stable" > android/build/.gradle.build.version
                 echo "✓ Android build template installed successfully via direct download"
+                echo "Created .gradle.build.version file"
               else
                 echo "❌ Failed to extract Android build template properly"
                 ls -la android/build/ || true
@@ -355,7 +358,10 @@ jobs:
               unzip -q "$ANDROID_SOURCE" -d android/build
               
               if [ -f android/build/build.gradle ]; then
+                # Create .gradle.build.version file required by Godot
+                echo "4.3.0.stable" > android/build/.gradle.build.version
                 echo "✓ Android build template installed successfully via direct download"
+                echo "Created .gradle.build.version file"
               else
                 echo "❌ Failed to extract Android build template properly"
                 ls -la android/build/ || true
