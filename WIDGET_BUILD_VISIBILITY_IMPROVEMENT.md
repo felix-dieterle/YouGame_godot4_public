@@ -151,7 +151,7 @@ Error Analysis:
 🔍 DETECTED: Missing version info error
    The .gradle.build.version file may be missing or has incorrect content.
    Expected location: android/build/.gradle.build.version
-   File exists with content: 4.3.0.stable
+   File exists with content: 4.3.stable
 
 Full build output (last 50 lines):
 -----------------------------------
