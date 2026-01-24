@@ -92,6 +92,8 @@ jobs:
         
         # Parse the version string: "Godot Engine v4.3.stable.official.77dcf97d8" -> "4.3.stable"
         # Extract just the version number part (4.3.stable)
+        # Pattern is intentionally restrictive to match only stable releases (X.Y.stable format)
+        # Non-stable versions (beta/alpha/dev/rc) will use the fallback version
         GODOT_VERSION=$(echo "$GODOT_VERSION_OUTPUT" | grep -oP 'v\K[0-9]+\.[0-9]+\.stable' || echo "4.3.stable")
         echo "Parsed Godot version: $GODOT_VERSION"
         echo "version=$GODOT_VERSION" >> $GITHUB_OUTPUT
@@ -450,6 +452,8 @@ jobs:
         
         # Parse the version string: "Godot Engine v4.3.stable.official.77dcf97d8" -> "4.3.stable"
         # Extract just the version number part (4.3.stable)
+        # Pattern is intentionally restrictive to match only stable releases (X.Y.stable format)
+        # Non-stable versions (beta/alpha/dev/rc) will use the fallback version
         GODOT_VERSION=$(echo "$GODOT_VERSION_OUTPUT" | grep -oP 'v\K[0-9]+\.[0-9]+\.stable' || echo "4.3.stable")
         echo "Parsed Godot version: $GODOT_VERSION"
         echo "version=$GODOT_VERSION" >> $GITHUB_OUTPUT
