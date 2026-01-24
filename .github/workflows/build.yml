@@ -82,130 +82,6 @@ jobs:
         use-dotnet: false
         include-templates: true
     
-    - name: Get Godot Version
-      id: godot_version
-      run: |
-        echo "Extracting Godot version..."
-        # Get the version from Godot itself
-        GODOT_VERSION_OUTPUT=$(godot --version 2>&1 || echo "")
-        echo "Godot version output: $GODOT_VERSION_OUTPUT"
-        
-        # Parse the version string: "Godot Engine v4.3.stable.official.77dcf97d8" -> "4.3.stable"
-        # Extract just the version number part (4.3.stable)
-        # Pattern is intentionally restrictive to match only stable releases (X.Y.stable format)
-        # Non-stable versions (beta/alpha/dev/rc) will use the fallback version
-        GODOT_VERSION=$(echo "$GODOT_VERSION_OUTPUT" | grep -oP 'v\K[0-9]+\.[0-9]+\.stable' || echo "4.3.stable")
-        echo "Parsed Godot version: $GODOT_VERSION"
-        echo "version=$GODOT_VERSION" >> $GITHUB_OUTPUT
-    
-    - name: Install Android Build Template
-      run: |
-        echo "Installing Android build template for widget builds..."
-        echo "Using Godot version: ${{ steps.godot_version.outputs.version }}"
-        
-        # Debug: Show where templates are installed by chickensoft action
-        echo "Checking for Godot templates installed by chickensoft/setup-godot..."
-        find ~/.local/share/godot -name "android_source.zip" 2>/dev/null || echo "No android_source.zip found in ~/.local/share/godot"
-        
-        # Try the install script first
-        chmod +x ./install_android_build_template.sh
-        if ./install_android_build_template.sh; then
-          echo "✓ Android build template installed successfully using install script"
-          # Override the version file with the version from Godot executable
-          echo -n "${{ steps.godot_version.outputs.version }}" > android/build/.gradle.build.version
-          echo "Updated .gradle.build.version with Godot version: ${{ steps.godot_version.outputs.version }}"
-        else
-          echo "⚠️ Install script failed, trying direct download from Godot releases..."
-          
-          # Download android_source.zip directly from Godot GitHub releases
-          # Use GODOT_RELEASE_VERSION from job env
-          ANDROID_SOURCE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_VERSION}/Godot_v${GODOT_RELEASE_VERSION}_export_templates.tpz"
-          
-          echo "Downloading export templates from: $ANDROID_SOURCE_URL"
-          wget -nv "$ANDROID_SOURCE_URL" -O /tmp/export_templates.tpz
-          
-          if [ -f /tmp/export_templates.tpz ]; then
-            echo "Downloaded export templates successfully"
-            
-            # Extract android_source.zip from the .tpz file (which is actually a zip)
-            echo "Extracting android_source.zip..."
-            mkdir -p /tmp/godot_templates
-            unzip -q /tmp/export_templates.tpz -d /tmp/godot_templates
-            
-            # Find and extract android_source.zip
-            ANDROID_SOURCE=$(find /tmp/godot_templates -name "android_source.zip" | head -n 1)
-            if [ -n "$ANDROID_SOURCE" ]; then
-              echo "Found android_source.zip at: $ANDROID_SOURCE"
-              mkdir -p android/build
-              unzip -q "$ANDROID_SOURCE" -d android/build
-              
-              if [ -f android/build/build.gradle ]; then
-                # Create .gradle.build.version file with the version from Godot executable
-                # This ensures exact match with what Godot expects
-                # Use echo -n to avoid adding a newline
-                echo -n "${{ steps.godot_version.outputs.version }}" > android/build/.gradle.build.version
-                echo "✓ Android build template installed successfully via direct download"
-                echo "Created .gradle.build.version file with Godot version: ${{ steps.godot_version.outputs.version }}"
-              else
-                echo "❌ Failed to extract Android build template properly"
-                ls -la android/build/ || true
-                exit 1
-              fi
-            else
-              echo "❌ Could not find android_source.zip in downloaded templates"
-              ls -la /tmp/godot_templates/ || true
-              exit 1
-            fi
-          else
-            echo "❌ Failed to download export templates"
-            exit 1
-          fi
-        fi
-    
-    - name: Verify Android Build Template Installation
-      run: |
-        echo "========================================="
-        echo "Verifying Android Build Template Setup"
-        echo "========================================="
-        
-        # Check if android/build directory exists
-        if [ ! -d "android/build" ]; then
-          echo "❌ CRITICAL: android/build directory does not exist!"
-          exit 1
-        fi
-        
-        # Check for build.gradle
-        if [ ! -f "android/build/build.gradle" ]; then
-          echo "❌ CRITICAL: android/build/build.gradle not found!"
-          echo "Directory contents:"
-          ls -la android/build/ || true
-          exit 1
-        fi
-        
-        # Check for .gradle.build.version file (required by Godot)
-        if [ ! -f "android/build/.gradle.build.version" ]; then
-          echo "❌ CRITICAL: android/build/.gradle.build.version file is MISSING!"
-          echo "This file is REQUIRED for Godot to recognize the gradle build template."
-          echo "Directory contents:"
-          ls -la android/build/ || true
-          exit 1
-        fi
-        
-        # Display .gradle.build.version content
-        echo "✓ .gradle.build.version file exists"
-        echo "Content: $(cat android/build/.gradle.build.version)"
-        
-        # Verify it matches expected version format
-        VERSION_CONTENT=$(cat android/build/.gradle.build.version)
-        if [[ ! "$VERSION_CONTENT" =~ ^[0-9]+\.[0-9]+\.stable$ ]]; then
-          echo "⚠️  WARNING: Version format may be incorrect: $VERSION_CONTENT"
-          echo "Expected format: X.Y.stable (e.g., 4.3.stable)"
-        fi
-        
-        echo "✓ All required files are present"
-        echo "Template verification complete!"
-        echo "========================================="
-    
     - name: Create export directory
       run: mkdir -p export
     
@@ -224,69 +100,46 @@ jobs:
           exit 1
         fi
     
-    - name: Build Widget APK  
+    - name: Build Standalone Widget APK  
       continue-on-error: true
       id: widget_build
       run: |
         echo "========================================="
-        echo "Building Widget-enabled Android APK..."
+        echo "Building Standalone Widget APK..."
         echo "========================================="
-        echo "Using debug export with automatic debug keystore signing"
+        echo "This is a native Android widget app (no Godot dependency)"
         echo ""
         
-        # Capture both stdout and stderr from godot export
-        set +e  # Don't exit on error so we can capture the output
-        godot --headless --export-debug "Android Widget" export/YouGame-Widget.apk 2>&1 | tee /tmp/widget_build.log
-        EXPORT_EXIT_CODE=${PIPESTATUS[0]}
-        set -e
+        # Navigate to widget app directory
+        cd widget_app
         
-        echo ""
-        echo "========================================="
-        echo "Widget Build Result Analysis"
-        echo "========================================="
+        # Create Gradle wrapper if it doesn't exist
+        if [ ! -f gradlew ]; then
+          echo "Creating Gradle wrapper..."
+          gradle wrapper --gradle-version 8.0
+        fi
+        
+        # Build the widget APK
+        echo "Building widget APK with Gradle..."
+        ./gradlew assembleDebug --no-daemon --stacktrace
         
         # Check if APK was created
-        if [ -f export/YouGame-Widget.apk ]; then
-          echo "✅ SUCCESS: Widget APK created successfully!"
-          ls -lh export/YouGame-Widget.apk
+        if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
+          echo "✅ SUCCESS: Standalone Widget APK created successfully!"
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          
+          # Copy to export directory with descriptive name
+          mkdir -p ../export
+          cp app/build/outputs/apk/debug/app-debug.apk ../export/YouGame-Widget.apk
+          echo "✓ Copied to export/YouGame-Widget.apk"
           echo "success=true" >> $GITHUB_OUTPUT
         else
           echo "❌ FAILURE: Widget APK was not created"
-          echo "Godot exit code: $EXPORT_EXIT_CODE"
-          echo ""
-          echo "Error Analysis:"
-          
-          # Check for specific error patterns
-          if grep -q "no version info for it exists" /tmp/widget_build.log; then
-            echo "🔍 DETECTED: Missing version info error"
-            echo "   The .gradle.build.version file may be missing or has incorrect content."
-            echo "   Expected location: android/build/.gradle.build.version"
-            if [ -f "android/build/.gradle.build.version" ]; then
-              echo "   File exists with content: $(cat android/build/.gradle.build.version)"
-            else
-              echo "   ❌ File does NOT exist!"
-            fi
-          fi
-          
-          if grep -q "Android build template not installed" /tmp/widget_build.log; then
-            echo "🔍 DETECTED: Android build template not installed"
-            echo "   The android/build directory may be missing or incomplete."
-          fi
-          
-          if grep -q "Could not find version of build tools" /tmp/widget_build.log; then
-            echo "🔍 DETECTED: Build tools version mismatch"
-            echo "   This is usually a warning and shouldn't prevent the build."
-          fi
-          
-          echo ""
-          echo "Full build output (last 50 lines):"
-          echo "-----------------------------------"
-          tail -50 /tmp/widget_build.log
-          echo "-----------------------------------"
-          
           echo "success=false" >> $GITHUB_OUTPUT
           exit 1
         fi
+        
+        cd ..
     
     - name: Report Widget Build Status
       if: steps.widget_build.outcome == 'failure'
@@ -295,15 +148,10 @@ jobs:
         echo "⚠️⚠️⚠️  WIDGET BUILD FAILED  ⚠️⚠️⚠️"
         echo "========================================="
         echo ""
-        echo "The widget-enabled APK could not be built."
-        echo "Only the standard APK will be available for this build."
+        echo "The standalone widget APK could not be built."
+        echo "Only the standard game APK will be available for this build."
         echo ""
-        echo "Common causes:"
-        echo "  1. Missing or incorrect .gradle.build.version file"
-        echo "  2. Incomplete Android build template installation"
-        echo "  3. Gradle build configuration issues"
-        echo ""
-        echo "See the 'Build Widget APK' step above for detailed error information."
+        echo "Check the 'Build Standalone Widget APK' step above for error details."
         echo "========================================="
     
     - name: Upload APK artifacts
@@ -442,129 +290,6 @@ jobs:
         use-dotnet: false
         include-templates: true
     
-    - name: Get Godot Version
-      id: godot_version
-      run: |
-        echo "Extracting Godot version..."
-        # Get the version from Godot itself
-        GODOT_VERSION_OUTPUT=$(godot --version 2>&1 || echo "")
-        echo "Godot version output: $GODOT_VERSION_OUTPUT"
-        
-        # Parse the version string: "Godot Engine v4.3.stable.official.77dcf97d8" -> "4.3.stable"
-        # Extract just the version number part (4.3.stable)
-        # Pattern is intentionally restrictive to match only stable releases (X.Y.stable format)
-        # Non-stable versions (beta/alpha/dev/rc) will use the fallback version
-        GODOT_VERSION=$(echo "$GODOT_VERSION_OUTPUT" | grep -oP 'v\K[0-9]+\.[0-9]+\.stable' || echo "4.3.stable")
-        echo "Parsed Godot version: $GODOT_VERSION"
-        echo "version=$GODOT_VERSION" >> $GITHUB_OUTPUT
-    
-    - name: Install Android Build Template
-      run: |
-        echo "Installing Android build template for widget builds..."
-        
-        # Debug: Show where templates are installed by chickensoft action
-        echo "Checking for Godot templates installed by chickensoft/setup-godot..."
-        find ~/.local/share/godot -name "android_source.zip" 2>/dev/null || echo "No android_source.zip found in ~/.local/share/godot"
-        
-        # Try the install script first
-        chmod +x ./install_android_build_template.sh
-        if ./install_android_build_template.sh; then
-          echo "✓ Android build template installed successfully using install script"
-          # Override the version file with the version from Godot executable
-          echo -n "${{ steps.godot_version.outputs.version }}" > android/build/.gradle.build.version
-          echo "Updated .gradle.build.version with Godot version: ${{ steps.godot_version.outputs.version }}"
-        else
-          echo "⚠️ Install script failed, trying direct download from Godot releases..."
-          
-          # Download android_source.zip directly from Godot GitHub releases
-          # Use GODOT_RELEASE_VERSION from job env
-          ANDROID_SOURCE_URL="https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_VERSION}/Godot_v${GODOT_RELEASE_VERSION}_export_templates.tpz"
-          
-          echo "Downloading export templates from: $ANDROID_SOURCE_URL"
-          wget -nv "$ANDROID_SOURCE_URL" -O /tmp/export_templates.tpz
-          
-          if [ -f /tmp/export_templates.tpz ]; then
-            echo "Downloaded export templates successfully"
-            
-            # Extract android_source.zip from the .tpz file (which is actually a zip)
-            echo "Extracting android_source.zip..."
-            mkdir -p /tmp/godot_templates
-            unzip -q /tmp/export_templates.tpz -d /tmp/godot_templates
-            
-            # Find and extract android_source.zip
-            ANDROID_SOURCE=$(find /tmp/godot_templates -name "android_source.zip" | head -n 1)
-            if [ -n "$ANDROID_SOURCE" ]; then
-              echo "Found android_source.zip at: $ANDROID_SOURCE"
-              mkdir -p android/build
-              unzip -q "$ANDROID_SOURCE" -d android/build
-              
-              if [ -f android/build/build.gradle ]; then
-                # Create .gradle.build.version file with the version from Godot executable
-                # This ensures exact match with what Godot expects
-                # Use echo -n to avoid adding a newline
-                echo -n "${{ steps.godot_version.outputs.version }}" > android/build/.gradle.build.version
-                echo "✓ Android build template installed successfully via direct download"
-                echo "Created .gradle.build.version file with Godot version: ${{ steps.godot_version.outputs.version }}"
-              else
-                echo "❌ Failed to extract Android build template properly"
-                ls -la android/build/ || true
-                exit 1
-              fi
-            else
-              echo "❌ Could not find android_source.zip in downloaded templates"
-              ls -la /tmp/godot_templates/ || true
-              exit 1
-            fi
-          else
-            echo "❌ Failed to download export templates"
-            exit 1
-          fi
-        fi
-    
-    - name: Verify Android Build Template Installation
-      run: |
-        echo "========================================="
-        echo "Verifying Android Build Template Setup"
-        echo "========================================="
-        
-        # Check if android/build directory exists
-        if [ ! -d "android/build" ]; then
-          echo "❌ CRITICAL: android/build directory does not exist!"
-          exit 1
-        fi
-        
-        # Check for build.gradle
-        if [ ! -f "android/build/build.gradle" ]; then
-          echo "❌ CRITICAL: android/build/build.gradle not found!"
-          echo "Directory contents:"
-          ls -la android/build/ || true
-          exit 1
-        fi
-        
-        # Check for .gradle.build.version file (required by Godot)
-        if [ ! -f "android/build/.gradle.build.version" ]; then
-          echo "❌ CRITICAL: android/build/.gradle.build.version file is MISSING!"
-          echo "This file is REQUIRED for Godot to recognize the gradle build template."
-          echo "Directory contents:"
-          ls -la android/build/ || true
-          exit 1
-        fi
-        
-        # Display .gradle.build.version content
-        echo "✓ .gradle.build.version file exists"
-        echo "Content: $(cat android/build/.gradle.build.version)"
-        
-        # Verify it matches expected version format
-        VERSION_CONTENT=$(cat android/build/.gradle.build.version)
-        if [[ ! "$VERSION_CONTENT" =~ ^[0-9]+\.[0-9]+\.stable$ ]]; then
-          echo "⚠️  WARNING: Version format may be incorrect: $VERSION_CONTENT"
-          echo "Expected format: X.Y.stable (e.g., 4.3.stable)"
-        fi
-        
-        echo "✓ All required files are present"
-        echo "Template verification complete!"
-        echo "========================================="
-    
     - name: Rebuild APKs with updated version
       run: |
         echo "Rebuilding Android APKs with updated version..."
@@ -588,16 +313,26 @@ jobs:
           exit 1
         fi
         
-        # Build widget APK - allow failure
+        # Build standalone widget APK - allow failure
         echo ""
         echo "========================================="
-        echo "Building widget-enabled APK..."
+        echo "Building Standalone Widget APK..."
         echo "========================================="
         
-        # Capture both stdout and stderr from godot export
-        set +e  # Don't exit on error so we can capture the output
-        godot --headless --export-debug "Android Widget" release/YouGame-Widget.apk 2>&1 | tee /tmp/widget_build_release.log
-        WIDGET_EXIT_CODE=${PIPESTATUS[0]}
+        set +e  # Don't exit on error
+        cd widget_app
+        
+        # Create Gradle wrapper if it doesn't exist
+        if [ ! -f gradlew ]; then
+          echo "Creating Gradle wrapper..."
+          gradle wrapper --gradle-version 8.0
+        fi
+        
+        # Build the widget APK
+        ./gradlew assembleDebug --no-daemon --stacktrace
+        WIDGET_EXIT_CODE=$?
+        
+        cd ..
         set -e
         
         echo ""
@@ -605,42 +340,18 @@ jobs:
         echo "Widget Build Result Analysis (Release)"
         echo "========================================="
         
-        if [ $WIDGET_EXIT_CODE -eq 0 ] && [ -f release/YouGame-Widget.apk ]; then
-          echo "✅ SUCCESS: Widget APK rebuilt successfully with new version!"
-          ls -lh release/YouGame-Widget.apk
+        if [ $WIDGET_EXIT_CODE -eq 0 ] && [ -f widget_app/app/build/outputs/apk/debug/app-debug.apk ]; then
+          echo "✅ SUCCESS: Standalone Widget APK built successfully!"
+          ls -lh widget_app/app/build/outputs/apk/debug/app-debug.apk
           
-          # Rename APK to include version number
+          # Copy and rename APK to include version number
           VERSION="${{ steps.version.outputs.new_version }}"
-          mv release/YouGame-Widget.apk "release/YouGame-Widget-${VERSION}.apk"
-          echo "Renamed widget APK to YouGame-Widget-${VERSION}.apk"
+          cp widget_app/app/build/outputs/apk/debug/app-debug.apk "release/YouGame-Widget-${VERSION}.apk"
+          echo "Created release/YouGame-Widget-${VERSION}.apk"
           echo "WIDGET_BUILD_SUCCESS=true" >> $GITHUB_ENV
         else
-          echo "❌ FAILURE: Widget APK build failed or file not created"
-          echo "Godot exit code: $WIDGET_EXIT_CODE"
-          echo ""
-          echo "Error Analysis:"
-          
-          # Check for specific error patterns
-          if grep -q "no version info for it exists" /tmp/widget_build_release.log; then
-            echo "🔍 DETECTED: Missing version info error"
-            echo "   The .gradle.build.version file may be missing or has incorrect content."
-            if [ -f "android/build/.gradle.build.version" ]; then
-              echo "   File exists with content: $(cat android/build/.gradle.build.version)"
-            else
-              echo "   ❌ File does NOT exist!"
-            fi
-          fi
-          
-          if grep -q "Android build template not installed" /tmp/widget_build_release.log; then
-            echo "🔍 DETECTED: Android build template not installed"
-          fi
-          
-          echo ""
-          echo "Full build output (last 50 lines):"
-          echo "-----------------------------------"
-          tail -50 /tmp/widget_build_release.log
-          echo "-----------------------------------"
-          
+          echo "❌ FAILURE: Widget APK build failed"
+          echo "Gradle exit code: $WIDGET_EXIT_CODE"
           echo "⚠️ Only the standard APK will be included in the release"
           echo "WIDGET_BUILD_SUCCESS=false" >> $GITHUB_ENV
         fi
@@ -678,20 +389,25 @@ jobs:
         This release was automatically created from the latest merge to main.
         
         ## Download
-        Two APK variants are available:
+        Two separate APK files are available:
         
-        - **YouGame-${VERSION}.apk** - Standard game APK (lighter, no widget)
-        - **YouGame-Widget-${VERSION}.apk** - Game APK with home screen widget support
+        - **YouGame-${VERSION}.apk** - Main game APK
+        - **YouGame-Widget-${VERSION}.apk** - Standalone widget APK (install separately)
         
-        ### Widget APK Features
-        The widget-enabled APK includes a home screen widget that displays:
+        ### How to Install
+        1. Install the main game APK: \`YouGame-${VERSION}.apk\`
+        2. (Optional) Install the widget APK: \`YouGame-Widget-${VERSION}.apk\`
+        3. Add widget to home screen (long-press → Widgets → "YouGame Save Status")
+        
+        ### Widget Features
+        The standalone widget displays your game progress on the home screen:
         - Last saved timestamp
         - Current game day
-        - Player health
-        - Torch count
-        - Player position
+        - Player health percentage
+        - Torch inventory count
+        - Player position (X, Z coordinates)
         
-        Choose the widget APK if you want to see your game status without opening the app!
+        **Note:** The widget is now a separate lightweight app that reads save data from the main game.
         EOF
         else
           # Only standard APK available
