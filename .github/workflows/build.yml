@@ -110,6 +110,10 @@ jobs:
         echo "This is a native Android widget app (no Godot dependency)"
         echo ""
         
+        # Clean up any .import files that Godot may have generated
+        echo "Cleaning up Godot .import files from widget_app..."
+        find widget_app -name "*.import" -type f -delete
+        
         # Navigate to widget app directory
         cd widget_app
         
@@ -318,6 +322,10 @@ jobs:
         echo "========================================="
         echo "Building Standalone Widget APK..."
         echo "========================================="
+        
+        # Clean up any .import files that Godot may have generated
+        echo "Cleaning up Godot .import files from widget_app..."
+        find widget_app -name "*.import" -type f -delete
         
         set +e  # Don't exit on error
         cd widget_app
