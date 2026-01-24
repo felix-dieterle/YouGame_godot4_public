@@ -251,15 +251,13 @@ func _update_lighting() -> void:
         ui_manager.update_sun_position(get_sun_position_degrees())
     
     # Calculate sun angle based on current time
-    # 0 = sunrise, DAY_CYCLE_DURATION/2 = noon, DAY_CYCLE_DURATION = sunset
-    var time_ratio = current_time / DAY_CYCLE_DURATION
+    # Use the display angle which accounts for INITIAL_TIME_OFFSET_HOURS
+    var display_angle = get_sun_position_degrees()
     
-    # NOTE: Sun offset is NOT applied to sun position - it only affects displayed time
-    # This prevents discontinuities when offset wraps around day boundaries
-    
-    # Use display angle (0-180°) for proper visual arc and shadow direction
-    # This matches what the player sees in the UI
-    var display_angle = time_ratio * 180.0
+    # Handle special cases (night, sunrise, sunset animations handled separately)
+    if display_angle < 0:
+        # Night time - lighting handled by _set_night_lighting()
+        return
     
     # Convert display angle to light rotation
     # 0° (sunrise) -> +90° rotation (light from east)
@@ -271,16 +269,16 @@ func _update_lighting() -> void:
     # Rotate around X axis for sun elevation
     directional_light.rotation_degrees.x = light_rotation
     
-    # Adjust light intensity based on time of day
-    # Brightest at noon, dimmer at sunrise/sunset
-    var intensity_curve = 1.0 - abs(time_ratio - 0.5) * 2.0  # 0 at edges, 1 at center
+    # Adjust light intensity based on sun position
+    # Brightest at noon (90°), dimmer at sunrise (0°) and sunset (180°)
+    var noon_distance = abs(display_angle - 90.0) / 90.0  # 0 at noon, 1 at sunrise/sunset
+    var intensity_curve = 1.0 - noon_distance  # 1 at noon, 0 at edges
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, MAX_LIGHT_ENERGY, intensity_curve)
     
     # Log sun degree and lighting data for debugging lighting issues
-    var sun_position_deg = get_sun_position_degrees()
-    if sun_position_deg > 80.0 or abs(sun_position_deg - 180.0) < 10.0:
-        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Time Ratio: %.2f | Current Time: %.2f" % [
-            sun_position_deg, light_rotation, directional_light.light_energy, time_ratio, current_time
+    if display_angle > 80.0 or abs(display_angle - 180.0) < 10.0:
+        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f" % [
+            display_angle, light_rotation, directional_light.light_energy
         ]
         LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
