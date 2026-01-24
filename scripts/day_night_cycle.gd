@@ -11,12 +11,15 @@ const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 const DAY_DURATION_HOURS: float = 10.0  # Day cycle represents 10 game hours (7 AM to 5 PM)
 const INITIAL_TIME_OFFSET_HOURS: float = 0.0  # Hours to advance sun position at game start (0.0 = start at sunrise, 7:00 AM)
 
-# Sun angle constants
-const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
-const SUNRISE_END_ANGLE: float = -20.0     # Sunrise position (20° from overhead for bright morning)
-const SUNSET_START_ANGLE: float = 20.0     # Sunset position (20° from overhead, symmetric)
-const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end
-const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night
+# Sun angle constants (DEPRECATED - kept for backwards compatibility)
+# These constants were used in the old sun positioning system where the sun
+# only traveled from -20° to +20° (40° arc). The new system uses display angles
+# (0-180°) directly for proper visual arc from horizon to horizon.
+const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start (deprecated)
+const SUNRISE_END_ANGLE: float = -20.0     # Sunrise position (deprecated)
+const SUNSET_START_ANGLE: float = 20.0     # Sunset position (deprecated)
+const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end (deprecated)
+const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night (deprecated)
 
 # Celestial object distance constants
 const CELESTIAL_DISTANCE: float = 2000.0   # Distance for sun and moon
@@ -251,31 +254,34 @@ func _update_lighting() -> void:
         ui_manager.update_sun_position(get_sun_position_degrees())
     
     # Calculate sun angle based on current time
-    # 0 = sunrise, DAY_CYCLE_DURATION/2 = noon, DAY_CYCLE_DURATION = sunset
-    var time_ratio = current_time / DAY_CYCLE_DURATION
+    # Use the display angle which accounts for INITIAL_TIME_OFFSET_HOURS
+    var display_angle = get_sun_position_degrees()
     
-    # NOTE: Sun offset is NOT applied to sun position - it only affects displayed time
-    # This prevents discontinuities when offset wraps around day boundaries
+    # Handle special cases (night, sunrise, sunset animations handled separately)
+    if display_angle < 0:
+        # Night time - lighting handled by _set_night_lighting()
+        return
     
-    # Sun moves from sunrise angle (-20°) to sunset angle (20°) over the course of the day
-    # At noon, sun is directly overhead (0°)
-    var sun_angle = lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
+    # Convert display angle to light rotation
+    # 0° (sunrise) -> +90° rotation (light from east)
+    # 90° (noon) -> 0° rotation (light from overhead)
+    # 180° (sunset) -> -90° rotation (light from west)
+    var light_rotation = 90.0 - display_angle
     
     # Apply rotation to directional light
     # Rotate around X axis for sun elevation
-    directional_light.rotation_degrees.x = -sun_angle
+    directional_light.rotation_degrees.x = light_rotation
     
-    # Adjust light intensity based on time of day
-    # Brightest at noon, dimmer at sunrise/sunset
-    var intensity_curve = 1.0 - abs(time_ratio - 0.5) * 2.0  # 0 at edges, 1 at center
+    # Adjust light intensity based on sun position
+    # Brightest at noon (90°), dimmer at sunrise (0°) and sunset (180°)
+    var noon_distance = abs(display_angle - 90.0) / 90.0  # 0 at noon, 1 at sunrise/sunset
+    var intensity_curve = 1.0 - noon_distance  # 1 at noon, 0 at edges
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, MAX_LIGHT_ENERGY, intensity_curve)
     
-    # Log sun degree and lighting data for debugging lighting issues
-    # This helps identify the problem where it stays dark even when sun degree > 80°
-    var sun_position_deg = get_sun_position_degrees()
-    if sun_position_deg > 80.0 or abs(sun_position_deg - 180.0) < 10.0:
-        var log_msg = "Sun Position: %.2f° | Sun Angle: %.2f° | Light Energy: %.2f | Time Ratio: %.2f | Current Time: %.2f" % [
-            sun_position_deg, sun_angle, directional_light.light_energy, time_ratio, current_time
+    # Log sun degree and lighting data for debugging lighting issues near noon and sunset
+    if display_angle > 80.0:
+        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f" % [
+            display_angle, light_rotation, directional_light.light_energy
         ]
         LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
@@ -304,17 +310,19 @@ func _animate_sunrise(progress: float) -> void:
     if not directional_light:
         return
     
-    # Animate from night (below horizon) to day (above horizon)
-    var sun_angle = lerp(SUNRISE_START_ANGLE, SUNRISE_END_ANGLE, progress)
-    directional_light.rotation_degrees.x = -sun_angle
+    # Animate from night (below horizon) to day (at horizon, 0°)
+    # During sunrise, sun goes from below horizon to 0° display angle
+    # Light rotation: from below horizon (+120°) to sunrise position (+90°)
+    var light_rotation = lerp(120.0, 90.0, progress)
+    directional_light.rotation_degrees.x = light_rotation
     
     # Fade in light to match the start-of-day intensity
     directional_light.light_energy = lerp(0.0, MIN_LIGHT_ENERGY, progress)
     
     # Log sunrise animation for debugging
     var sun_position_deg = get_sun_position_degrees()
-    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Sun Angle: %.2f° | Light Energy: %.2f" % [
-        progress, sun_position_deg, sun_angle, directional_light.light_energy
+    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f" % [
+        progress, sun_position_deg, light_rotation, directional_light.light_energy
     ]
     LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
@@ -346,16 +354,18 @@ func _animate_sunset(progress: float) -> void:
         return
     
     # Animate from day to night (sun going below horizon)
-    var sun_angle = lerp(SUNSET_START_ANGLE, SUNSET_END_ANGLE, progress)
-    directional_light.rotation_degrees.x = -sun_angle
+    # During sunset, sun goes from 180° display angle to below horizon
+    # Light rotation: from sunset position (-90°) to below horizon (-120°)
+    var light_rotation = lerp(-90.0, -120.0, progress)
+    directional_light.rotation_degrees.x = light_rotation
     
     # Fade out light from end-of-day intensity to darkness
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, 0.0, progress)
     
     # Log sunset animation for debugging
     var sun_position_deg = get_sun_position_degrees()
-    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Sun Angle: %.2f° | Light Energy: %.2f" % [
-        progress, sun_position_deg, sun_angle, directional_light.light_energy
+    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f" % [
+        progress, sun_position_deg, light_rotation, directional_light.light_energy
     ]
     LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
@@ -386,8 +396,8 @@ func _set_night_lighting() -> void:
     if not directional_light:
         return
     
-    # Set sun below horizon
-    directional_light.rotation_degrees.x = NIGHT_SUN_ANGLE
+    # Set sun below horizon (below -90° or above +90°)
+    directional_light.rotation_degrees.x = 120.0  # Below horizon on the east side
     directional_light.light_energy = 0.0
     
     # Dark blue ambient light for night
@@ -550,7 +560,9 @@ func _create_moon() -> void:
     moon.add_child(mesh_instance)
     moon.visible = false  # Start hidden
 
-# Calculate current sun angle based on animation/time state.
+# DEPRECATED: Calculate current sun angle based on animation/time state.
+# This function is kept for backwards compatibility but is no longer used.
+# The new system uses get_sun_position_degrees() and display angles (0-180°) directly.
 func _calculate_current_sun_angle() -> float:
     if is_animating_sunrise:
         var progress = sunrise_animation_time / SUNRISE_DURATION
@@ -613,21 +625,32 @@ func _update_moon_position() -> void:
     if not moon:
         return
     
-    # During night, position moon at zenith
+    # During night or when sun is not visible, position moon at zenith
     if is_night:
         moon.visible = true
         moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
         return
     
-    # Calculate sun angle and moon moves opposite (180 degrees offset)
-    var sun_angle = _calculate_current_sun_angle()
-    var moon_angle = sun_angle + 180.0
+    # Get sun display angle and moon moves opposite (180 degrees offset)
+    var sun_display_angle = get_sun_position_degrees()
     
-    # Position moon in sky (far from player, moves in arc)
-    # moon_angle = 0° means moon overhead, negative = one side, positive = other side
-    # Convert to elevation angle where 90° = zenith, 0° = horizon
-    var elevation_angle = 90.0 + moon_angle
-    var angle_rad = deg_to_rad(elevation_angle)
+    # If sun is not visible (returns -1), position moon at zenith
+    if sun_display_angle < 0:
+        moon.visible = true
+        moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
+        return
+    
+    # Moon is on opposite side of sky from sun (180° offset)
+    var moon_angle = sun_display_angle + 180.0
+    
+    # Normalize angle to -180° to +180° range for positioning
+    # Since sun_display_angle is 0-180°, moon_angle is 180-360°
+    # Subtract 360° to get -180° to 0° range (e.g., 270° -> -90°, 360° -> 0°)
+    if moon_angle > 180.0:
+        moon_angle -= 360.0
+    
+    # Position moon using its angle (same as sun positioning logic)
+    var angle_rad = deg_to_rad(moon_angle)
     
     # Calculate position on arc
     moon.position.x = 0
@@ -672,13 +695,18 @@ func _update_sun_position():
     if not sun:
         return
     
-    # Calculate current sun angle
-    var sun_angle = _calculate_current_sun_angle()
+    # Get display angle (0-180°) for visual positioning
+    var display_angle = get_sun_position_degrees()
     
-    # Position sun in sky (far from player, moves in arc)
-    # sun_angle = 0° means sun overhead (noon), negative = morning, positive = evening
-    # Convert to elevation angle where 90° = zenith, 0° = horizon
-    var elevation_angle = 90.0 + sun_angle
+    # Handle night time (display_angle returns -1)
+    if display_angle < 0:
+        sun.visible = false
+        return
+    
+    # Position sun in sky using display angle
+    # 0° = horizon (sunrise), 90° = zenith (noon), 180° = horizon (sunset)
+    # Convert to elevation angle for positioning
+    var elevation_angle = display_angle
     var angle_rad = deg_to_rad(elevation_angle)
     
     # Calculate position on arc
