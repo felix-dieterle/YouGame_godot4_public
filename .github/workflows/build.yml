@@ -82,9 +82,24 @@ jobs:
         use-dotnet: false
         include-templates: true
     
+    - name: Get Godot Version
+      id: godot_version
+      run: |
+        echo "Extracting Godot version..."
+        # Get the version from Godot itself
+        GODOT_VERSION_OUTPUT=$(godot --version 2>&1 || echo "")
+        echo "Godot version output: $GODOT_VERSION_OUTPUT"
+        
+        # Parse the version string: "Godot Engine v4.3.stable.official.77dcf97d8" -> "4.3.stable"
+        # Extract just the version number part (4.3.stable)
+        GODOT_VERSION=$(echo "$GODOT_VERSION_OUTPUT" | grep -oP 'v\K[0-9]+\.[0-9]+\.stable' || echo "4.3.stable")
+        echo "Parsed Godot version: $GODOT_VERSION"
+        echo "version=$GODOT_VERSION" >> $GITHUB_OUTPUT
+    
     - name: Install Android Build Template
       run: |
         echo "Installing Android build template for widget builds..."
+        echo "Using Godot version: ${{ steps.godot_version.outputs.version }}"
         
         # Debug: Show where templates are installed by chickensoft action
         echo "Checking for Godot templates installed by chickensoft/setup-godot..."
@@ -94,6 +109,9 @@ jobs:
         chmod +x ./install_android_build_template.sh
         if ./install_android_build_template.sh; then
           echo "✓ Android build template installed successfully using install script"
+          # Override the version file with the version from Godot executable
+          echo -n "${{ steps.godot_version.outputs.version }}" > android/build/.gradle.build.version
+          echo "Updated .gradle.build.version with Godot version: ${{ steps.godot_version.outputs.version }}"
         else
           echo "⚠️ Install script failed, trying direct download from Godot releases..."
           
@@ -112,18 +130,6 @@ jobs:
             mkdir -p /tmp/godot_templates
             unzip -q /tmp/export_templates.tpz -d /tmp/godot_templates
             
-            # The .tpz file contains a templates/ directory with version.txt
-            # Extract the version from version.txt to use in .gradle.build.version
-            VERSION_FILE=$(find /tmp/godot_templates -name "version.txt" | head -n 1)
-            if [ -n "$VERSION_FILE" ]; then
-              TEMPLATE_VERSION=$(tr -d '\r\n' < "$VERSION_FILE")
-              echo "Found template version from version.txt: $TEMPLATE_VERSION"
-            else
-              # Fallback to 4.3.stable if version.txt not found
-              TEMPLATE_VERSION="4.3.stable"
-              echo "version.txt not found, using fallback version: $TEMPLATE_VERSION"
-            fi
-            
             # Find and extract android_source.zip
             ANDROID_SOURCE=$(find /tmp/godot_templates -name "android_source.zip" | head -n 1)
             if [ -n "$ANDROID_SOURCE" ]; then
@@ -132,11 +138,12 @@ jobs:
               unzip -q "$ANDROID_SOURCE" -d android/build
               
               if [ -f android/build/build.gradle ]; then
-                # Create .gradle.build.version file with the version from templates
+                # Create .gradle.build.version file with the version from Godot executable
+                # This ensures exact match with what Godot expects
                 # Use echo -n to avoid adding a newline
-                echo -n "$TEMPLATE_VERSION" > android/build/.gradle.build.version
+                echo -n "${{ steps.godot_version.outputs.version }}" > android/build/.gradle.build.version
                 echo "✓ Android build template installed successfully via direct download"
-                echo "Created .gradle.build.version file with version: $TEMPLATE_VERSION"
+                echo "Created .gradle.build.version file with Godot version: ${{ steps.godot_version.outputs.version }}"
               else
                 echo "❌ Failed to extract Android build template properly"
                 ls -la android/build/ || true
@@ -433,6 +440,20 @@ jobs:
         use-dotnet: false
         include-templates: true
     
+    - name: Get Godot Version
+      id: godot_version
+      run: |
+        echo "Extracting Godot version..."
+        # Get the version from Godot itself
+        GODOT_VERSION_OUTPUT=$(godot --version 2>&1 || echo "")
+        echo "Godot version output: $GODOT_VERSION_OUTPUT"
+        
+        # Parse the version string: "Godot Engine v4.3.stable.official.77dcf97d8" -> "4.3.stable"
+        # Extract just the version number part (4.3.stable)
+        GODOT_VERSION=$(echo "$GODOT_VERSION_OUTPUT" | grep -oP 'v\K[0-9]+\.[0-9]+\.stable' || echo "4.3.stable")
+        echo "Parsed Godot version: $GODOT_VERSION"
+        echo "version=$GODOT_VERSION" >> $GITHUB_OUTPUT
+    
     - name: Install Android Build Template
       run: |
         echo "Installing Android build template for widget builds..."
@@ -445,6 +466,9 @@ jobs:
         chmod +x ./install_android_build_template.sh
         if ./install_android_build_template.sh; then
           echo "✓ Android build template installed successfully using install script"
+          # Override the version file with the version from Godot executable
+          echo -n "${{ steps.godot_version.outputs.version }}" > android/build/.gradle.build.version
+          echo "Updated .gradle.build.version with Godot version: ${{ steps.godot_version.outputs.version }}"
         else
           echo "⚠️ Install script failed, trying direct download from Godot releases..."
           
@@ -463,18 +487,6 @@ jobs:
             mkdir -p /tmp/godot_templates
             unzip -q /tmp/export_templates.tpz -d /tmp/godot_templates
             
-            # The .tpz file contains a templates/ directory with version.txt
-            # Extract the version from version.txt to use in .gradle.build.version
-            VERSION_FILE=$(find /tmp/godot_templates -name "version.txt" | head -n 1)
-            if [ -n "$VERSION_FILE" ]; then
-              TEMPLATE_VERSION=$(tr -d '\r\n' < "$VERSION_FILE")
-              echo "Found template version from version.txt: $TEMPLATE_VERSION"
-            else
-              # Fallback to 4.3.stable if version.txt not found
-              TEMPLATE_VERSION="4.3.stable"
-              echo "version.txt not found, using fallback version: $TEMPLATE_VERSION"
-            fi
-            
             # Find and extract android_source.zip
             ANDROID_SOURCE=$(find /tmp/godot_templates -name "android_source.zip" | head -n 1)
             if [ -n "$ANDROID_SOURCE" ]; then
@@ -483,11 +495,12 @@ jobs:
               unzip -q "$ANDROID_SOURCE" -d android/build
               
               if [ -f android/build/build.gradle ]; then
-                # Create .gradle.build.version file with the version from templates
+                # Create .gradle.build.version file with the version from Godot executable
+                # This ensures exact match with what Godot expects
                 # Use echo -n to avoid adding a newline
-                echo -n "$TEMPLATE_VERSION" > android/build/.gradle.build.version
+                echo -n "${{ steps.godot_version.outputs.version }}" > android/build/.gradle.build.version
                 echo "✓ Android build template installed successfully via direct download"
-                echo "Created .gradle.build.version file with version: $TEMPLATE_VERSION"
+                echo "Created .gradle.build.version file with Godot version: ${{ steps.godot_version.outputs.version }}"
               else
                 echo "❌ Failed to extract Android build template properly"
                 ls -la android/build/ || true
