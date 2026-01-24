@@ -139,6 +139,12 @@ adb logcat | grep -i widget
 
 ## Troubleshooting
 
+### Widget shows "widget kann nicht geladen werden" (cannot be loaded)
+- This was caused by missing launcher icons (fixed in latest version)
+- Ensure you have the latest widget APK with all icon resources
+- Reinstall the widget APK if upgrading from an older version
+- See `WIDGET_LOADING_FIX.md` for detailed fix information
+
 ### Widget shows "No save data"
 - Ensure main game APK is installed
 - Play the game and save at least once
