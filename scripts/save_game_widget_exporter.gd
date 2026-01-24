@@ -1,23 +1,24 @@
 extends Node
 # SaveGameWidgetExporter - Exports save data to Android widget
-# This autoload singleton interfaces with the Android SaveGameWidget plugin
+# This autoload singleton writes save data to a shared file for the widget app to read
 
-var _android_plugin = null
+# Shared file path - accessible by the standalone widget app
+# On Android, this will be in external files directory
+var widget_data_path: String = ""
 
 func _ready() -> void:
-	# Initialize Android plugin if running on Android
 	if OS.get_name() == "Android":
-		if Engine.has_singleton("SaveGameWidget"):
-			_android_plugin = Engine.get_singleton("SaveGameWidget")
-			print("SaveGameWidgetExporter: Android plugin initialized")
-		else:
-			push_warning("SaveGameWidgetExporter: SaveGameWidget plugin not found")
+		# Use external storage for cross-app access
+		# This requires READ_EXTERNAL_STORAGE permission in widget app
+		widget_data_path = "/storage/emulated/0/Android/data/com.yougame.godot4/files/widget_data.txt"
+		print("SaveGameWidgetExporter: Android detected, file-based widget export enabled")
+		print("SaveGameWidgetExporter: Widget data path: ", widget_data_path)
 	else:
 		print("SaveGameWidgetExporter: Not running on Android, widget export disabled")
 
 # Export save data to the Android widget
 func export_save_data(save_data: Dictionary) -> void:
-	if _android_plugin == null:
+	if OS.get_name() != "Android" or widget_data_path == "":
 		return
 	
 	# Extract metadata
@@ -33,25 +34,27 @@ func export_save_data(save_data: Dictionary) -> void:
 	var torch_count = player.get("torch_count", 0)
 	var position = player.get("position", Vector3.ZERO)
 	
-	# Call Android plugin method
-	# Note: position.y is included for future debugging features (e.g., cave detection)
-	# but is not currently displayed in the widget
-	_android_plugin.exportSaveData(
-		timestamp,
-		day_count,
-		current_health,
-		torch_count,
-		position.x,
-		position.y,
-		position.z
-	)
-	
-	print("SaveGameWidgetExporter: Exported save data to widget")
+	# Write data to shared file in simple key=value format
+	var file = FileAccess.open(widget_data_path, FileAccess.WRITE)
+	if file:
+		file.store_line("timestamp=" + str(timestamp))
+		file.store_line("day_count=" + str(day_count))
+		file.store_line("current_health=" + str(current_health))
+		file.store_line("torch_count=" + str(torch_count))
+		file.store_line("position_x=" + str(position.x))
+		file.store_line("position_z=" + str(position.z))
+		file.close()
+		
+		print("SaveGameWidgetExporter: Exported save data to file for widget: ", widget_data_path)
+	else:
+		push_error("SaveGameWidgetExporter: Failed to write widget data file: " + widget_data_path)
 
 # Clear widget data
 func clear_widget_data() -> void:
-	if _android_plugin == null:
+	if OS.get_name() != "Android" or widget_data_path == "":
 		return
 	
-	_android_plugin.clearSaveData()
-	print("SaveGameWidgetExporter: Cleared widget data")
+	# Delete the widget data file
+	if FileAccess.file_exists(widget_data_path):
+		DirAccess.remove_absolute(widget_data_path)
+		print("SaveGameWidgetExporter: Cleared widget data")
