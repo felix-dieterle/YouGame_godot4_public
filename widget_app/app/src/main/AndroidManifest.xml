@@ -4,8 +4,6 @@
     <!-- Permission to read external storage for accessing game save data -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
         android:maxSdkVersion="32" />
-    <!-- For Android 13+ (API 33+), we need specific media permissions -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:allowBackup="false"

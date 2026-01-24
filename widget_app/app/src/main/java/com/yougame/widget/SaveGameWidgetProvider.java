@@ -86,70 +86,64 @@ public class SaveGameWidgetProvider extends AppWidgetProvider {
      * Read save data from shared file
      */
     private static SaveData readSaveData(Context context) {
+        BufferedReader reader = null;
         try {
-            // The main game (com.yougame.godot4) writes to its user:// directory
-            // which maps to: /data/data/com.yougame.godot4/files/widget_data.txt
-            // 
-            // For cross-app access, both apps need to share the same sharedUserId
-            // OR we need to use MODE_WORLD_READABLE (deprecated) 
-            // OR use a ContentProvider (complex)
-            // 
-            // Best solution: Use external storage with proper permissions
-            // The game will write to getExternalFilesDir() which is accessible
-            
+            // The main game (com.yougame.godot4) writes to its external files directory
             // Path: /storage/emulated/0/Android/data/com.yougame.godot4/files/widget_data.txt
             File gameDataDir = new File("/storage/emulated/0/Android/data/com.yougame.godot4/files");
             File dataFile = new File(gameDataDir, WIDGET_DATA_FILE);
             
-            if (!dataFile.exists()) {
-                // Fallback: try shared documents directory
-                File documentsDir = new File(android.os.Environment.getExternalStoragePublicDirectory(
-                    android.os.Environment.DIRECTORY_DOCUMENTS), WIDGET_DATA_DIR);
-                dataFile = new File(documentsDir, WIDGET_DATA_FILE);
+            if (!dataFile.exists() || !dataFile.canRead()) {
+                return null;
             }
             
-            if (dataFile.exists() && dataFile.canRead()) {
-                BufferedReader reader = new BufferedReader(new FileReader(dataFile));
-                SaveData data = new SaveData();
-                
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split("=", 2);
-                    if (parts.length == 2) {
-                        String key = parts[0].trim();
-                        String value = parts[1].trim();
-                        
-                        switch (key) {
-                            case "timestamp":
-                                data.timestamp = Long.parseLong(value);
-                                break;
-                            case "day_count":
-                                data.dayCount = Integer.parseInt(value);
-                                break;
-                            case "current_health":
-                                data.currentHealth = Float.parseFloat(value);
-                                break;
-                            case "torch_count":
-                                data.torchCount = Integer.parseInt(value);
-                                break;
-                            case "position_x":
-                                data.positionX = Float.parseFloat(value);
-                                break;
-                            case "position_z":
-                                data.positionZ = Float.parseFloat(value);
-                                break;
-                        }
+            reader = new BufferedReader(new FileReader(dataFile));
+            SaveData data = new SaveData();
+            
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("=", 2);
+                if (parts.length == 2) {
+                    String key = parts[0].trim();
+                    String value = parts[1].trim();
+                    
+                    switch (key) {
+                        case "timestamp":
+                            data.timestamp = Long.parseLong(value);
+                            break;
+                        case "day_count":
+                            data.dayCount = Integer.parseInt(value);
+                            break;
+                        case "current_health":
+                            data.currentHealth = Float.parseFloat(value);
+                            break;
+                        case "torch_count":
+                            data.torchCount = Integer.parseInt(value);
+                            break;
+                        case "position_x":
+                            data.positionX = Float.parseFloat(value);
+                            break;
+                        case "position_z":
+                            data.positionZ = Float.parseFloat(value);
+                            break;
                     }
                 }
-                
-                reader.close();
-                return data;
             }
+            
+            return data;
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
+        } finally {
+            // Ensure reader is closed even if exception occurs
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
-        
-        return null;
     }
     
     /**
