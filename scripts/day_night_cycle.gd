@@ -625,7 +625,7 @@ func _update_moon_position() -> void:
     if not moon:
         return
     
-    # During night, position moon at zenith
+    # During night or when sun is not visible, position moon at zenith
     if is_night:
         moon.visible = true
         moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
@@ -634,7 +634,7 @@ func _update_moon_position() -> void:
     # Get sun display angle and moon moves opposite (180 degrees offset)
     var sun_display_angle = get_sun_position_degrees()
     
-    # Handle night time (display_angle returns -1)
+    # If sun is not visible (returns -1), position moon at zenith
     if sun_display_angle < 0:
         moon.visible = true
         moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
@@ -644,7 +644,8 @@ func _update_moon_position() -> void:
     var moon_angle = sun_display_angle + 180.0
     
     # Normalize angle to -180° to +180° range for positioning
-    # Using fmod to handle wrapping: 270° -> -90°, 360° -> 0°
+    # Since sun_display_angle is 0-180°, moon_angle is 180-360°
+    # Subtract 360° to get -180° to 0° range (e.g., 270° -> -90°, 360° -> 0°)
     if moon_angle > 180.0:
         moon_angle -= 360.0
     
