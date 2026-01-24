@@ -55,9 +55,9 @@ func export_save_data(save_data: Dictionary) -> void:
 			# Extract just the message part (remove timestamp)
 			var parts = last_log.split("] ", true, 1)
 			if parts.size() > 1:
-				last_error = parts[1].substr(0, 50)  # Truncate to 50 chars
+				last_error = parts[1].left(50)  # Truncate to 50 chars
 			else:
-				last_error = last_log.substr(0, 50)
+				last_error = last_log.left(50)
 	
 	# Write data to shared file in simple key=value format
 	var file = FileAccess.open(widget_data_path, FileAccess.WRITE)
