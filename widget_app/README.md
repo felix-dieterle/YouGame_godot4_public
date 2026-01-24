@@ -26,11 +26,18 @@ This standalone approach:
 
 ### Widget Features
 Displays:
+
+**Save Game Data:**
 - Last saved timestamp
 - Current game day
 - Player health percentage
 - Torch inventory count
 - Player position (X, Z coordinates)
+
+**Log Data:**
+- Error count
+- Total log count (all categories)
+- Last error message
 
 ## Building
 

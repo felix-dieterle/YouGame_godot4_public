@@ -66,6 +66,9 @@ current_health=75.0
 torch_count=42
 position_x=123.45
 position_z=678.90
+error_count=0
+total_log_count=15
+last_error=No errors
 ```
 
 ### Permissions

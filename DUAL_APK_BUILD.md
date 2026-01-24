@@ -19,11 +19,18 @@ This repository is configured to build and release TWO separate APK files:
 ## Widget Features
 
 The standalone widget APK displays:
+
+**Save Game Data:**
 - Last saved timestamp
 - Current game day
 - Player health percentage
 - Torch inventory count
 - Player position (X, Z coordinates)
+
+**Log Data:**
+- Error count
+- Total log count (all categories)
+- Last error message (truncated to 50 chars)
 
 The widget reads save data from a file written by the main game APK.
 
@@ -105,6 +112,19 @@ Widget reads save data from:
 ```
 
 Main game writes to this file on every save via `SaveGameWidgetExporter`.
+
+**Data format (key=value):**
+```
+timestamp=1706097840000
+day_count=5
+current_health=75.0
+torch_count=42
+position_x=123.45
+position_z=678.90
+error_count=0
+total_log_count=15
+last_error=No errors
+```
 
 ## Troubleshooting
 
