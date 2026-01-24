@@ -11,12 +11,15 @@ const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 const DAY_DURATION_HOURS: float = 10.0  # Day cycle represents 10 game hours (7 AM to 5 PM)
 const INITIAL_TIME_OFFSET_HOURS: float = 0.0  # Hours to advance sun position at game start (0.0 = start at sunrise, 7:00 AM)
 
-# Sun angle constants
-const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start
-const SUNRISE_END_ANGLE: float = -20.0     # Sunrise position (20° from overhead for bright morning)
-const SUNSET_START_ANGLE: float = 20.0     # Sunset position (20° from overhead, symmetric)
-const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end
-const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night
+# Sun angle constants (DEPRECATED - kept for backwards compatibility)
+# These constants were used in the old sun positioning system where the sun
+# only traveled from -20° to +20° (40° arc). The new system uses display angles
+# (0-180°) directly for proper visual arc from horizon to horizon.
+const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start (deprecated)
+const SUNRISE_END_ANGLE: float = -20.0     # Sunrise position (deprecated)
+const SUNSET_START_ANGLE: float = 20.0     # Sunset position (deprecated)
+const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end (deprecated)
+const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night (deprecated)
 
 # Celestial object distance constants
 const CELESTIAL_DISTANCE: float = 2000.0   # Distance for sun and moon
@@ -557,7 +560,9 @@ func _create_moon() -> void:
     moon.add_child(mesh_instance)
     moon.visible = false  # Start hidden
 
-# Calculate current sun angle based on animation/time state.
+# DEPRECATED: Calculate current sun angle based on animation/time state.
+# This function is kept for backwards compatibility but is no longer used.
+# The new system uses get_sun_position_degrees() and display angles (0-180°) directly.
 func _calculate_current_sun_angle() -> float:
     if is_animating_sunrise:
         var progress = sunrise_animation_time / SUNRISE_DURATION
