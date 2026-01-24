@@ -1,12 +1,25 @@
 #!/bin/bash
-# Install Android Build Template for Godot 4.3.0
+# Install Android Build Template for Godot 4.3
 # This script installs the Android build template needed for gradle_build exports
 
 set -e
 
 echo "=== Installing Android Build Template ==="
 
-GODOT_VERSION="4.3.stable"
+# Try to get the version from Godot if it's installed
+if command -v godot &> /dev/null; then
+    echo "Detecting Godot version..."
+    GODOT_VERSION_OUTPUT=$(godot --version 2>&1 || echo "")
+    # Pattern is intentionally restrictive to match only stable releases (X.Y.stable format)
+    # Non-stable versions (beta/alpha/dev/rc) will use the fallback version
+    GODOT_VERSION=$(echo "$GODOT_VERSION_OUTPUT" | grep -oP 'v\K[0-9]+\.[0-9]+\.stable' || echo "4.3.stable")
+    echo "Detected Godot version: $GODOT_VERSION"
+else
+    # Fallback if Godot is not installed
+    GODOT_VERSION="4.3.stable"
+    echo "Godot not found in PATH, using fallback version: $GODOT_VERSION"
+fi
+
 ANDROID_BUILD_DIR="./android/build"
 
 # Check if running from repository root
