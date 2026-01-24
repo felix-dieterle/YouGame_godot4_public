@@ -112,6 +112,18 @@ jobs:
             mkdir -p /tmp/godot_templates
             unzip -q /tmp/export_templates.tpz -d /tmp/godot_templates
             
+            # The .tpz file contains a templates/ directory with version.txt
+            # Extract the version from version.txt to use in .gradle.build.version
+            VERSION_FILE=$(find /tmp/godot_templates -name "version.txt" | head -n 1)
+            if [ -n "$VERSION_FILE" ]; then
+              TEMPLATE_VERSION=$(tr -d '\r\n' < "$VERSION_FILE")
+              echo "Found template version from version.txt: $TEMPLATE_VERSION"
+            else
+              # Fallback to 4.3.stable if version.txt not found
+              TEMPLATE_VERSION="4.3.stable"
+              echo "version.txt not found, using fallback version: $TEMPLATE_VERSION"
+            fi
+            
             # Find and extract android_source.zip
             ANDROID_SOURCE=$(find /tmp/godot_templates -name "android_source.zip" | head -n 1)
             if [ -n "$ANDROID_SOURCE" ]; then
@@ -120,10 +132,11 @@ jobs:
               unzip -q "$ANDROID_SOURCE" -d android/build
               
               if [ -f android/build/build.gradle ]; then
-                # Create .gradle.build.version file required by Godot
-                echo "4.3.stable" > android/build/.gradle.build.version
+                # Create .gradle.build.version file with the version from templates
+                # Use echo -n to avoid adding a newline
+                echo -n "$TEMPLATE_VERSION" > android/build/.gradle.build.version
                 echo "✓ Android build template installed successfully via direct download"
-                echo "Created .gradle.build.version file"
+                echo "Created .gradle.build.version file with version: $TEMPLATE_VERSION"
               else
                 echo "❌ Failed to extract Android build template properly"
                 ls -la android/build/ || true
@@ -450,6 +463,18 @@ jobs:
             mkdir -p /tmp/godot_templates
             unzip -q /tmp/export_templates.tpz -d /tmp/godot_templates
             
+            # The .tpz file contains a templates/ directory with version.txt
+            # Extract the version from version.txt to use in .gradle.build.version
+            VERSION_FILE=$(find /tmp/godot_templates -name "version.txt" | head -n 1)
+            if [ -n "$VERSION_FILE" ]; then
+              TEMPLATE_VERSION=$(tr -d '\r\n' < "$VERSION_FILE")
+              echo "Found template version from version.txt: $TEMPLATE_VERSION"
+            else
+              # Fallback to 4.3.stable if version.txt not found
+              TEMPLATE_VERSION="4.3.stable"
+              echo "version.txt not found, using fallback version: $TEMPLATE_VERSION"
+            fi
+            
             # Find and extract android_source.zip
             ANDROID_SOURCE=$(find /tmp/godot_templates -name "android_source.zip" | head -n 1)
             if [ -n "$ANDROID_SOURCE" ]; then
@@ -458,10 +483,11 @@ jobs:
               unzip -q "$ANDROID_SOURCE" -d android/build
               
               if [ -f android/build/build.gradle ]; then
-                # Create .gradle.build.version file required by Godot
-                echo "4.3.stable" > android/build/.gradle.build.version
+                # Create .gradle.build.version file with the version from templates
+                # Use echo -n to avoid adding a newline
+                echo -n "$TEMPLATE_VERSION" > android/build/.gradle.build.version
                 echo "✓ Android build template installed successfully via direct download"
-                echo "Created .gradle.build.version file"
+                echo "Created .gradle.build.version file with version: $TEMPLATE_VERSION"
               else
                 echo "❌ Failed to extract Android build template properly"
                 ls -la android/build/ || true
