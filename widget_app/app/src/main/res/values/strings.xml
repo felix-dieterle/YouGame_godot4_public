@@ -8,4 +8,7 @@
     <string name="health_label">Health: --%</string>
     <string name="torches_label">Torches: --</string>
     <string name="position_label">Pos: --, --</string>
+    <string name="errors_label">Errors: --</string>
+    <string name="logs_label">Logs: --</string>
+    <string name="no_errors">No errors</string>
 </resources>

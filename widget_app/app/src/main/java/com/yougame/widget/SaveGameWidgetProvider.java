@@ -69,6 +69,17 @@ public class SaveGameWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.widget_torches, "Torches: " + data.torchCount);
             views.setTextViewText(R.id.widget_position, 
                 String.format(Locale.getDefault(), "Pos: %.0f, %.0f", data.positionX, data.positionZ));
+            
+            // Update log stats
+            views.setTextViewText(R.id.widget_error_count, "Errors: " + data.errorCount);
+            views.setTextViewText(R.id.widget_total_logs, "Logs: " + data.totalLogCount);
+            
+            // Update last error message
+            if (data.errorCount > 0 && data.lastError != null && !data.lastError.isEmpty()) {
+                views.setTextViewText(R.id.widget_last_error, data.lastError);
+            } else {
+                views.setTextViewText(R.id.widget_last_error, context.getString(R.string.no_errors));
+            }
         } else {
             // No save data available
             views.setTextViewText(R.id.widget_timestamp, context.getString(R.string.no_save_data));
@@ -76,6 +87,9 @@ public class SaveGameWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.widget_health, context.getString(R.string.health_label));
             views.setTextViewText(R.id.widget_torches, context.getString(R.string.torches_label));
             views.setTextViewText(R.id.widget_position, context.getString(R.string.position_label));
+            views.setTextViewText(R.id.widget_error_count, context.getString(R.string.errors_label));
+            views.setTextViewText(R.id.widget_total_logs, context.getString(R.string.logs_label));
+            views.setTextViewText(R.id.widget_last_error, context.getString(R.string.no_errors));
         }
         
         // Update the widget
@@ -126,6 +140,15 @@ public class SaveGameWidgetProvider extends AppWidgetProvider {
                         case "position_z":
                             data.positionZ = Float.parseFloat(value);
                             break;
+                        case "error_count":
+                            data.errorCount = Integer.parseInt(value);
+                            break;
+                        case "total_log_count":
+                            data.totalLogCount = Integer.parseInt(value);
+                            break;
+                        case "last_error":
+                            data.lastError = value;
+                            break;
                     }
                 }
             }
@@ -171,5 +194,8 @@ public class SaveGameWidgetProvider extends AppWidgetProvider {
         int torchCount = 0;
         float positionX = 0.0f;
         float positionZ = 0.0f;
+        int errorCount = 0;
+        int totalLogCount = 0;
+        String lastError = "No errors";
     }
 }

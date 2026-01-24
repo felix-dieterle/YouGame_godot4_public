@@ -79,4 +79,50 @@
             android:textSize="12sp" />
     </LinearLayout>
 
+    <!-- Logs Section Separator -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
+        android:background="#4CAF50" />
+
+    <!-- Log Stats Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="4dp">
+
+        <TextView
+            android:id="@+id/widget_error_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/errors_label"
+            android:textColor="#FFAA00"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/widget_total_logs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/logs_label"
+            android:textColor="#CCCCCC"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Last Error Message -->
+    <TextView
+        android:id="@+id/widget_last_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/no_errors"
+        android:textColor="#FFAA00"
+        android:textSize="10sp"
+        android:paddingTop="4dp"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
 </LinearLayout>
