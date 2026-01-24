@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YouGame Widget</string>
+    <string name="widget_title">YouGame Save Status</string>
+    <string name="no_save_data">No save data</string>
+    <string name="last_saved">Last saved: %1$s</string>
+    <string name="day_label">Day: --</string>
+    <string name="health_label">Health: --%</string>
+    <string name="torches_label">Torches: --</string>
+    <string name="position_label">Pos: --, --</string>
+    <string name="errors_label">Errors: --</string>
+    <string name="logs_label">Logs: --</string>
+    <string name="no_errors">No errors</string>
+</resources>
