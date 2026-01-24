@@ -116,7 +116,7 @@ jobs:
         # Create Gradle wrapper if it doesn't exist
         if [ ! -f gradlew ]; then
           echo "Creating Gradle wrapper..."
-          gradle wrapper --gradle-version 8.0
+          gradle wrapper --gradle-version 8.7
         fi
         
         # Build the widget APK
@@ -325,7 +325,7 @@ jobs:
         # Create Gradle wrapper if it doesn't exist
         if [ ! -f gradlew ]; then
           echo "Creating Gradle wrapper..."
-          gradle wrapper --gradle-version 8.0
+          gradle wrapper --gradle-version 8.7
         fi
         
         # Build the widget APK
