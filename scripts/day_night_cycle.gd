@@ -278,8 +278,8 @@ func _update_lighting() -> void:
     var intensity_curve = 1.0 - noon_distance  # 1 at noon, 0 at edges
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, MAX_LIGHT_ENERGY, intensity_curve)
     
-    # Log sun degree and lighting data for debugging lighting issues
-    if display_angle > 80.0 or abs(display_angle - 180.0) < 10.0:
+    # Log sun degree and lighting data for debugging lighting issues near noon and sunset
+    if display_angle > 80.0:
         var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f" % [
             display_angle, light_rotation, directional_light.light_energy
         ]
@@ -640,12 +640,13 @@ func _update_moon_position() -> void:
         moon.position = Vector3(0, MOON_ZENITH_HEIGHT, 0)
         return
     
-    # Moon is on opposite side of sky from sun
+    # Moon is on opposite side of sky from sun (180° offset)
     var moon_angle = sun_display_angle + 180.0
     
-    # If moon angle > 180°, it wraps around (e.g., 270° = -90° from other side)
+    # Normalize angle to -180° to +180° range for positioning
+    # Using fmod to handle wrapping: 270° -> -90°, 360° -> 0°
     if moon_angle > 180.0:
-        moon_angle = moon_angle - 360.0
+        moon_angle -= 360.0
     
     # Position moon using its angle (same as sun positioning logic)
     var angle_rad = deg_to_rad(moon_angle)
