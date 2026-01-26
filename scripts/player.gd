@@ -5,6 +5,7 @@ class_name Player
 const CrystalSystem = preload("res://scripts/crystal_system.gd")
 const TorchSystem = preload("res://scripts/torch_system.gd")
 const CampfireSystem = preload("res://scripts/campfire_system.gd")
+const Chunk = preload("res://scripts/chunk.gd")
 
 # Torch placement settings
 @export var torch_placement_offset: float = 0.5  # Height offset when placing torch
@@ -720,8 +721,7 @@ func _is_in_border_chunk() -> bool:
 
 ## Get border health drain rate from chunk constants
 func get_border_health_drain_rate() -> float:
-    # Access the constant from Chunk class
-    const Chunk = preload("res://scripts/chunk.gd")
+    # Access the constant from Chunk class (preloaded at class level)
     return Chunk.BORDER_HEALTH_DRAIN_RATE
 
 ## Trigger game over when health reaches zero
