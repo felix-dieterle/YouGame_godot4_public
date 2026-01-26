@@ -564,7 +564,6 @@ func _setup_footstep_audio() -> void:
     # Create audio player for footstep and jetpack sounds
     footstep_player = AudioStreamPlayer.new()
     footstep_player.volume_db = -10.0  # Slightly quieter
-    footstep_player.stream = footstep_sound  # Set initial stream
     add_child(footstep_player)
     
     # Create reusable audio player for crystal collection

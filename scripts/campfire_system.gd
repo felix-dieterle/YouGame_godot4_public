@@ -87,7 +87,8 @@ static func create_campfire_node(light_energy: float = 8.0, light_range: float =
     audio_player.stream = load("res://assets/sounds/campfire_crackle.wav")
     audio_player.volume_db = -5.0  # Slightly quieter
     audio_player.max_distance = 20.0  # Can hear from 20 meters away
-    audio_player.autoplay = true
     campfire.add_child(audio_player)
+    # Start playing after added to scene tree for better control
+    audio_player.play()
     
     return campfire

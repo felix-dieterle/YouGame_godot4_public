@@ -22,6 +22,10 @@ var transition_progress: float = 1.0  # 0.0 = current, 1.0 = target
 var time_in_current_weather: float = 0.0
 var next_weather_change: float = 0.0
 
+# Rain audio constants
+const BASE_RAIN_VOLUME: float = -8.0  # Base volume for rain sound
+const RAIN_VOLUME_SCALE: float = 5.0  # Volume increase per rain intensity unit
+
 # Visual elements
 var fog_environment: Environment
 var rain_particles: GPUParticles3D
@@ -139,7 +143,7 @@ func _setup_rain_audio() -> void:
     # Create audio player for rain sound
     rain_audio = AudioStreamPlayer.new()
     rain_audio.stream = load("res://assets/sounds/rain.wav")
-    rain_audio.volume_db = -8.0
+    rain_audio.volume_db = BASE_RAIN_VOLUME
     rain_audio.autoplay = false
     add_child(rain_audio)
 
@@ -205,7 +209,7 @@ func _apply_weather_transition() -> void:
                 rain_audio.play()
             # Adjust rain audio volume based on intensity
             if rain_audio:
-                rain_audio.volume_db = -8.0 + (rain_intensity * 5.0)  # Louder with more rain
+                rain_audio.volume_db = BASE_RAIN_VOLUME + (rain_intensity * RAIN_VOLUME_SCALE)  # Louder with more rain
         else:
             rain_particles.emitting = false
             # Stop rain audio
