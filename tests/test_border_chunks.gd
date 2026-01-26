@@ -163,22 +163,18 @@ func test_border_no_vegetation() -> void:
 	var border_chunk = Chunk.new(10, 10, 12345)
 	border_chunk.generate()
 	
-	# Check that no trees were placed (placed_objects should be empty or only contain non-tree objects)
-	# Since border chunks should not have trees, the placed_objects array should be much smaller
-	# or contain only non-vegetation objects (warning signs, skeletons, etc. are not in placed_objects)
-	var has_no_trees = true
-	for obj in border_chunk.placed_objects:
-		# Trees use specific meshes from ProceduralModels.create_tree_mesh()
-		# If placed_objects has any items, they shouldn't be trees
-		# In practice, border chunks shouldn't add any trees to placed_objects
-		has_no_trees = true  # This is a simplified check
+	# Check that no trees or bushes were placed
+	# Trees and bushes are added to placed_objects array
+	# Border chunks should not have any vegetation in placed_objects
+	var vegetation_count = border_chunk.placed_objects.size()
+	var has_no_vegetation = (vegetation_count == 0)
 	
-	if has_no_trees:
-		test_results.append({"name": "Border chunk has no trees", "passed": true})
-		print("✓ Border chunk has no trees (placed_objects: %d): PASS" % border_chunk.placed_objects.size())
+	if has_no_vegetation:
+		test_results.append({"name": "Border chunk has no vegetation", "passed": true})
+		print("✓ Border chunk has no vegetation (placed_objects: %d): PASS" % vegetation_count)
 	else:
-		test_results.append({"name": "Border chunk has no trees", "passed": false})
-		print("✗ Border chunk has trees: FAIL")
+		test_results.append({"name": "Border chunk has no vegetation", "passed": false})
+		print("✗ Border chunk has vegetation (placed_objects: %d): FAIL" % vegetation_count)
 	
 	border_chunk.queue_free()
 
