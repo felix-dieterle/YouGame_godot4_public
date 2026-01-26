@@ -1024,13 +1024,17 @@ func show_game_over() -> void:
 ## Handle restart game button press
 func _on_restart_game() -> void:
     # Delete save file to prevent loading dead state
-    SaveGameManager.delete_save()
+    var delete_success = SaveGameManager.delete_save()
+    if not delete_success:
+        push_warning("UIManager: Failed to delete save file, continuing with restart anyway")
     
     # Unpause the game before reloading
     get_tree().paused = false
     
     # Reload the current scene to start fresh
-    get_tree().reload_current_scene()
+    var reload_error = get_tree().reload_current_scene()
+    if reload_error != OK:
+        push_error("UIManager: Failed to reload scene, error code: %d" % reload_error)
 
 ## Update flint stone count display
 func update_flint_stone_count(count: int) -> void:
