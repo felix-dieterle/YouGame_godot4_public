@@ -6,6 +6,9 @@ class_name AnimatedCharacter
 ## This character can play various animations from the UAL library
 ## and can be placed around the world (near start point, houses, lighthouses)
 
+# Constants
+const CHUNK_SIZE = 32  # Match chunk.gd constant
+
 # Character state
 enum State { IDLE, WALKING, WAVING }
 var current_state = State.IDLE
@@ -174,8 +177,8 @@ func adjust_to_terrain(world_manager) -> void:
 	var world_z = global_position.z
 	
 	# Find which chunk this position is in
-	var chunk_x = int(floor(world_x / 32.0))
-	var chunk_z = int(floor(world_z / 32.0))
+	var chunk_x = int(floor(world_x / CHUNK_SIZE))
+	var chunk_z = int(floor(world_z / CHUNK_SIZE))
 	var chunk_key = Vector2i(chunk_x, chunk_z)
 	
 	if chunk_key in world_manager.chunks:

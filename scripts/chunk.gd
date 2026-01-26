@@ -252,6 +252,7 @@ func _init(x: int, z: int, world_seed: int):
 
 ## Generates all terrain data and visuals for this chunk
 ## This is the main entry point called after chunk creation
+## 
 ## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → caves → lighthouses → fishing boat → animated characters → ambient sounds
 func generate() -> void:
     _detect_unique_mountain()  # Check if this is the unique mountain chunk
