@@ -71,7 +71,7 @@ const NIGHT_OVERLAY_Z_INDEX: int = 200  # Above everything else
 
 # Game over constants
 const GAME_OVER_MESSAGE: String = "GAME OVER\n\nYou drowned!"
-const GAME_OVER_INSTRUCTION: String = "Restart the game to continue"
+const GAME_OVER_INSTRUCTION: String = "Click the button below to restart"
 
 # Game version
 var game_version: String = ""
@@ -960,6 +960,8 @@ func show_game_over() -> void:
         game_over_overlay.anchor_bottom = 1.0
         game_over_overlay.color = Color(0.0, 0.0, 0.0, 0.9)
         game_over_overlay.z_index = 300  # Above everything
+        # Make game over overlay immune to pause
+        game_over_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
         add_child(game_over_overlay)
         
         # Create label
@@ -986,19 +988,69 @@ func show_game_over() -> void:
         instruction_label.anchor_right = 0.5
         instruction_label.anchor_bottom = 0.5
         instruction_label.offset_left = -200
-        instruction_label.offset_top = 100
+        instruction_label.offset_top = 50
         instruction_label.offset_right = 200
-        instruction_label.offset_bottom = 150
+        instruction_label.offset_bottom = 100
         instruction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
         instruction_label.add_theme_font_size_override("font_size", 18)
         instruction_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
         instruction_label.text = GAME_OVER_INSTRUCTION
         game_over_overlay.add_child(instruction_label)
+        
+        # Add restart button
+        var restart_button = Button.new()
+        restart_button.text = "🔄 Restart Game"
+        restart_button.anchor_left = 0.5
+        restart_button.anchor_top = 0.5
+        restart_button.anchor_right = 0.5
+        restart_button.anchor_bottom = 0.5
+        restart_button.offset_left = -100
+        restart_button.offset_top = 120
+        restart_button.offset_right = 100
+        restart_button.offset_bottom = 180
+        restart_button.add_theme_font_size_override("font_size", 22)
+        restart_button.focus_mode = Control.FOCUS_NONE
+        # Create button style
+        var normal_style = StyleBoxFlat.new()
+        normal_style.bg_color = Color(0.2, 0.5, 0.2, 1.0)
+        normal_style.corner_radius_top_left = 8
+        normal_style.corner_radius_top_right = 8
+        normal_style.corner_radius_bottom_left = 8
+        normal_style.corner_radius_bottom_right = 8
+        restart_button.add_theme_stylebox_override("normal", normal_style)
+        var hover_style = StyleBoxFlat.new()
+        hover_style.bg_color = Color(0.3, 0.6, 0.3, 1.0)
+        hover_style.corner_radius_top_left = 8
+        hover_style.corner_radius_top_right = 8
+        hover_style.corner_radius_bottom_left = 8
+        hover_style.corner_radius_bottom_right = 8
+        restart_button.add_theme_stylebox_override("hover", hover_style)
+        var pressed_style = StyleBoxFlat.new()
+        pressed_style.bg_color = Color(0.4, 0.7, 0.4, 1.0)
+        pressed_style.corner_radius_top_left = 8
+        pressed_style.corner_radius_top_right = 8
+        pressed_style.corner_radius_bottom_left = 8
+        pressed_style.corner_radius_bottom_right = 8
+        restart_button.add_theme_stylebox_override("pressed", pressed_style)
+        restart_button.pressed.connect(_on_restart_game)
+        game_over_overlay.add_child(restart_button)
     
     game_over_overlay.visible = true
     
     # Pause the game
     get_tree().paused = true
+
+## Handle restart game button press
+func _on_restart_game() -> void:
+    # Delete save file to prevent loading dead state
+    SaveGameManager.delete_save()
+    
+    # Unpause the game before reloading
+    get_tree().paused = false
+    
+    # Reload the current scene to start fresh
+    get_tree().reload_current_scene()
+
 ## Update flint stone count display
 func update_flint_stone_count(count: int) -> void:
     if flint_stone_count_label:
