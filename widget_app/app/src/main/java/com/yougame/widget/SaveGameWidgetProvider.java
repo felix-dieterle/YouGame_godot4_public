@@ -147,7 +147,6 @@ public class SaveGameWidgetProvider extends AppWidgetProvider {
             String line;
             int lineCount = 0;
             while ((line = reader.readLine()) != null) {
-                lineCount++;
                 String[] parts = line.split("=", 2);
                 if (parts.length == 2) {
                     String key = parts[0].trim();
@@ -163,9 +162,6 @@ public class SaveGameWidgetProvider extends AppWidgetProvider {
                                 break;
                             case "current_health":
                                 data.currentHealth = Float.parseFloat(value);
-                                break;
-                            case "torch_count":
-                                data.torchCount = Integer.parseInt(value);
                                 break;
                             case "position_x":
                                 data.positionX = Float.parseFloat(value);
@@ -185,10 +181,11 @@ public class SaveGameWidgetProvider extends AppWidgetProvider {
                         }
                     } catch (NumberFormatException nfe) {
                         WidgetErrorLogger.logError(context,
-                            "Invalid data format in save file. Line " + lineCount + ": " + line,
+                            "Invalid data format in save file. Line " + (lineCount + 1) + ": " + line,
                             nfe);
                     }
                 }
+                lineCount++;
             }
             
             WidgetErrorLogger.logInfo(context, 

@@ -64,22 +64,22 @@ public class WidgetErrorLogger {
             }
             
             // Read the file and get the last error line
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                new java.io.FileReader(logFile));
-            String lastError = null;
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("[ERROR]")) {
-                    lastError = line;
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.FileReader(logFile))) {
+                String lastError = null;
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("[ERROR]")) {
+                        lastError = line;
+                    }
                 }
-            }
-            reader.close();
-            
-            if (lastError != null) {
-                // Extract just the message part (after timestamp and level)
-                int messageStart = lastError.indexOf("]", lastError.indexOf("]") + 1);
-                if (messageStart > 0 && messageStart < lastError.length() - 1) {
-                    return lastError.substring(messageStart + 2).trim();
+                
+                if (lastError != null) {
+                    // Extract just the message part (after timestamp and level)
+                    int messageStart = lastError.indexOf("]", lastError.indexOf("]") + 1);
+                    if (messageStart > 0 && messageStart < lastError.length() - 1) {
+                        return lastError.substring(messageStart + 2).trim();
+                    }
                 }
             }
             return null;
@@ -100,7 +100,6 @@ public class WidgetErrorLogger {
      * Write a log entry to the persistent log file
      */
     private static void writeToLogFile(Context context, String level, String message, Exception exception) {
-        BufferedWriter writer = null;
         try {
             File logFile = getLogFile(context);
             
@@ -115,40 +114,32 @@ public class WidgetErrorLogger {
                 truncateLogFile(logFile);
             }
             
-            // Append to log file
-            writer = new BufferedWriter(new FileWriter(logFile, true));
-            
-            // Format: [timestamp] [LEVEL] message
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-            String timestamp = sdf.format(new Date());
-            
-            writer.write(String.format("[%s] [%s] %s\n", timestamp, level, message));
-            
-            // Add exception stack trace if present
-            if (exception != null) {
-                writer.write(String.format("  Exception: %s\n", exception.getClass().getName()));
-                writer.write(String.format("  Message: %s\n", exception.getMessage()));
+            // Append to log file using try-with-resources
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))) {
+                // Format: [timestamp] [LEVEL] message
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                String timestamp = sdf.format(new Date());
                 
-                // Write first few lines of stack trace
-                StackTraceElement[] stackTrace = exception.getStackTrace();
-                int linesToWrite = Math.min(5, stackTrace.length);
-                for (int i = 0; i < linesToWrite; i++) {
-                    writer.write(String.format("    at %s\n", stackTrace[i].toString()));
+                writer.write(String.format("[%s] [%s] %s\n", timestamp, level, message));
+                
+                // Add exception stack trace if present
+                if (exception != null) {
+                    writer.write(String.format("  Exception: %s\n", exception.getClass().getName()));
+                    writer.write(String.format("  Message: %s\n", exception.getMessage()));
+                    
+                    // Write first few lines of stack trace
+                    StackTraceElement[] stackTrace = exception.getStackTrace();
+                    int linesToWrite = Math.min(5, stackTrace.length);
+                    for (int i = 0; i < linesToWrite; i++) {
+                        writer.write(String.format("    at %s\n", stackTrace[i].toString()));
+                    }
                 }
+                
+                writer.flush();
             }
-            
-            writer.flush();
         } catch (IOException e) {
             // Can't log to file, but we already logged to logcat
             Log.e(TAG, "Failed to write to log file", e);
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    // Ignore close errors
-                }
-            }
         }
     }
     
@@ -172,26 +163,26 @@ public class WidgetErrorLogger {
      */
     private static void truncateLogFile(File logFile) {
         try {
-            // Read all lines
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                new java.io.FileReader(logFile));
+            // Read all lines using try-with-resources
             java.util.ArrayList<String> lines = new java.util.ArrayList<>();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.FileReader(logFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    lines.add(line);
+                }
             }
-            reader.close();
             
             // Keep only the last 50% of lines
             int keepFrom = lines.size() / 2;
             
-            // Write back the kept lines
-            BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, false));
-            for (int i = keepFrom; i < lines.size(); i++) {
-                writer.write(lines.get(i));
-                writer.write("\n");
+            // Write back the kept lines using try-with-resources
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, false))) {
+                for (int i = keepFrom; i < lines.size(); i++) {
+                    writer.write(lines.get(i));
+                    writer.write("\n");
+                }
             }
-            writer.close();
         } catch (Exception e) {
             // If truncation fails, delete the file
             logFile.delete();
