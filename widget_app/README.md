@@ -39,6 +39,15 @@ Displays:
 - Total log count (all categories)
 - Last error message
 
+**Error Logging and Diagnostics (NEW):**
+- Comprehensive error logging for troubleshooting widget issues
+- Error logs accessible via file manager (no developer tools needed)
+- Location: `Android/data/com.yougame.widget/files/widget_errors.log`
+- Errors displayed on widget UI when initialization fails
+- Automatic log size management (max 50KB, auto-cleanup)
+- Detailed error messages for common issues (file not found, permissions, etc.)
+- See `WIDGET_ERROR_LOGGING.md` for complete documentation
+
 ## Building
 
 ### Prerequisites
@@ -145,6 +154,22 @@ adb logcat | grep -i widget
 - Reinstall the widget APK if upgrading from an older version
 - See `WIDGET_LOADING_FIX.md` for detailed fix information
 
+### Widget shows "Widget Error - Check Logs"
+- The widget encountered an initialization or data loading error
+- **NEW**: Error logs are now accessible without developer tools!
+- See `WIDGET_ERROR_LOGGING.md` for complete guide on accessing error logs
+- Common causes:
+  - Main game not installed
+  - No save data yet (play and save the game first)
+  - Missing storage permissions
+  - Corrupted save data file
+
+#### Quick Error Log Access
+1. Open Android file manager
+2. Navigate to: `Android/data/com.yougame.widget/files/`
+3. Open: `widget_errors.log`
+4. See `WIDGET_ERROR_LOGGING.md` for detailed instructions
+
 ### Widget shows "No save data"
 - Ensure main game APK is installed
 - Play the game and save at least once
@@ -160,7 +185,10 @@ adb logcat | grep -i widget
 ### Widget not appearing in widget list
 - Ensure widget APK is installed
 - Restart launcher app
-- Check logcat for errors
+- Check logcat for errors:
+  ```bash
+  adb logcat | grep -i YouGameWidget
+  ```
 
 ## CI/CD Integration
 
