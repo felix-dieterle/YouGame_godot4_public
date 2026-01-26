@@ -30,6 +30,7 @@ func setup_3d_environment():
 	
 	# Create camera
 	var camera = Camera3D.new()
+	camera.name = "Camera3D"
 	camera.position = Vector3(32, 50, 32)  # Position to view multiple chunks
 	camera.look_at(Vector3(32, 0, 32), Vector3.UP)
 	add_child(camera)
