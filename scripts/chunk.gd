@@ -1137,6 +1137,10 @@ func _place_cluster_objects() -> void:
 
 ## Place trees for a forest cluster
 func _place_forest_objects(cluster: ClusterSystem.ClusterData) -> void:
+    # Don't place trees in border chunks (desert wasteland)
+    if is_border:
+        return
+    
     var rng = RandomNumberGenerator.new()
     rng.seed = cluster.seed_value ^ hash(Vector2i(chunk_x, chunk_z))
     
@@ -1395,6 +1399,10 @@ func _play_endpoint_sound(segment) -> void:
 
 ## Place bushes along path edges for natural decoration
 func _place_path_bushes() -> void:
+    # Don't place bushes in border chunks (desert wasteland)
+    if is_border:
+        return
+    
     if path_segments.is_empty():
         return
     
