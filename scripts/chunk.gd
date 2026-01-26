@@ -505,7 +505,12 @@ func _create_mesh() -> void:
             
             # Determine material color based on height (biome)
             var base_color: Color
-            if avg_height <= OCEAN_LEVEL:
+            if is_border:
+                # Border/wasteland - sandy desert color with rocky variations
+                var height_factor = clamp((avg_height + 5.0) / 15.0, 0.0, 1.0)
+                # Sandy beige/tan color for desert
+                base_color = Color(0.76, 0.70, 0.50).lerp(Color(0.65, 0.58, 0.45), height_factor)
+            elif avg_height <= OCEAN_LEVEL:
                 # Ocean floor - sandy/rocky seabed
                 base_color = Color(0.6, 0.55, 0.4)  # Sandy color for ocean floor
             elif avg_height > 8.0:
@@ -534,12 +539,13 @@ func _create_mesh() -> void:
             if not is_walkable:
                 base_color = base_color.lerp(Color(0.5, 0.4, 0.3), 0.2)  # Subtle brownish tint
             
-            # Darken ground in forest areas
-            var forest_influence = forest_influence_map[z * RESOLUTION + x]
-            if forest_influence > 0.1:
-                # Make ground darker and more brown/earthy in forests
-                var dark_forest_color = Color(0.25, 0.2, 0.15)  # Dark brown forest floor
-                base_color = base_color.lerp(dark_forest_color, forest_influence * 0.5)
+            # Darken ground in forest areas (but not in border biomes)
+            if not is_border:
+                var forest_influence = forest_influence_map[z * RESOLUTION + x]
+                if forest_influence > 0.1:
+                    # Make ground darker and more brown/earthy in forests
+                    var dark_forest_color = Color(0.25, 0.2, 0.15)  # Dark brown forest floor
+                    base_color = base_color.lerp(dark_forest_color, forest_influence * 0.5)
             
             # First triangle
             surface_tool.set_color(base_color)
