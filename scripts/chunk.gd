@@ -227,6 +227,7 @@ var ocean_mesh_instance: MeshInstance3D = null  # Used for ocean
 
 # Cluster objects
 var placed_objects: Array = []  # Array of MeshInstance3D for trees/buildings
+var placed_buildings: Array = []  # Array of MeshInstance3D for buildings only
 var active_clusters: Array = []  # Clusters affecting this chunk
 
 # Crystal data
@@ -1282,6 +1283,7 @@ func _place_settlement_objects(cluster: ClusterSystem.ClusterData) -> void:
         
         add_child(building_instance)
         placed_objects.append(building_instance)
+        placed_buildings.append(building_instance)
 
 ## Generate and visualize paths in this chunk
 func _generate_paths() -> void:
@@ -2031,19 +2033,14 @@ func _place_animated_characters() -> void:
 	rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ ANIMATED_CHARACTER_SEED_OFFSET
 	
 	# Place characters near buildings
-	var building_count = 0
-	for obj in placed_objects:
-		# Check if this is a building (buildings are larger than rocks/trees)
-		if obj is MeshInstance3D and obj.mesh:
-			var mesh = obj.mesh
-			# Heuristic: buildings have specific mesh types from ProceduralModels
-			# We'll check based on position and add characters probabilistically
-			if rng.randf() < ANIMATED_CHARACTER_CHANCE_NEAR_BUILDING:
-				_place_character_near_object(obj, rng)
-				building_count += 1
-				# Limit characters per chunk to avoid overcrowding
-				if building_count >= 3:
-					break
+	var character_count = 0
+	for building in placed_buildings:
+		if rng.randf() < ANIMATED_CHARACTER_CHANCE_NEAR_BUILDING:
+			_place_character_near_object(building, rng)
+			character_count += 1
+			# Limit characters per chunk to avoid overcrowding
+			if character_count >= 3:
+				break
 	
 	# Place characters near lighthouses
 	for lighthouse in placed_lighthouses:
