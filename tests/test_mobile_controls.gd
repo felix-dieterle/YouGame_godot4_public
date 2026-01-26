@@ -262,13 +262,13 @@ func test_menu_button_position():
 	
 	var menu_button = mobile_controls.menu_button
 	
-	# Debug overlay has 5 buttons: toggle (📋), clear (🗑), copy (📄), sun (☀), moon (🌙)
+	# Debug overlay has 6 buttons: toggle (📋), clear (🗑), copy (📄), sun (☀), moon (🌙), zip (📦)
 	# Each button is 40px wide with 5px spacing
-	# Positions: 10, 55, 100, 145, 190
-	# Last button ends at: 190 + 40 = 230px
-	const DEBUG_BUTTONS_END_X = 230.0
+	# Positions: 10, 55, 100, 145, 190, 235
+	# Last button ends at: 235 + 40 = 275px
+	const DEBUG_BUTTONS_END_X = 275.0
 	const MIN_SPACING = 10.0
-	const EXPECTED_MENU_BUTTON_X = 240.0  # 230 + 10px spacing
+	const EXPECTED_MENU_BUTTON_X = 285.0  # 275 + 10px spacing
 	
 	var menu_x = menu_button.position.x
 	
@@ -279,7 +279,7 @@ func test_menu_button_position():
 	
 	# Check that menu button is positioned after all debug buttons with proper spacing
 	if menu_x >= DEBUG_BUTTONS_END_X + MIN_SPACING:
-		assert_pass("Menu button is positioned at x=%.0f (after all 5 debug buttons)" % menu_x)
+		assert_pass("Menu button is positioned at x=%.0f (after all 6 debug buttons)" % menu_x)
 	else:
 		assert_fail("Menu button at x=%.0f overlaps with debug buttons (should be >= %.0f)" % [menu_x, DEBUG_BUTTONS_END_X + MIN_SPACING])
 	
