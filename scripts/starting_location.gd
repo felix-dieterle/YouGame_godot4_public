@@ -11,10 +11,15 @@ class_name StartingLocation
 # Constants
 const LOCATION_RADIUS = 8.0  # Radius of starting area
 const NUM_MARKER_STONES = 6  # Number of marker stones around the area
+const NUM_ANIMATED_CHARACTERS = 3  # Number of animated characters around starting area
+
+# Preload animated character scene
+const AnimatedCharacter = preload("res://scenes/characters/animated_character.tscn")
 
 # Starting location objects
 var marker_stones: Array[MeshInstance3D] = []
 var central_marker: MeshInstance3D = null
+var animated_characters: Array = []
 
 # World position of starting location (always at origin)
 var world_position: Vector3 = Vector3(0, 0, 0)
@@ -26,6 +31,7 @@ func _ready() -> void:
 func generate_starting_location() -> void:
 	_create_central_marker()
 	_create_marker_stones()
+	_create_animated_characters()
 
 ## Create central marker (a simple cairn/stone pile)
 func _create_central_marker():
@@ -141,6 +147,30 @@ func _create_marker_stones():
 		add_child(stone)
 		marker_stones.append(stone)
 
+## Create animated characters around the starting area
+func _create_animated_characters() -> void:
+	var rng = RandomNumberGenerator.new()
+	rng.seed = 123  # Fixed seed for consistent character placement
+	
+	for i in range(NUM_ANIMATED_CHARACTERS):
+		var character_instance = AnimatedCharacter.instantiate()
+		
+		# Position characters around the starting area
+		var angle = (float(i) / NUM_ANIMATED_CHARACTERS) * TAU + rng.randf_range(-0.3, 0.3)
+		var radius = LOCATION_RADIUS * 0.6 + rng.randf_range(-1.0, 1.0)
+		
+		var char_pos = Vector3(
+			cos(angle) * radius,
+			0,  # Height will be adjusted to terrain
+			sin(angle) * radius
+		)
+		
+		character_instance.position = char_pos
+		character_instance.character_seed = 1000 + i  # Unique seed for each character
+		
+		add_child(character_instance)
+		animated_characters.append(character_instance)
+
 ## Adjust starting location to terrain height
 func adjust_to_terrain(world_manager) -> void:
 	if not world_manager:
@@ -155,6 +185,10 @@ func adjust_to_terrain(world_manager) -> void:
 		var stone_world_pos = world_position + stone.position
 		var stone_height = world_manager.get_height_at_position(stone_world_pos)
 		stone.position.y = stone_height
+	
+	# Adjust animated characters
+	for character in animated_characters:
+		character.adjust_to_terrain(world_manager)
 
 ## Get the world position of the starting location
 func get_world_position() -> Vector3:
