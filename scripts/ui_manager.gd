@@ -960,7 +960,7 @@ func show_game_over() -> void:
         game_over_overlay.anchor_bottom = 1.0
         game_over_overlay.color = Color(0.0, 0.0, 0.0, 0.9)
         game_over_overlay.z_index = 300  # Above everything
-        # Make game over overlay immune to pause
+        # Make game over overlay immune to pause so restart button remains clickable
         game_over_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
         add_child(game_over_overlay)
         
