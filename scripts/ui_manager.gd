@@ -1010,28 +1010,9 @@ func show_game_over() -> void:
         restart_button.offset_bottom = 180
         restart_button.add_theme_font_size_override("font_size", 22)
         restart_button.focus_mode = Control.FOCUS_NONE
-        # Create button style
-        var normal_style = StyleBoxFlat.new()
-        normal_style.bg_color = Color(0.2, 0.5, 0.2, 1.0)
-        normal_style.corner_radius_top_left = 8
-        normal_style.corner_radius_top_right = 8
-        normal_style.corner_radius_bottom_left = 8
-        normal_style.corner_radius_bottom_right = 8
-        restart_button.add_theme_stylebox_override("normal", normal_style)
-        var hover_style = StyleBoxFlat.new()
-        hover_style.bg_color = Color(0.3, 0.6, 0.3, 1.0)
-        hover_style.corner_radius_top_left = 8
-        hover_style.corner_radius_top_right = 8
-        hover_style.corner_radius_bottom_left = 8
-        hover_style.corner_radius_bottom_right = 8
-        restart_button.add_theme_stylebox_override("hover", hover_style)
-        var pressed_style = StyleBoxFlat.new()
-        pressed_style.bg_color = Color(0.4, 0.7, 0.4, 1.0)
-        pressed_style.corner_radius_top_left = 8
-        pressed_style.corner_radius_top_right = 8
-        pressed_style.corner_radius_bottom_left = 8
-        pressed_style.corner_radius_bottom_right = 8
-        restart_button.add_theme_stylebox_override("pressed", pressed_style)
+        restart_button.add_theme_stylebox_override("normal", _create_button_style(Color(0.2, 0.5, 0.2, 1.0), 8))
+        restart_button.add_theme_stylebox_override("hover", _create_button_style(Color(0.3, 0.6, 0.3, 1.0), 8))
+        restart_button.add_theme_stylebox_override("pressed", _create_button_style(Color(0.4, 0.7, 0.4, 1.0), 8))
         restart_button.pressed.connect(_on_restart_game)
         game_over_overlay.add_child(restart_button)
     
