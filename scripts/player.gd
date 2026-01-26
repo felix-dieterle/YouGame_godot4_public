@@ -66,6 +66,12 @@ const FOOTSTEP_DURATION: float = 0.15  # Sound duration in seconds
 const JET_SOUND_INTERVAL_MULTIPLIER: float = 0.3  # Multiplier for jet sound interval (faster than footsteps)
 const JET_HARMONIC_RATIO: float = 1.5  # Harmonic frequency multiplier for jet sound
 
+# Preloaded sound effects
+var footstep_sound: AudioStream
+var jetpack_sound: AudioStream
+var crystal_collect_sound: AudioStream
+var crystal_collect_player: AudioStreamPlayer  # Reusable player for crystal sounds
+
 # World reference
 var world_manager  # WorldManager - type hint removed to avoid preload dependency
 
@@ -550,13 +556,22 @@ func _create_eye(eye_position: Vector3) -> MeshInstance3D:
     return eye
 
 func _setup_footstep_audio() -> void:
-    # Create audio player for footstep sounds
+    # Preload sound effects once during initialization
+    footstep_sound = load("res://assets/sounds/footstep_grass.wav")
+    jetpack_sound = load("res://assets/sounds/jetpack.wav")
+    crystal_collect_sound = load("res://assets/sounds/crystal_collect.wav")
+    
+    # Create audio player for footstep and jetpack sounds
     footstep_player = AudioStreamPlayer.new()
     footstep_player.volume_db = -10.0  # Slightly quieter
+    footstep_player.stream = footstep_sound  # Set initial stream
     add_child(footstep_player)
     
-    # Preload footstep and jetpack sounds
-    footstep_player.stream = load("res://assets/sounds/footstep_grass.wav")
+    # Create reusable audio player for crystal collection
+    crystal_collect_player = AudioStreamPlayer.new()
+    crystal_collect_player.stream = crystal_collect_sound
+    crystal_collect_player.volume_db = -5.0
+    add_child(crystal_collect_player)
 
 func _update_footsteps(delta: float) -> void:
     # Update footstep timer
@@ -578,13 +593,13 @@ func _update_footsteps(delta: float) -> void:
 
 func _play_footstep_sound() -> void:
     # Play the preloaded footstep sound
-    if footstep_player and footstep_player.stream:
+    if footstep_player and footstep_sound:
+        footstep_player.stream = footstep_sound
         footstep_player.play()
 
 func _play_jet_sound() -> void:
-    # Play the jetpack sound
-    var jetpack_sound = load("res://assets/sounds/jetpack.wav")
-    if footstep_player:
+    # Play the preloaded jetpack sound
+    if footstep_player and jetpack_sound:
         footstep_player.stream = jetpack_sound
         footstep_player.play()
 
@@ -762,14 +777,9 @@ func _collect_crystal(crystal_node: Node3D) -> void:
     tween.tween_property(crystal_node, "position", crystal_node.position + Vector3(0, 1.0, 0), 0.3)
     tween.finished.connect(func(): crystal_node.queue_free())
     
-    # Play collection sound effect
-    var collect_sound = AudioStreamPlayer.new()
-    collect_sound.stream = load("res://assets/sounds/crystal_collect.wav")
-    collect_sound.volume_db = -5.0
-    add_child(collect_sound)
-    collect_sound.play()
-    # Remove the audio player after the sound finishes
-    collect_sound.finished.connect(func(): collect_sound.queue_free())
+    # Play collection sound effect using reusable player
+    if crystal_collect_player:
+        crystal_collect_player.play()
 
 func _load_saved_state():
     # Get player state from SaveGameManager (already loaded at startup)
