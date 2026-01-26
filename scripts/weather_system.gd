@@ -28,6 +28,9 @@ var rain_particles: GPUParticles3D
 var world_environment: WorldEnvironment
 var sky_material: PhysicalSkyMaterial
 
+# Audio elements
+var rain_audio: AudioStreamPlayer
+
 # Player reference for positioning rain
 var player: Node3D
 
@@ -42,6 +45,9 @@ func _ready() -> void:
     
     # Setup rain particles
     _setup_rain_particles()
+    
+    # Setup rain audio
+    _setup_rain_audio()
     
     # Set initial weather change time
     next_weather_change = randf_range(min_weather_duration, max_weather_duration)
@@ -129,6 +135,14 @@ func _setup_rain_particles() -> void:
     
     add_child(rain_particles)
 
+func _setup_rain_audio() -> void:
+    # Create audio player for rain sound
+    rain_audio = AudioStreamPlayer.new()
+    rain_audio.stream = load("res://assets/sounds/rain.wav")
+    rain_audio.volume_db = -8.0
+    rain_audio.autoplay = false
+    add_child(rain_audio)
+
 func _start_weather_transition() -> void:
     # Choose a new random weather state
     var weather_weights = {
@@ -186,8 +200,17 @@ func _apply_weather_transition() -> void:
         if rain_intensity > 0.0:
             rain_particles.emitting = true
             rain_particles.amount = int(1000 * rain_intensity)
+            # Start rain audio if not playing
+            if rain_audio and not rain_audio.playing:
+                rain_audio.play()
+            # Adjust rain audio volume based on intensity
+            if rain_audio:
+                rain_audio.volume_db = -8.0 + (rain_intensity * 5.0)  # Louder with more rain
         else:
             rain_particles.emitting = false
+            # Stop rain audio
+            if rain_audio and rain_audio.playing:
+                rain_audio.stop()
     
     # Interpolate sky parameters (clouds, color)
     if sky_material:

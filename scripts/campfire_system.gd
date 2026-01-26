@@ -28,8 +28,10 @@ static func create_campfire_node(light_energy: float = 8.0, light_range: float =
         stone.rotation.y = angle + PI / 2.0
         
         var stone_material = StandardMaterial3D.new()
-        stone_material.albedo_color = Color(0.4, 0.4, 0.45)  # Gray stone
+        stone_material.albedo_texture = load("res://assets/textures/stone.png")
+        stone_material.albedo_color = Color(0.4, 0.4, 0.45)  # Gray stone tint
         stone_material.roughness = 0.9
+        stone_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
         stone.set_surface_override_material(0, stone_material)
         campfire.add_child(stone)
     
@@ -48,7 +50,9 @@ static func create_campfire_node(light_energy: float = 8.0, light_range: float =
         log.rotation.y = angle
         
         var log_material = StandardMaterial3D.new()
-        log_material.albedo_color = Color(0.3, 0.2, 0.1)  # Brown wood
+        log_material.albedo_texture = load("res://assets/textures/wood.png")
+        log_material.albedo_color = Color(0.3, 0.2, 0.1)  # Brown wood tint
+        log_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
         log.set_surface_override_material(0, log_material)
         campfire.add_child(log)
     
@@ -77,5 +81,13 @@ static func create_campfire_node(light_energy: float = 8.0, light_range: float =
     light.shadow_enabled = true
     light.position = Vector3(0, 0.5, 0)
     campfire.add_child(light)
+    
+    # Add campfire crackling sound
+    var audio_player = AudioStreamPlayer3D.new()
+    audio_player.stream = load("res://assets/sounds/campfire_crackle.wav")
+    audio_player.volume_db = -5.0  # Slightly quieter
+    audio_player.max_distance = 20.0  # Can hear from 20 meters away
+    audio_player.autoplay = true
+    campfire.add_child(audio_player)
     
     return campfire

@@ -570,6 +570,14 @@ func _create_mesh() -> void:
     material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
     material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
     material.roughness = 0.9
+    
+    # Add grass texture for grassland areas (blended with vertex colors)
+    if not is_border:  # Don't add texture to border/wasteland areas
+        material.albedo_texture = load("res://assets/textures/grass.png")
+        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+        material.uv1_triplanar = true  # Use triplanar mapping for better terrain coverage
+        material.uv1_scale = Vector3(2.0, 2.0, 2.0)  # Scale texture for detail
+    
     # Enable shadow receiving to show terrain depth
     mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     mesh_instance.set_surface_override_material(0, material)
