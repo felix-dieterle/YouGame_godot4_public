@@ -66,6 +66,12 @@ const FOOTSTEP_DURATION: float = 0.15  # Sound duration in seconds
 const JET_SOUND_INTERVAL_MULTIPLIER: float = 0.3  # Multiplier for jet sound interval (faster than footsteps)
 const JET_HARMONIC_RATIO: float = 1.5  # Harmonic frequency multiplier for jet sound
 
+# Preloaded sound effects
+var footstep_sound: AudioStream
+var jetpack_sound: AudioStream
+var crystal_collect_sound: AudioStream
+var crystal_collect_player: AudioStreamPlayer  # Reusable player for crystal sounds
+
 # World reference
 var world_manager  # WorldManager - type hint removed to avoid preload dependency
 
@@ -550,10 +556,21 @@ func _create_eye(eye_position: Vector3) -> MeshInstance3D:
     return eye
 
 func _setup_footstep_audio() -> void:
-    # Create audio player for footstep sounds
+    # Preload sound effects once during initialization
+    footstep_sound = load("res://assets/sounds/footstep_grass.wav")
+    jetpack_sound = load("res://assets/sounds/jetpack.wav")
+    crystal_collect_sound = load("res://assets/sounds/crystal_collect.wav")
+    
+    # Create audio player for footstep and jetpack sounds
     footstep_player = AudioStreamPlayer.new()
     footstep_player.volume_db = -10.0  # Slightly quieter
     add_child(footstep_player)
+    
+    # Create reusable audio player for crystal collection
+    crystal_collect_player = AudioStreamPlayer.new()
+    crystal_collect_player.stream = crystal_collect_sound
+    crystal_collect_player.volume_db = -5.0
+    add_child(crystal_collect_player)
 
 func _update_footsteps(delta: float) -> void:
     # Update footstep timer
@@ -574,96 +591,16 @@ func _update_footsteps(delta: float) -> void:
             _play_footstep_sound()
 
 func _play_footstep_sound() -> void:
-    # Get terrain material at current position
-    var terrain_material = "grass"
-    if world_manager:
-        terrain_material = world_manager.get_terrain_material_at_position(global_position)
-    
-    # Create a simple procedural footstep sound based on material
-    var generator = AudioStreamGenerator.new()
-    generator.mix_rate = 22050.0
-    generator.buffer_length = FOOTSTEP_DURATION
-    
-    footstep_player.stream = generator
-    
-    # Start playback to get access to the playback buffer
-    footstep_player.play()
-    
-    # Wait one frame for the stream to initialize
-    await get_tree().process_frame
-    
-    # Generate the sound waveform in the playback buffer
-    var playback = footstep_player.get_stream_playback() as AudioStreamGeneratorPlayback
-    if not playback:
-        return  # Stream not ready, skip this footstep
-    
-    var frames_available = playback.get_frames_available()
-    var frames_to_fill = roundi(generator.mix_rate * FOOTSTEP_DURATION)
-    var frequency = 100.0  # Base frequency
-    var noise_amount = 0.5
-    
-    # Adjust sound characteristics based on material
-    match terrain_material:
-        "stone":
-            frequency = 150.0
-            noise_amount = 0.8  # More noise for hard surface
-        "rock":
-            frequency = 120.0
-            noise_amount = 0.6
-        "grass":
-            frequency = 80.0
-            noise_amount = 0.4  # Softer, less noise
-    
-    # Generate audio frames
-    for i in range(min(frames_to_fill, frames_available)):
-        var t = float(i) / generator.mix_rate
-        var envelope = exp(-t * 15.0)  # Exponential decay
-        
-        # Mix tone with noise
-        var tone = sin(2.0 * PI * frequency * t) * (1.0 - noise_amount)
-        var noise_val = (randf() * 2.0 - 1.0) * noise_amount
-        var sample = (tone + noise_val) * envelope * 0.3
-        
-        playback.push_frame(Vector2(sample, sample))
+    # Play the preloaded footstep sound
+    if footstep_player and footstep_sound:
+        footstep_player.stream = footstep_sound
+        footstep_player.play()
 
 func _play_jet_sound() -> void:
-    # Create a procedural jet/thruster sound
-    var generator = AudioStreamGenerator.new()
-    generator.mix_rate = 22050.0
-    generator.buffer_length = FOOTSTEP_DURATION
-    
-    footstep_player.stream = generator
-    
-    # Start playback to get access to the playback buffer
-    footstep_player.play()
-    
-    # Wait one frame for the stream to initialize
-    await get_tree().process_frame
-    
-    # Generate the sound waveform in the playback buffer
-    var playback = footstep_player.get_stream_playback() as AudioStreamGeneratorPlayback
-    if not playback:
-        return  # Stream not ready, skip this sound
-    
-    var frames_available = playback.get_frames_available()
-    var frames_to_fill = roundi(generator.mix_rate * FOOTSTEP_DURATION)
-    
-    # Jet sound characteristics: low rumble + white noise
-    var base_frequency = 40.0  # Low rumble
-    var noise_amount = 0.9  # Mostly noise for jet effect
-    
-    # Generate audio frames
-    for i in range(min(frames_to_fill, frames_available)):
-        var t = float(i) / generator.mix_rate
-        var envelope = 1.0 - (t / FOOTSTEP_DURATION)  # Linear decay
-        
-        # Mix low frequency rumble with heavy noise
-        var rumble = sin(2.0 * PI * base_frequency * t) * 0.3
-        var rumble2 = sin(2.0 * PI * base_frequency * JET_HARMONIC_RATIO * t) * 0.2  # Add harmonic
-        var noise_val = (randf() * 2.0 - 1.0) * noise_amount
-        var sample = (rumble + rumble2 + noise_val) * envelope * 0.4
-        
-        playback.push_frame(Vector2(sample, sample))
+    # Play the preloaded jetpack sound
+    if footstep_player and jetpack_sound:
+        footstep_player.stream = jetpack_sound
+        footstep_player.play()
 
 
 func set_input_enabled(enabled: bool) -> void:
@@ -839,7 +776,9 @@ func _collect_crystal(crystal_node: Node3D) -> void:
     tween.tween_property(crystal_node, "position", crystal_node.position + Vector3(0, 1.0, 0), 0.3)
     tween.finished.connect(func(): crystal_node.queue_free())
     
-    # TODO: Add collection sound effect
+    # Play collection sound effect using reusable player
+    if crystal_collect_player:
+        crystal_collect_player.play()
 
 func _load_saved_state():
     # Get player state from SaveGameManager (already loaded at startup)
