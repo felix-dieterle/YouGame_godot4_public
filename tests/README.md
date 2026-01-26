@@ -13,6 +13,7 @@ This directory contains automated tests for the YouGame Godot 4 project.
 
 ### Visual Tests (with Screenshot Capture)
 - `test_visual_example.gd` / `test_scene_visual_example.tscn` - Example test demonstrating screenshot capture
+- `test_path_visual.gd` / `test_scene_path_visual.tscn` - Visual test for path rendering across chunks with multiple camera angles
 
 ## Screenshot Functionality
 
