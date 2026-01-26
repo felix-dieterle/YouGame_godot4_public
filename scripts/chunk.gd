@@ -25,7 +25,6 @@ const ClusterSystem = preload("res://scripts/cluster_system.gd")
 const ProceduralModels = preload("res://scripts/procedural_models.gd")
 const PathSystem = preload("res://scripts/path_system.gd")
 const CrystalSystem = preload("res://scripts/crystal_system.gd")
-const AnimatedCharacter = preload("res://scenes/characters/animated_character.tscn")
 
 # ============================================================================
 # CONFIGURATION CONSTANTS
@@ -2080,7 +2079,8 @@ func _place_character_near_object(object: Node3D, rng: RandomNumberGenerator) ->
 	var height = get_height_at_world_pos(world_x, world_z)
 	
 	# Create character instance
-	var character = AnimatedCharacter.instantiate()
+	var character_scene = load("res://scenes/characters/animated_character.tscn")
+	var character = character_scene.instantiate()
 	character.position = Vector3(char_local_pos.x, height, char_local_pos.z)
 	character.character_seed = rng.randi()
 	

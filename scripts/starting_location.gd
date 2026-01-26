@@ -13,9 +13,6 @@ const LOCATION_RADIUS = 8.0  # Radius of starting area
 const NUM_MARKER_STONES = 6  # Number of marker stones around the area
 const NUM_ANIMATED_CHARACTERS = 3  # Number of animated characters around starting area
 
-# Preload animated character scene
-const AnimatedCharacter = preload("res://scenes/characters/animated_character.tscn")
-
 # Starting location objects
 var marker_stones: Array[MeshInstance3D] = []
 var central_marker: MeshInstance3D = null
@@ -153,7 +150,8 @@ func _create_animated_characters() -> void:
 	rng.seed = 123  # Fixed seed for consistent character placement
 	
 	for i in range(NUM_ANIMATED_CHARACTERS):
-		var character_instance = AnimatedCharacter.instantiate()
+		var character_scene = load("res://scenes/characters/animated_character.tscn")
+		var character_instance = character_scene.instantiate()
 		
 		# Position characters around the starting area
 		var angle = (float(i) / NUM_ANIMATED_CHARACTERS) * TAU + rng.randf_range(-0.3, 0.3)
