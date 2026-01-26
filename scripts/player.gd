@@ -714,7 +714,7 @@ func _is_in_border_chunk() -> bool:
     
     # Get current chunk
     var chunk = world_manager.get_chunk_at_position(global_position)
-    if chunk and chunk.has("is_border"):
+    if chunk:
         return chunk.is_border
     
     return false
