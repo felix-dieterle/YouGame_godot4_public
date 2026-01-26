@@ -5,6 +5,7 @@ class_name Player
 const CrystalSystem = preload("res://scripts/crystal_system.gd")
 const TorchSystem = preload("res://scripts/torch_system.gd")
 const CampfireSystem = preload("res://scripts/campfire_system.gd")
+const Chunk = preload("res://scripts/chunk.gd")
 
 # Torch placement settings
 @export var torch_placement_offset: float = 0.5  # Height offset when placing torch
@@ -677,6 +678,9 @@ func _update_air_and_health(delta: float) -> void:
     var water_depth = world_manager.get_water_depth_at_position(global_position)
     is_underwater = water_depth > underwater_threshold
     
+    # Check if player is in border chunk
+    var is_in_border = _is_in_border_chunk()
+    
     if is_underwater:
         # Deplete air when underwater
         current_air = max(0.0, current_air - air_depletion_rate * delta)
@@ -692,8 +696,33 @@ func _update_air_and_health(delta: float) -> void:
         # Refill air immediately when above water
         current_air = max_air
     
+    # Deplete health if in border chunk
+    if is_in_border:
+        current_health = max(0.0, current_health - get_border_health_drain_rate() * delta)
+        
+        # Check for game over
+        if current_health <= 0.0:
+            _trigger_game_over()
+    
     # Update UI
     _update_air_health_ui()
+
+## Check if player is in a border chunk
+func _is_in_border_chunk() -> bool:
+    if not world_manager:
+        return false
+    
+    # Get current chunk
+    var chunk = world_manager.get_chunk_at_position(global_position)
+    if chunk:
+        return chunk.is_border
+    
+    return false
+
+## Get border health drain rate from chunk constants
+func get_border_health_drain_rate() -> float:
+    # Access the constant from Chunk class (preloaded at class level)
+    return Chunk.BORDER_HEALTH_DRAIN_RATE
 
 ## Trigger game over when health reaches zero
 func _trigger_game_over() -> void:

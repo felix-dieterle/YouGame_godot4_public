@@ -124,6 +124,18 @@ const CAVE_CHAMBER_RADIUS_MAX = 6.0  # Max radius of cave chambers
 const MOUNTAIN_PATH_WIDTH = 1.5  # Narrower paths for mountain trails
 const CAVE_ENTRANCE_THRESHOLD = 0.3  # Dot product threshold for entrance opening
 
+# Border chunk constants (world boundary / "Rand chunks")
+const BORDER_START_DISTANCE = 256.0  # Distance from origin where border begins (~8 chunks = 256 units)
+const BORDER_HEALTH_DRAIN_RATE = 2.0  # Health lost per second in border areas
+const BORDER_WARNING_SIGN_COUNT = 2  # Number of warning signs per border chunk
+const BORDER_DIRECTIONAL_SIGN_CHANCE = 0.3  # 30% chance for directional signs pointing to core
+const BORDER_SKELETON_COUNT_MIN = 1  # Minimum skeletons in border chunks
+const BORDER_SKELETON_COUNT_MAX = 4  # Maximum skeletons in border chunks
+const BORDER_DUNE_COUNT_MIN = 3  # Minimum dunes in border chunks
+const BORDER_DUNE_COUNT_MAX = 7  # Maximum dunes in border chunks
+const BORDER_PORTAL_CAVE_CHANCE = 0.15  # 15% chance for portal cave in border chunks
+const BORDER_SEED_OFFSET = 123456  # Offset for border chunk placement seed
+
 # ============================================================================
 # STATE VARIABLES
 # ============================================================================
@@ -179,6 +191,15 @@ var cave_mesh_instances: Array = []  # Array of cave interior MeshInstance3D
 static var mountain_center_chunk_x: int = 999999  # Invalid position marker
 static var mountain_center_chunk_z: int = 999999  # Invalid position marker
 
+# Border chunk data
+var is_border: bool = false  # True if this is a border chunk
+var border_warning_signs: Array = []  # Array of warning sign MeshInstance3D
+var border_directional_signs: Array = []  # Array of directional sign MeshInstance3D
+var border_skeletons: Array = []  # Array of skeleton MeshInstance3D
+var border_dunes: Array = []  # Array of dune MeshInstance3D
+var has_portal_cave: bool = false  # True if this border chunk has a portal cave
+var portal_cave_position: Vector3 = Vector3.ZERO  # Position of portal cave entrance
+
 # Ambient sound data
 var ambient_sound_player: AudioStreamPlayer3D = null  # For ambient sounds like woodpecker
 var woodpecker_timer: float = 0.0  # Timer for next woodpecker sound
@@ -223,6 +244,7 @@ func _init(x: int, z: int, world_seed: int):
 ## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → caves → lighthouses → fishing boat → ambient sounds
 func generate() -> void:
     _detect_unique_mountain()  # Check if this is the unique mountain chunk
+    _detect_border_chunk()  # Check if this is a border chunk
     _setup_noise()
     _generate_heightmap()
     _calculate_walkability()
@@ -240,6 +262,7 @@ func generate() -> void:
     _setup_wind_sound()  # Add wind ambient sound for mountain regions
     _place_fishing_boat_if_coastal()
     _place_gravel_area_with_stone_animals()  # Place unique gravel area with stone animals
+    _generate_border_features()  # Generate border chunk features
     _setup_ambient_sounds()  # Setup ambient sounds for dense forests
 
 # ============================================================================
@@ -292,6 +315,16 @@ func _find_mountain_center_chunk() -> void:
     # This shouldn't happen with modulo 73 and radius 28 chunks
     mountain_center_chunk_x = 0
     mountain_center_chunk_z = 0
+
+## Detect if this chunk is a border chunk (world boundary)
+func _detect_border_chunk() -> void:
+    # Calculate distance from origin to determine if this is a border chunk
+    var chunk_world_center = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
+    var distance_from_origin = chunk_world_center.length()
+    
+    # Border chunks appear beyond the border distance
+    if distance_from_origin >= BORDER_START_DISTANCE:
+        is_border = true
 
 func _setup_noise() -> void:
     noise = FastNoiseLite.new()
@@ -472,7 +505,12 @@ func _create_mesh() -> void:
             
             # Determine material color based on height (biome)
             var base_color: Color
-            if avg_height <= OCEAN_LEVEL:
+            if is_border:
+                # Border/wasteland - sandy desert color with rocky variations
+                var height_factor = clamp((avg_height + 5.0) / 15.0, 0.0, 1.0)
+                # Sandy beige/tan color for desert
+                base_color = Color(0.76, 0.70, 0.50).lerp(Color(0.65, 0.58, 0.45), height_factor)
+            elif avg_height <= OCEAN_LEVEL:
                 # Ocean floor - sandy/rocky seabed
                 base_color = Color(0.6, 0.55, 0.4)  # Sandy color for ocean floor
             elif avg_height > 8.0:
@@ -501,12 +539,13 @@ func _create_mesh() -> void:
             if not is_walkable:
                 base_color = base_color.lerp(Color(0.5, 0.4, 0.3), 0.2)  # Subtle brownish tint
             
-            # Darken ground in forest areas
-            var forest_influence = forest_influence_map[z * RESOLUTION + x]
-            if forest_influence > 0.1:
-                # Make ground darker and more brown/earthy in forests
-                var dark_forest_color = Color(0.25, 0.2, 0.15)  # Dark brown forest floor
-                base_color = base_color.lerp(dark_forest_color, forest_influence * 0.5)
+            # Darken ground in forest areas (but not in border biomes)
+            if not is_border:
+                var forest_influence = forest_influence_map[z * RESOLUTION + x]
+                if forest_influence > 0.1:
+                    # Make ground darker and more brown/earthy in forests
+                    var dark_forest_color = Color(0.25, 0.2, 0.15)  # Dark brown forest floor
+                    base_color = base_color.lerp(dark_forest_color, forest_influence * 0.5)
             
             # First triangle
             surface_tool.set_color(base_color)
@@ -557,10 +596,14 @@ func _calculate_metadata() -> void:
     var distance_from_origin = chunk_world_center.length()
     
     # Determine biome and landmark type based on height, variance, and distance
+    # Border biome is determined first for chunks beyond the border distance
+    if is_border:
+        biome = "border"
+        landmark_type = "wasteland"
     # Ocean biome is determined by either:
     # 1. Natural low elevation (avg_height <= OCEAN_LEVEL)
     # 2. Distance from origin (>= OCEAN_START_DISTANCE ensures ocean is discoverable)
-    if avg_height <= OCEAN_LEVEL or distance_from_origin >= OCEAN_START_DISTANCE:
+    elif avg_height <= OCEAN_LEVEL or distance_from_origin >= OCEAN_START_DISTANCE:
         biome = "ocean"
         landmark_type = "ocean"
         is_ocean = true
@@ -2486,4 +2529,238 @@ func _add_mountain_paths_to_caves() -> void:
             
             path_segments.append(segment)
             current_pos = next_pos
+
+## Generate border chunk features (warning signs, skeletons, dunes, portal caves)
+func _generate_border_features() -> void:
+    # Only generate border features if this is a border chunk
+    if not is_border:
+        return
+    
+    # Use chunk position for random seed
+    var rng = RandomNumberGenerator.new()
+    rng.seed = hash(Vector2i(chunk_x, chunk_z)) + seed_value + BORDER_SEED_OFFSET
+    
+    # 1. Place warning signs at chunk entrance points
+    _place_border_warning_signs(rng)
+    
+    # 2. Place directional signs (occasionally)
+    if rng.randf() < BORDER_DIRECTIONAL_SIGN_CHANCE:
+        _place_border_directional_signs(rng)
+    
+    # 3. Place skeletons
+    _place_border_skeletons(rng)
+    
+    # 4. Place dunes (desert features)
+    _place_border_dunes(rng)
+    
+    # 5. Potentially place portal cave
+    if rng.randf() < BORDER_PORTAL_CAVE_CHANCE:
+        _place_border_portal_cave(rng)
+
+## Place warning signs in border chunks
+func _place_border_warning_signs(rng: RandomNumberGenerator) -> void:
+    for i in range(BORDER_WARNING_SIGN_COUNT):
+        # Find a random walkable position
+        var attempts = 0
+        var pos = Vector2.ZERO
+        var found_position = false
+        
+        while attempts < 20:
+            pos = Vector2(
+                rng.randf_range(2.0, CHUNK_SIZE - 2.0),
+                rng.randf_range(2.0, CHUNK_SIZE - 2.0)
+            )
+            
+            var cell_x = int(pos.x / CELL_SIZE)
+            var cell_z = int(pos.y / CELL_SIZE)
+            var cell_index = cell_z * RESOLUTION + cell_x
+            
+            if cell_index >= 0 and cell_index < walkable_map.size() and walkable_map[cell_index] == 1:
+                found_position = true
+                break
+            
+            attempts += 1
+        
+        if not found_position:
+            continue
+        
+        # Get height at this position
+        var height = _get_height_at_local_pos(pos.x, pos.y)
+        
+        # Create warning sign
+        var sign = MeshInstance3D.new()
+        sign.mesh = ProceduralModels.create_warning_sign_mesh(rng.randi())
+        sign.material_override = ProceduralModels.create_border_feature_material()
+        sign.position = Vector3(pos.x, height, pos.y)
+        sign.rotation.y = rng.randf_range(0, 2 * PI)
+        
+        add_child(sign)
+        border_warning_signs.append(sign)
+
+## Place directional signs pointing toward spawn/core
+func _place_border_directional_signs(rng: RandomNumberGenerator) -> void:
+    # Find a random walkable position
+    var attempts = 0
+    var pos = Vector2.ZERO
+    var found_position = false
+    
+    while attempts < 20:
+        pos = Vector2(
+            rng.randf_range(2.0, CHUNK_SIZE - 2.0),
+            rng.randf_range(2.0, CHUNK_SIZE - 2.0)
+        )
+        
+        var cell_x = int(pos.x / CELL_SIZE)
+        var cell_z = int(pos.y / CELL_SIZE)
+        var cell_index = cell_z * RESOLUTION + cell_x
+        
+        if cell_index >= 0 and cell_index < walkable_map.size() and walkable_map[cell_index] == 1:
+            found_position = true
+            break
+        
+        attempts += 1
+    
+    if not found_position:
+        return
+    
+    # Get height at this position
+    var height = _get_height_at_local_pos(pos.x, pos.y)
+    
+    # Calculate direction to origin (spawn point)
+    var chunk_world_center = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
+    var direction_to_spawn = -chunk_world_center.normalized()
+    var rotation_angle = atan2(direction_to_spawn.x, direction_to_spawn.y)
+    
+    # Create directional sign
+    var sign = MeshInstance3D.new()
+    sign.mesh = ProceduralModels.create_directional_sign_mesh(rng.randi())
+    sign.material_override = ProceduralModels.create_border_feature_material()
+    sign.position = Vector3(pos.x, height, pos.y)
+    sign.rotation.y = rotation_angle  # Point toward spawn
+    
+    add_child(sign)
+    border_directional_signs.append(sign)
+
+## Place skeletons in border chunks
+func _place_border_skeletons(rng: RandomNumberGenerator) -> void:
+    var skeleton_count = rng.randi_range(BORDER_SKELETON_COUNT_MIN, BORDER_SKELETON_COUNT_MAX)
+    
+    for i in range(skeleton_count):
+        # Find a random walkable position
+        var attempts = 0
+        var pos = Vector2.ZERO
+        var found_position = false
+        
+        while attempts < 20:
+            pos = Vector2(
+                rng.randf_range(2.0, CHUNK_SIZE - 2.0),
+                rng.randf_range(2.0, CHUNK_SIZE - 2.0)
+            )
+            
+            var cell_x = int(pos.x / CELL_SIZE)
+            var cell_z = int(pos.y / CELL_SIZE)
+            var cell_index = cell_z * RESOLUTION + cell_x
+            
+            if cell_index >= 0 and cell_index < walkable_map.size() and walkable_map[cell_index] == 1:
+                found_position = true
+                break
+            
+            attempts += 1
+        
+        if not found_position:
+            continue
+        
+        # Get height at this position
+        var height = _get_height_at_local_pos(pos.x, pos.y)
+        
+        # Create skeleton
+        var skeleton = MeshInstance3D.new()
+        skeleton.mesh = ProceduralModels.create_skeleton_mesh(rng.randi())
+        skeleton.material_override = ProceduralModels.create_border_feature_material()
+        skeleton.position = Vector3(pos.x, height, pos.y)
+        skeleton.rotation.y = rng.randf_range(0, 2 * PI)
+        
+        add_child(skeleton)
+        border_skeletons.append(skeleton)
+
+## Place dunes (desert features) in border chunks
+func _place_border_dunes(rng: RandomNumberGenerator) -> void:
+    var dune_count = rng.randi_range(BORDER_DUNE_COUNT_MIN, BORDER_DUNE_COUNT_MAX)
+    
+    for i in range(dune_count):
+        # Dunes can be placed anywhere, even on unwalkable areas
+        var pos = Vector2(
+            rng.randf_range(2.0, CHUNK_SIZE - 2.0),
+            rng.randf_range(2.0, CHUNK_SIZE - 2.0)
+        )
+        
+        # Get height at this position
+        var height = _get_height_at_local_pos(pos.x, pos.y)
+        
+        # Create dune
+        var dune = MeshInstance3D.new()
+        dune.mesh = ProceduralModels.create_dune_mesh(rng.randi())
+        dune.material_override = ProceduralModels.create_border_feature_material()
+        dune.position = Vector3(pos.x, height - 0.5, pos.y)  # Slightly sunken into terrain
+        dune.rotation.y = rng.randf_range(0, 2 * PI)
+        # Random scale for variety
+        var scale = rng.randf_range(0.8, 1.3)
+        dune.scale = Vector3(scale, scale * 0.6, scale)  # Flatter
+        
+        add_child(dune)
+        border_dunes.append(dune)
+
+## Place portal cave in border chunk (entry to "heart of the land")
+func _place_border_portal_cave(rng: RandomNumberGenerator) -> void:
+    # Find a suitable position for portal cave
+    var pos = Vector2(
+        rng.randf_range(5.0, CHUNK_SIZE - 5.0),
+        rng.randf_range(5.0, CHUNK_SIZE - 5.0)
+    )
+    
+    # Get height at this position
+    var height = _get_height_at_local_pos(pos.x, pos.y)
+    
+    # Create simple portal cave marker (using rock as base, but marked as special)
+    var portal = MeshInstance3D.new()
+    portal.mesh = ProceduralModels.create_rock_mesh(rng.randi())
+    
+    # Special dark material for portal
+    var portal_material = StandardMaterial3D.new()
+    portal_material.albedo_color = Color(0.1, 0.05, 0.15)  # Dark purple
+    portal_material.emission_enabled = true
+    portal_material.emission = Color(0.3, 0.1, 0.4)  # Purple glow
+    portal_material.emission_energy_multiplier = 2.0
+    portal.material_override = portal_material
+    
+    portal.position = Vector3(pos.x, height, pos.y)
+    portal.scale = Vector3(3.0, 3.0, 3.0)  # Larger than normal rocks
+    
+    add_child(portal)
+    
+    has_portal_cave = true
+    portal_cave_position = Vector3(pos.x, height, pos.y)
+    
+    # Add narrative marker for portal cave
+    var marker_id = "portal_cave_%d_%d" % [chunk_x, chunk_z]
+    var chunk_pos = Vector2i(chunk_x, chunk_z)
+    var world_pos = Vector3(chunk_x * CHUNK_SIZE + pos.x, height, chunk_z * CHUNK_SIZE + pos.y)
+    var marker = NarrativeMarker.new(marker_id, chunk_pos, world_pos, "portal_cave")
+    marker.metadata = {
+        "biome": "border",
+        "type": "portal_to_heart"
+    }
+    narrative_markers.append(marker)
+    add_child(marker)
+
+## Helper function to get height at local position
+func _get_height_at_local_pos(local_x: float, local_z: float) -> float:
+    var cell_x = int(clamp(local_x / CELL_SIZE, 0, RESOLUTION - 1))
+    var cell_z = int(clamp(local_z / CELL_SIZE, 0, RESOLUTION - 1))
+    var index = cell_z * RESOLUTION + cell_x
+    
+    if index >= 0 and index < heightmap.size():
+        return heightmap[index]
+    return 0.0
+
 

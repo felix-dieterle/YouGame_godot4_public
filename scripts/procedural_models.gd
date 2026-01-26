@@ -901,3 +901,117 @@ static func create_fence_post_material() -> StandardMaterial3D:
     material.roughness = 0.9  # Very rough, weathered wood
     material.cull_mode = BaseMaterial3D.CULL_BACK
     return material
+
+## Create a warning sign mesh for border areas
+static func create_warning_sign_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    var post_height = 1.5
+    var sign_width = 1.2
+    var sign_height = 0.8
+    var sign_thickness = 0.1
+    
+    # Weathered wood color
+    var wood_color = Color(0.4, 0.3, 0.2)
+    # Warning red color
+    var warning_color = Color(0.7, 0.2, 0.1)
+    
+    # Create post
+    _add_cylinder(surface_tool, Vector3(0, post_height/2, 0), post_height, 0.08, 6, wood_color)
+    
+    # Create sign board at top
+    var sign_pos = Vector3(0, post_height, 0)
+    _add_box(surface_tool, sign_pos, Vector3(sign_width, sign_height, sign_thickness), warning_color)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create a directional sign mesh pointing to core/spawn
+static func create_directional_sign_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    var post_height = 1.5
+    var arrow_length = 1.5
+    var arrow_width = 0.3
+    var arrow_thickness = 0.1
+    
+    # Weathered wood color
+    var wood_color = Color(0.4, 0.3, 0.2)
+    
+    # Create post
+    _add_cylinder(surface_tool, Vector3(0, post_height/2, 0), post_height, 0.08, 6, wood_color)
+    
+    # Create arrow board (horizontal plank)
+    var arrow_pos = Vector3(arrow_length/2, post_height, 0)
+    _add_box(surface_tool, arrow_pos, Vector3(arrow_length, arrow_width, arrow_thickness), wood_color)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create a skeleton mesh for border areas
+static func create_skeleton_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Bone white color
+    var bone_color = Color(0.85, 0.82, 0.75)
+    
+    # Create simple skeleton - spine
+    _add_cylinder(surface_tool, Vector3(0, 0.3, 0), 0.6, 0.05, 6, bone_color)
+    
+    # Skull (sphere-like)
+    var skull_pos = Vector3(0, 0.7, 0)
+    _add_box(surface_tool, skull_pos, Vector3(0.2, 0.25, 0.2), bone_color)
+    
+    # Ribs (small boxes)
+    for i in range(3):
+        var rib_y = 0.3 + i * 0.15
+        _add_box(surface_tool, Vector3(0.15, rib_y, 0), Vector3(0.2, 0.03, 0.1), bone_color)
+        _add_box(surface_tool, Vector3(-0.15, rib_y, 0), Vector3(0.2, 0.03, 0.1), bone_color)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create a dune/sand mound mesh for border desert areas
+static func create_dune_mesh(seed_val: int = 0) -> ArrayMesh:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_val
+    
+    var surface_tool = SurfaceTool.new()
+    surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+    
+    # Sandy desert color
+    var sand_color = Color(0.76, 0.70, 0.50)
+    
+    # Create elongated mound (dune shape)
+    var dune_length = rng.randf_range(3.0, 6.0)
+    var dune_width = rng.randf_range(2.0, 4.0)
+    var dune_height = rng.randf_range(1.0, 2.0)
+    
+    # Simple ellipsoid shape
+    _add_box(surface_tool, Vector3(0, dune_height/2, 0), Vector3(dune_length, dune_height, dune_width), sand_color)
+    
+    surface_tool.generate_normals()
+    return surface_tool.commit()
+
+## Create material for border features
+static func create_border_feature_material() -> StandardMaterial3D:
+    var material = StandardMaterial3D.new()
+    material.vertex_color_use_as_albedo = true
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+    material.roughness = 0.9
+    material.cull_mode = BaseMaterial3D.CULL_BACK
+    return material
+
