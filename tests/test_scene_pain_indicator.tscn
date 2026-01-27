@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b4p8k3n5qwxyz"]
+
+[ext_resource type="Script" path="res://tests/test_pain_indicator.gd" id="1"]
+
+[node name="TestPainIndicator" type="Node"]
+script = ExtResource("1")

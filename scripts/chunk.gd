@@ -424,6 +424,9 @@ func _generate_heightmap() -> void:
             # Add subtle directional gradient
             height += _calculate_gradient_offset(world_x, world_z)
             
+            # Add ocean cliff effect for chunks near ocean
+            height += _calculate_ocean_cliff_offset(world_x, world_z)
+            
             heightmap[z * (RESOLUTION + 1) + x] = height
 
 ## Calculate the directional gradient offset for a given world position
@@ -432,6 +435,38 @@ func _calculate_gradient_offset(world_x: float, world_z: float) -> float:
     # Note: Could be simplified to `world_z * GRADIENT_STRENGTH` with current GRADIENT_DIRECTION=(0,1)
     # However, preserving dot product form allows easy reconfiguration of gradient direction
     return (world_x * GRADIENT_DIRECTION.x + world_z * GRADIENT_DIRECTION.y) * GRADIENT_STRENGTH
+
+## Calculate ocean cliff offset to create steep elevation near ocean boundaries
+## Returns additional height to add when near ocean edges
+func _calculate_ocean_cliff_offset(world_x: float, world_z: float) -> float:
+    # Only apply cliff effect if we're at a reasonable distance from origin (where ocean starts)
+    var distance_from_origin = sqrt(world_x * world_x + world_z * world_z)
+    
+    # Ocean starts at OCEAN_START_DISTANCE (160 units)
+    # Apply cliff effect in a transition zone before ocean begins
+    var cliff_transition_start = OCEAN_START_DISTANCE - CHUNK_SIZE * 2  # Start 2 chunks before ocean
+    var cliff_transition_end = OCEAN_START_DISTANCE  # End at ocean boundary
+    
+    # Check if we're in the cliff transition zone
+    if distance_from_origin >= cliff_transition_start and distance_from_origin < cliff_transition_end:
+        # Calculate how far we are through the transition (0.0 to 1.0)
+        var transition_factor = (distance_from_origin - cliff_transition_start) / (cliff_transition_end - cliff_transition_start)
+        
+        # Add random variation to cliff height using noise
+        var cliff_noise = noise.get_noise_2d(world_x * 0.1, world_z * 0.1)
+        var cliff_variation = cliff_noise * 5.0  # ±5 units variation
+        
+        # Calculate base cliff height (15-25 units before transition curve)
+        var base_cliff_height = 15.0 + transition_factor * 10.0
+        
+        # Apply quadratic curve by multiplying with transition_factor
+        # This creates a smooth 0-30 unit cliff (including ±5 variation)
+        # Height starts at 0 near cliff_transition_start and increases to ~25-30 near ocean
+        var cliff_height = (base_cliff_height + cliff_variation) * transition_factor
+        
+        return cliff_height
+    
+    return 0.0
 
 func _calculate_walkability() -> void:
     # Initialize walkability map - 1D array indexed by [z * RESOLUTION + x]

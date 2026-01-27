@@ -122,6 +122,12 @@ var current_air: float = 100.0  # Current air level
 var current_health: float = 100.0  # Current health
 var is_underwater: bool = false  # Track if player is currently underwater
 
+# Fall damage system
+@export var fall_damage_threshold: float = 5.0  # Minimum fall height before damage starts (in meters)
+@export var fall_damage_per_meter: float = 5.0  # Damage per meter fallen above threshold
+var is_falling: bool = false  # Track if player is in the air
+var fall_start_y: float = 0.0  # Y position where fall started
+
 func _ready() -> void:
     # Add to Player group so other systems can find this node
     add_to_group("Player")
@@ -182,6 +188,8 @@ func _physics_process(delta) -> void:
     if jetpack_active:
         is_gliding = false
         was_jetpack_active = true
+        # Reset fall tracking when jetpack activates (jetpack negates fall damage)
+        is_falling = false
     elif was_jetpack_active:
         # Jetpack was just released - start gliding
         is_gliding = true
@@ -340,10 +348,24 @@ func _physics_process(delta) -> void:
     if world_manager:
         var terrain_level = _get_terrain_level()
         
+        # Track fall state
+        var height_above_terrain = global_position.y - terrain_level
+        var is_airborne = _is_jetpack_active() or is_gliding or height_above_terrain > 0.5
+        
+        # Detect when player starts falling (goes airborne without jetpack)
+        if is_airborne and not is_falling and not _is_jetpack_active():
+            is_falling = true
+            fall_start_y = global_position.y
+        
         # Only snap to terrain when jetpack is not active and not gliding
         if not _is_jetpack_active() and not is_gliding:
             # Use collision-aware snapping to prevent sinking into ground
             _safe_snap_to_terrain(terrain_level)
+            
+            # Check if player just landed after falling
+            if is_falling:
+                _handle_fall_damage()
+                is_falling = false
         elif is_gliding:
             # Check if player has reached or gone below terrain level while gliding
             if global_position.y <= terrain_level:
@@ -354,6 +376,11 @@ func _physics_process(delta) -> void:
                 # Use collision-aware snapping to prevent clipping through terrain/walls
                 _safe_snap_to_terrain(terrain_level)
                 velocity.y = 0.0
+                
+                # Check for fall damage from gliding descent
+                if is_falling:
+                    _handle_fall_damage()
+                    is_falling = false
     
     # Update air and health bars
     _update_air_and_health(delta)
@@ -606,6 +633,38 @@ func _play_jet_sound() -> void:
 func set_input_enabled(enabled: bool) -> void:
     input_enabled = enabled
 
+## Handle fall damage when player lands after falling
+func _handle_fall_damage() -> void:
+    # Calculate fall distance
+    var fall_distance = fall_start_y - global_position.y
+    
+    # Only apply damage if fall exceeds threshold
+    if fall_distance > fall_damage_threshold:
+        var excess_fall = fall_distance - fall_damage_threshold
+        var damage = excess_fall * fall_damage_per_meter
+        
+        # Apply damage
+        current_health = max(0.0, current_health - damage)
+        
+        # Trigger pain indicator
+        _trigger_pain_indicator(damage)
+        
+        # Update UI
+        _update_air_health_ui()
+        
+        # Check for game over
+        if current_health <= 0.0:
+            _trigger_game_over()
+        
+        # Log fall damage for debugging
+        DebugLogOverlay.add_log("Fall damage: %.1f (fell %.1fm)" % [damage, fall_distance], "red")
+
+## Trigger pain indicator when health is lost
+func _trigger_pain_indicator(damage: float) -> void:
+    var ui_manager = get_tree().get_first_node_in_group("UIManager")
+    if ui_manager and ui_manager.has_method("show_pain_indicator"):
+        ui_manager.show_pain_indicator(damage)
+
 ## Update air and health bars based on underwater status
 func _update_air_and_health(delta: float) -> void:
     if not world_manager:
@@ -618,6 +677,8 @@ func _update_air_and_health(delta: float) -> void:
     # Check if player is in border chunk
     var is_in_border = _is_in_border_chunk()
     
+    var health_before = current_health
+    
     if is_underwater:
         # Deplete air when underwater
         current_air = max(0.0, current_air - air_depletion_rate * delta)
@@ -625,6 +686,11 @@ func _update_air_and_health(delta: float) -> void:
         # If air is empty, deplete health
         if current_air <= 0.0:
             current_health = max(0.0, current_health - health_depletion_rate * delta)
+            
+            # Trigger pain indicator for drowning damage
+            var damage_taken = health_before - current_health
+            if damage_taken > 0.0:
+                _trigger_pain_indicator(damage_taken)
             
             # Check for game over
             if current_health <= 0.0:
@@ -636,6 +702,11 @@ func _update_air_and_health(delta: float) -> void:
     # Deplete health if in border chunk
     if is_in_border:
         current_health = max(0.0, current_health - get_border_health_drain_rate() * delta)
+        
+        # Trigger pain indicator for border damage
+        var damage_taken = health_before - current_health
+        if damage_taken > 0.0:
+            _trigger_pain_indicator(damage_taken)
         
         # Check for game over
         if current_health <= 0.0:

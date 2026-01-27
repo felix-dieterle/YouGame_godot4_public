@@ -29,6 +29,8 @@ var selected_item_label: Label  # Label for selected item
 var air_bar: ProgressBar  # Air bar
 var health_bar: ProgressBar  # Health bar
 var game_over_overlay: ColorRect  # Game over screen
+var pain_overlay: ColorRect  # Red flash overlay for pain indicator
+var pain_tween: Tween  # Track active pain indicator tween to prevent conflicts
 
 # State
 var initial_loading_complete: bool = false
@@ -1020,6 +1022,37 @@ func show_game_over() -> void:
     
     # Pause the game
     get_tree().paused = true
+
+## Show pain indicator when player takes damage
+func show_pain_indicator(damage: float) -> void:
+    # Create pain overlay if it doesn't exist
+    if not pain_overlay:
+        pain_overlay = ColorRect.new()
+        pain_overlay.anchor_right = 1.0
+        pain_overlay.anchor_bottom = 1.0
+        pain_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block input
+        pain_overlay.z_index = 250  # Above most UI but below game over
+        add_child(pain_overlay)
+    
+    # Kill any existing tween to prevent conflicts from rapid damage
+    if pain_tween and pain_tween.is_valid():
+        pain_tween.kill()
+    
+    # Reset modulate alpha before setting new color
+    pain_overlay.modulate.a = 1.0
+    
+    # Set red color with alpha based on damage amount
+    # More damage = more intense red flash
+    var alpha = clamp(damage / 50.0, 0.2, 0.6)  # Scale alpha based on damage (max at 50 damage)
+    pain_overlay.color = Color(1.0, 0.0, 0.0, alpha)
+    pain_overlay.visible = true
+    
+    # Create tween to fade out the pain indicator
+    pain_tween = create_tween()
+    pain_tween.tween_property(pain_overlay, "modulate:a", 0.0, 0.5)
+    pain_tween.tween_callback(func(): pain_overlay.visible = false)
+    # Reset modulate alpha for next use
+    pain_tween.tween_callback(func(): pain_overlay.modulate.a = 1.0)
 
 ## Handle restart game button press
 func _on_restart_game() -> void:
