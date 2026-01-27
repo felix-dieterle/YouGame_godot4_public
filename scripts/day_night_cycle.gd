@@ -294,6 +294,7 @@ func _update_lighting() -> void:
     # NOTE: This must be after ambient color is set to log the actual brightness values
     if display_angle > 80.0:
         var ambient_brightness = _calculate_ambient_brightness()
+        # Total brightness is a simplified debugging metric combining directional + ambient
         var total_brightness = directional_light.light_energy + ambient_brightness
         
         var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
@@ -337,6 +338,7 @@ func _animate_sunrise(progress: float) -> void:
     # NOTE: This must be after ambient color is set to log the actual brightness values
     var sun_position_deg = get_sun_position_degrees()
     var ambient_brightness = _calculate_ambient_brightness()
+    # Total brightness is a simplified debugging metric combining directional + ambient
     var total_brightness = directional_light.light_energy + ambient_brightness
     
     var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
@@ -384,6 +386,7 @@ func _animate_sunset(progress: float) -> void:
     # NOTE: This must be after ambient color is set to log the actual brightness values
     var sun_position_deg = get_sun_position_degrees()
     var ambient_brightness = _calculate_ambient_brightness()
+    # Total brightness is a simplified debugging metric combining directional + ambient
     var total_brightness = directional_light.light_energy + ambient_brightness
     
     var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
@@ -633,11 +636,15 @@ func get_sun_position_degrees() -> float:
     return time_ratio * 180.0
 
 # Calculate perceived brightness from ambient light color using standard luminance formula
+# Note: This is a simplified metric for debugging/logging purposes that combines
+# ambient color luminance with the ambient energy multiplier
 func _calculate_ambient_brightness() -> float:
     if world_environment and world_environment.environment:
         var ambient_color = world_environment.environment.ambient_light_color
         # Calculate perceived luminance from RGB (using standard formula)
-        return 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
+        var color_luminance = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
+        # Multiply by ambient energy to get actual brightness contribution
+        return color_luminance * world_environment.environment.ambient_light_energy
     return 0.0
 
 # Update moon position based on time of day.
