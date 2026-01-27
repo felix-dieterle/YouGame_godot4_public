@@ -122,8 +122,10 @@ func _export_logs_internal(log_type: LogType) -> String:
 	if file:
 		file.store_string(content)
 		file.close()
-		print("Logs exported to: %s" % filepath)
-		return filepath
+		# Convert virtual path to absolute filesystem path for display
+		var absolute_path = ProjectSettings.globalize_path(filepath)
+		print("Logs exported to: %s" % absolute_path)
+		return absolute_path
 	else:
 		push_error("Failed to export logs to: %s" % filepath)
 		return ""
@@ -245,8 +247,10 @@ func _export_all_logs_as_zip_internal() -> String:
 	# Close the ZIP
 	packer.close()
 	
-	print("All logs exported to ZIP: %s" % zip_path)
-	return zip_path
+	# Convert virtual path to absolute filesystem path for display
+	var absolute_path = ProjectSettings.globalize_path(zip_path)
+	print("All logs exported to ZIP: %s" % absolute_path)
+	return absolute_path
 
 # Generate metadata file content
 func _generate_metadata() -> String:
