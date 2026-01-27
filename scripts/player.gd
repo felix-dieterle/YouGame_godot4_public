@@ -741,7 +741,7 @@ func _try_collect_crystal(screen_pos: Vector2) -> void:
     var space_state = get_world_3d().direct_space_state
     var query = PhysicsRayQueryParameters3D.create(from, to)
     query.collide_with_areas = true
-    query.collide_with_bodies = true  # Changed to true to detect herb collision bodies
+    query.collide_with_bodies = true  # Required for herb collection via StaticBody3D
     
     var result = space_state.intersect_ray(query)
     
@@ -752,11 +752,14 @@ func _try_collect_crystal(screen_pos: Vector2) -> void:
             var crystal_node = collider.get_parent()
             if crystal_node and crystal_node.has_meta("is_crystal") and crystal_node.get_meta("is_crystal"):
                 _collect_crystal(crystal_node)
-        # Check if we hit a herb's collision body
-        elif collider is StaticBody3D:
+                return  # Early return to prevent checking other types
+        
+        # Check if we hit a herb's collision body (StaticBody3D)
+        if collider is StaticBody3D:
             var herb_node = collider.get_parent()
             if herb_node and herb_node.has_meta("is_herb") and herb_node.get_meta("is_herb"):
                 _collect_herb(herb_node)
+                return
 
 ## Collect a crystal and add to inventory
 func _collect_crystal(crystal_node: Node3D) -> void:

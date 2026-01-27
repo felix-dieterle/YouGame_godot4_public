@@ -1518,7 +1518,7 @@ func _place_herbs() -> void:
 		# Check forest influence at this position
 		var max_forest_influence = 0.0
 		for cluster in forest_clusters:
-			var influence = ClusterSystem.calculate_influence(Vector2(world_x, world_z), cluster)
+			var influence = ClusterSystem.get_cluster_influence_at_pos(Vector2(world_x, world_z), cluster)
 			max_forest_influence = max(max_forest_influence, influence)
 		
 		# Only place if there's significant forest influence
@@ -1536,7 +1536,6 @@ func _place_herbs() -> void:
 		
 		# Add metadata for collection
 		herb_instance.set_meta("is_herb", true)
-		herb_instance.set_meta("health_restore", HerbSystem.get_health_restore_amount(100.0))  # Will be adjusted by player max health
 		
 		# Add collision for clicking/tapping
 		var static_body = StaticBody3D.new()
