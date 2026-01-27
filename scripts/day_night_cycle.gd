@@ -278,21 +278,6 @@ func _update_lighting() -> void:
     var intensity_curve = 1.0 - noon_distance  # 1 at noon, 0 at edges
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, MAX_LIGHT_ENERGY, intensity_curve)
     
-    # Log sun degree and lighting data for debugging lighting issues near noon and sunset
-    if display_angle > 80.0:
-        # Calculate actual brightness including ambient light contribution
-        var ambient_brightness = 0.0
-        if world_environment and world_environment.environment:
-            var ambient_color = world_environment.environment.ambient_light_color
-            # Calculate perceived luminance from RGB (using standard formula)
-            ambient_brightness = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
-        var total_brightness = directional_light.light_energy + ambient_brightness
-        
-        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
-            display_angle, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
-        ]
-        LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
-    
     # Keep ambient light color white when using Sky as ambient source
     # This allows the PhysicalSkyMaterial's natural blue color to show through
     if world_environment and world_environment.environment:
@@ -304,6 +289,17 @@ func _update_lighting() -> void:
             # Fallback for other ambient light sources (e.g., Color mode)
             var color_warmth = lerp(0.2, 0.0, intensity_curve)  # More orange at sunrise/sunset
             env.ambient_light_color = Color(1.0, 1.0 - color_warmth, 1.0 - color_warmth * 1.5)
+    
+    # Log sun degree and lighting data for debugging lighting issues near noon and sunset
+    # NOTE: This must be after ambient color is set to log the actual brightness values
+    if display_angle > 80.0:
+        var ambient_brightness = _calculate_ambient_brightness()
+        var total_brightness = directional_light.light_energy + ambient_brightness
+        
+        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
+            display_angle, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
+        ]
+        LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
     # Update moon position
     _update_moon_position()
@@ -327,22 +323,6 @@ func _animate_sunrise(progress: float) -> void:
     # Fade in light to match the start-of-day intensity
     directional_light.light_energy = lerp(0.0, MIN_LIGHT_ENERGY, progress)
     
-    # Log sunrise animation for debugging
-    var sun_position_deg = get_sun_position_degrees()
-    
-    # Calculate actual brightness including ambient light contribution
-    var ambient_brightness = 0.0
-    if world_environment and world_environment.environment:
-        var ambient_color = world_environment.environment.ambient_light_color
-        # Calculate perceived luminance from RGB (using standard formula)
-        ambient_brightness = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
-    var total_brightness = directional_light.light_energy + ambient_brightness
-    
-    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
-        progress, sun_position_deg, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
-    ]
-    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
-    
     # Keep sky blue during sunrise when using Sky as ambient source
     if world_environment and world_environment.environment:
         var env = world_environment.environment
@@ -352,6 +332,17 @@ func _animate_sunrise(progress: float) -> void:
             # Fallback for other ambient light sources
             var warmth = lerp(0.4, 0.2, progress)  # End with same warmth as day start
             env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * 1.5)
+    
+    # Log sunrise animation for debugging
+    # NOTE: This must be after ambient color is set to log the actual brightness values
+    var sun_position_deg = get_sun_position_degrees()
+    var ambient_brightness = _calculate_ambient_brightness()
+    var total_brightness = directional_light.light_energy + ambient_brightness
+    
+    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
+        progress, sun_position_deg, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
+    ]
+    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
     # Update moon (it should be setting during sunrise)
     _update_moon_position()
@@ -379,22 +370,6 @@ func _animate_sunset(progress: float) -> void:
     # Fade out light from end-of-day intensity to darkness
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, 0.0, progress)
     
-    # Log sunset animation for debugging
-    var sun_position_deg = get_sun_position_degrees()
-    
-    # Calculate actual brightness including ambient light contribution
-    var ambient_brightness = 0.0
-    if world_environment and world_environment.environment:
-        var ambient_color = world_environment.environment.ambient_light_color
-        # Calculate perceived luminance from RGB (using standard formula)
-        ambient_brightness = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
-    var total_brightness = directional_light.light_energy + ambient_brightness
-    
-    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
-        progress, sun_position_deg, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
-    ]
-    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
-    
     # Keep sky blue during sunset when using Sky as ambient source
     if world_environment and world_environment.environment:
         var env = world_environment.environment
@@ -404,6 +379,17 @@ func _animate_sunset(progress: float) -> void:
             # Fallback for other ambient light sources
             var warmth = lerp(0.2, 0.5, progress * SUNSET_WARMTH_FACTOR)  # Start from day-end warmth
             env.ambient_light_color = Color(1.0, 1.0 - warmth, 1.0 - warmth * SUNSET_COLOR_INTENSITY)
+    
+    # Log sunset animation for debugging
+    # NOTE: This must be after ambient color is set to log the actual brightness values
+    var sun_position_deg = get_sun_position_degrees()
+    var ambient_brightness = _calculate_ambient_brightness()
+    var total_brightness = directional_light.light_energy + ambient_brightness
+    
+    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
+        progress, sun_position_deg, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
+    ]
+    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
     # Update moon (it should be rising during sunset)
     _update_moon_position()
@@ -645,6 +631,14 @@ func get_sun_position_degrees() -> float:
     # Map 0.0-1.0 ratio to 0-180 degrees
     # 0.0 (game start) -> 0°, 0.5 (midpoint of playable day) -> 90°, 1.0 (sunset) -> 180°
     return time_ratio * 180.0
+
+# Calculate perceived brightness from ambient light color using standard luminance formula
+func _calculate_ambient_brightness() -> float:
+    if world_environment and world_environment.environment:
+        var ambient_color = world_environment.environment.ambient_light_color
+        # Calculate perceived luminance from RGB (using standard formula)
+        return 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
+    return 0.0
 
 # Update moon position based on time of day.
 func _update_moon_position() -> void:
