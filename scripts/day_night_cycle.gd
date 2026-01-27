@@ -280,8 +280,16 @@ func _update_lighting() -> void:
     
     # Log sun degree and lighting data for debugging lighting issues near noon and sunset
     if display_angle > 80.0:
-        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f" % [
-            display_angle, light_rotation, directional_light.light_energy
+        # Calculate actual brightness including ambient light contribution
+        var ambient_brightness = 0.0
+        if world_environment and world_environment.environment:
+            var ambient_color = world_environment.environment.ambient_light_color
+            # Calculate perceived luminance from RGB (using standard formula)
+            ambient_brightness = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
+        var total_brightness = directional_light.light_energy + ambient_brightness
+        
+        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
+            display_angle, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
         ]
         LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
@@ -321,8 +329,17 @@ func _animate_sunrise(progress: float) -> void:
     
     # Log sunrise animation for debugging
     var sun_position_deg = get_sun_position_degrees()
-    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f" % [
-        progress, sun_position_deg, light_rotation, directional_light.light_energy
+    
+    # Calculate actual brightness including ambient light contribution
+    var ambient_brightness = 0.0
+    if world_environment and world_environment.environment:
+        var ambient_color = world_environment.environment.ambient_light_color
+        # Calculate perceived luminance from RGB (using standard formula)
+        ambient_brightness = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
+    var total_brightness = directional_light.light_energy + ambient_brightness
+    
+    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
+        progress, sun_position_deg, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
     ]
     LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
@@ -364,8 +381,17 @@ func _animate_sunset(progress: float) -> void:
     
     # Log sunset animation for debugging
     var sun_position_deg = get_sun_position_degrees()
-    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f" % [
-        progress, sun_position_deg, light_rotation, directional_light.light_energy
+    
+    # Calculate actual brightness including ambient light contribution
+    var ambient_brightness = 0.0
+    if world_environment and world_environment.environment:
+        var ambient_color = world_environment.environment.ambient_light_color
+        # Calculate perceived luminance from RGB (using standard formula)
+        ambient_brightness = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
+    var total_brightness = directional_light.light_energy + ambient_brightness
+    
+    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
+        progress, sun_position_deg, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
     ]
     LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
