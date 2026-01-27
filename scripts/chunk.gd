@@ -1462,94 +1462,94 @@ func _play_endpoint_sound(segment) -> void:
 
 ## Place herbs in dense forests
 func _place_herbs() -> void:
-	# Don't place herbs in border chunks, ocean chunks, or unique mountain
-	if is_border or is_ocean or is_unique_mountain:
-		return
-	
-	# Calculate average forest density for this chunk
-	var chunk_pos = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
-	var forest_clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, seed_value)
-	
-	if forest_clusters.is_empty():
-		return
-	
-	# Calculate average forest density
-	var total_density = 0.0
-	for cluster in forest_clusters:
-		total_density += cluster.density
-	var avg_forest_density = total_density / forest_clusters.size()
-	
-	# Only spawn herbs in dense forests
-	if not HerbSystem.can_spawn_in_forest(avg_forest_density):
-		return
-	
-	# Create RNG for herb placement
-	var herb_rng = RandomNumberGenerator.new()
-	herb_rng.seed = seed_value + HERB_SEED_OFFSET
-	
-	# Attempt to place herbs
-	for i in range(HERB_SPAWN_ATTEMPTS):
-		# Random chance check
-		if herb_rng.randf() > HerbSystem.HERB_SPAWN_CHANCE:
-			continue
-		
-		# Random position in chunk
-		var local_x = herb_rng.randf_range(2.0, CHUNK_SIZE - 2.0)
-		var local_z = herb_rng.randf_range(2.0, CHUNK_SIZE - 2.0)
-		var world_x = chunk_x * CHUNK_SIZE + local_x
-		var world_z = chunk_z * CHUNK_SIZE + local_z
-		
-		# Check if position is walkable
-		var cell_x = int(local_x / CELL_SIZE)
-		var cell_z = int(local_z / CELL_SIZE)
-		if cell_x >= 0 and cell_x < RESOLUTION and cell_z >= 0 and cell_z < RESOLUTION:
-			if walkable_map[cell_z * RESOLUTION + cell_x] != 1:
-				continue
-		
-		# Get terrain height
-		var height = get_height_at_world_pos(world_x, world_z)
-		
-		# Skip if in lake
-		if has_lake:
-			var dist_to_lake = Vector2(local_x, local_z).distance_to(lake_center)
-			if dist_to_lake < lake_radius:
-				continue
-		
-		# Check forest influence at this position
-		var max_forest_influence = 0.0
-		for cluster in forest_clusters:
-			var influence = ClusterSystem.get_cluster_influence_at_pos(Vector2(world_x, world_z), cluster)
-			max_forest_influence = max(max_forest_influence, influence)
-		
-		# Only place if there's significant forest influence
-		if max_forest_influence < 0.3:
-			continue
-		
-		# Create herb instance
-		var size_scale = herb_rng.randf_range(0.8, 1.2)
-		var herb_instance = MeshInstance3D.new()
-		herb_instance.mesh = HerbSystem.create_herb_mesh(size_scale, herb_rng.randi())
-		herb_instance.material_override = HerbSystem.create_herb_material()
-		herb_instance.position = Vector3(local_x, height, local_z)
-		herb_instance.rotation.y = herb_rng.randf_range(0, TAU)  # Random rotation
-		herb_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # Small plants don't cast shadows
-		
-		# Add metadata for collection
-		herb_instance.set_meta("is_herb", true)
-		
-		# Add collision for clicking/tapping
-		var static_body = StaticBody3D.new()
-		var collision_shape = CollisionShape3D.new()
-		var shape = CylinderShape3D.new()
-		shape.radius = 0.15
-		shape.height = 0.3
-		collision_shape.shape = shape
-		collision_shape.position = Vector3(0, 0.15, 0)  # Center at herb height
-		static_body.add_child(collision_shape)
-		herb_instance.add_child(static_body)
-		
-		add_child(herb_instance)
-		placed_herbs.append(herb_instance)
+    # Don't place herbs in border chunks, ocean chunks, or unique mountain
+    if is_border or is_ocean or is_unique_mountain:
+        return
+    
+    # Calculate average forest density for this chunk
+    var chunk_pos = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
+    var forest_clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, seed_value)
+    
+    if forest_clusters.is_empty():
+        return
+    
+    # Calculate average forest density
+    var total_density = 0.0
+    for cluster in forest_clusters:
+        total_density += cluster.density
+    var avg_forest_density = total_density / forest_clusters.size()
+    
+    # Only spawn herbs in dense forests
+    if not HerbSystem.can_spawn_in_forest(avg_forest_density):
+        return
+    
+    # Create RNG for herb placement
+    var herb_rng = RandomNumberGenerator.new()
+    herb_rng.seed = seed_value + HERB_SEED_OFFSET
+    
+    # Attempt to place herbs
+    for i in range(HERB_SPAWN_ATTEMPTS):
+        # Random chance check
+        if herb_rng.randf() > HerbSystem.HERB_SPAWN_CHANCE:
+            continue
+        
+        # Random position in chunk
+        var local_x = herb_rng.randf_range(2.0, CHUNK_SIZE - 2.0)
+        var local_z = herb_rng.randf_range(2.0, CHUNK_SIZE - 2.0)
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        
+        # Check if position is walkable
+        var cell_x = int(local_x / CELL_SIZE)
+        var cell_z = int(local_z / CELL_SIZE)
+        if cell_x >= 0 and cell_x < RESOLUTION and cell_z >= 0 and cell_z < RESOLUTION:
+            if walkable_map[cell_z * RESOLUTION + cell_x] != 1:
+                continue
+        
+        # Get terrain height
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Skip if in lake
+        if has_lake:
+            var dist_to_lake = Vector2(local_x, local_z).distance_to(lake_center)
+            if dist_to_lake < lake_radius:
+                continue
+        
+        # Check forest influence at this position
+        var max_forest_influence = 0.0
+        for cluster in forest_clusters:
+            var influence = ClusterSystem.get_cluster_influence_at_pos(Vector2(world_x, world_z), cluster)
+            max_forest_influence = max(max_forest_influence, influence)
+        
+        # Only place if there's significant forest influence
+        if max_forest_influence < 0.3:
+            continue
+        
+        # Create herb instance
+        var size_scale = herb_rng.randf_range(0.8, 1.2)
+        var herb_instance = MeshInstance3D.new()
+        herb_instance.mesh = HerbSystem.create_herb_mesh(size_scale, herb_rng.randi())
+        herb_instance.material_override = HerbSystem.create_herb_material()
+        herb_instance.position = Vector3(local_x, height, local_z)
+        herb_instance.rotation.y = herb_rng.randf_range(0, TAU)  # Random rotation
+        herb_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # Small plants don't cast shadows
+        
+        # Add metadata for collection
+        herb_instance.set_meta("is_herb", true)
+        
+        # Add collision for clicking/tapping
+        var static_body = StaticBody3D.new()
+        var collision_shape = CollisionShape3D.new()
+        var shape = CylinderShape3D.new()
+        shape.radius = 0.15
+        shape.height = 0.3
+        collision_shape.shape = shape
+        collision_shape.position = Vector3(0, 0.15, 0)  # Center at herb height
+        static_body.add_child(collision_shape)
+        herb_instance.add_child(static_body)
+        
+        add_child(herb_instance)
+        placed_herbs.append(herb_instance)
 
 ## Place bushes along path edges for natural decoration
 func _place_path_bushes() -> void:
