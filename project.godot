@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="YouGame"
-config/version="1.0.139"
+config/version="1.0.140"
 config/features=PackedStringArray("4.3", "Mobile")
 config/icon="res://icon.svg"
 run/main_scene="res://scenes/main.tscn"
