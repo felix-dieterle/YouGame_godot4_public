@@ -2029,63 +2029,63 @@ func _place_fishing_boat(pos: Vector3, rng: RandomNumberGenerator, ocean_directi
 
 ## Place animated characters near buildings and lighthouses
 func _place_animated_characters() -> void:
-	var rng = RandomNumberGenerator.new()
-	rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ ANIMATED_CHARACTER_SEED_OFFSET
-	
-	# Place characters near buildings
-	var character_count = 0
-	for building in placed_buildings:
-		if rng.randf() < ANIMATED_CHARACTER_CHANCE_NEAR_BUILDING:
-			_place_character_near_object(building, rng)
-			character_count += 1
-			# Limit characters per chunk to avoid overcrowding
-			if character_count >= 3:
-				break
-	
-	# Place characters near lighthouses
-	for lighthouse in placed_lighthouses:
-		if rng.randf() < ANIMATED_CHARACTER_CHANCE_NEAR_LIGHTHOUSE:
-			_place_character_near_object(lighthouse, rng)
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ ANIMATED_CHARACTER_SEED_OFFSET
+    
+    # Place characters near buildings
+    var character_count = 0
+    for building in placed_buildings:
+        if rng.randf() < ANIMATED_CHARACTER_CHANCE_NEAR_BUILDING:
+            _place_character_near_object(building, rng)
+            character_count += 1
+            # Limit characters per chunk to avoid overcrowding
+            if character_count >= 3:
+                break
+    
+    # Place characters near lighthouses
+    for lighthouse in placed_lighthouses:
+        if rng.randf() < ANIMATED_CHARACTER_CHANCE_NEAR_LIGHTHOUSE:
+            _place_character_near_object(lighthouse, rng)
 
 ## Place a single animated character near an object (building or lighthouse)
 func _place_character_near_object(object: Node3D, rng: RandomNumberGenerator) -> void:
-	# Get object position
-	var obj_pos = object.position
-	
-	# Place character near the object
-	var angle = rng.randf_range(0, TAU)
-	var distance = ANIMATED_CHARACTER_DISTANCE_FROM_BUILDING + rng.randf_range(-1.0, 1.0)
-	
-	var char_local_pos = Vector3(
-		obj_pos.x + cos(angle) * distance,
-		0,
-		obj_pos.z + sin(angle) * distance
-	)
-	
-	# Check if position is within chunk bounds
-	if char_local_pos.x < 0 or char_local_pos.x >= CHUNK_SIZE or char_local_pos.z < 0 or char_local_pos.z >= CHUNK_SIZE:
-		return
-	
-	# Check if position is walkable
-	var cell_x = int(char_local_pos.x / CELL_SIZE)
-	var cell_z = int(char_local_pos.z / CELL_SIZE)
-	if cell_x >= 0 and cell_x < RESOLUTION and cell_z >= 0 and cell_z < RESOLUTION:
-		if walkable_map[cell_z * RESOLUTION + cell_x] != 1:
-			return
-	
-	# Get world position for height
-	var world_x = chunk_x * CHUNK_SIZE + char_local_pos.x
-	var world_z = chunk_z * CHUNK_SIZE + char_local_pos.z
-	var height = get_height_at_world_pos(world_x, world_z)
-	
-	# Create character instance
-	var character_scene = load("res://scenes/characters/animated_character.tscn")
-	var character = character_scene.instantiate()
-	character.position = Vector3(char_local_pos.x, height, char_local_pos.z)
-	character.character_seed = rng.randi()
-	
-	add_child(character)
-	placed_animated_characters.append(character)
+    # Get object position
+    var obj_pos = object.position
+    
+    # Place character near the object
+    var angle = rng.randf_range(0, TAU)
+    var distance = ANIMATED_CHARACTER_DISTANCE_FROM_BUILDING + rng.randf_range(-1.0, 1.0)
+    
+    var char_local_pos = Vector3(
+        obj_pos.x + cos(angle) * distance,
+        0,
+        obj_pos.z + sin(angle) * distance
+    )
+    
+    # Check if position is within chunk bounds
+    if char_local_pos.x < 0 or char_local_pos.x >= CHUNK_SIZE or char_local_pos.z < 0 or char_local_pos.z >= CHUNK_SIZE:
+        return
+    
+    # Check if position is walkable
+    var cell_x = int(char_local_pos.x / CELL_SIZE)
+    var cell_z = int(char_local_pos.z / CELL_SIZE)
+    if cell_x >= 0 and cell_x < RESOLUTION and cell_z >= 0 and cell_z < RESOLUTION:
+        if walkable_map[cell_z * RESOLUTION + cell_x] != 1:
+            return
+    
+    # Get world position for height
+    var world_x = chunk_x * CHUNK_SIZE + char_local_pos.x
+    var world_z = chunk_z * CHUNK_SIZE + char_local_pos.z
+    var height = get_height_at_world_pos(world_x, world_z)
+    
+    # Create character instance
+    var character_scene = load("res://scenes/characters/animated_character.tscn")
+    var character = character_scene.instantiate()
+    character.position = Vector3(char_local_pos.x, height, char_local_pos.z)
+    character.character_seed = rng.randi()
+    
+    add_child(character)
+    placed_animated_characters.append(character)
 
 # ============================================================================
 # STONE ANIMAL GRAVEL AREA SYSTEM
