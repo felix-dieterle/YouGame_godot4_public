@@ -89,6 +89,12 @@ const FISHING_BOAT_PLACEMENT_RADIUS = 96.0  # Only place boat near starting area
 const FISHING_BOAT_SELECTION_MODULO = 7  # Hash modulo for deterministic boat chunk selection
 const FISHING_BOAT_SELECTION_VALUE = 3  # Target value for boat chunk selection
 
+# Animated character constants
+const ANIMATED_CHARACTER_SEED_OFFSET = 55555  # Offset for animated character placement seed
+const ANIMATED_CHARACTER_CHANCE_NEAR_BUILDING = 0.3  # 30% chance to place character near each building
+const ANIMATED_CHARACTER_CHANCE_NEAR_LIGHTHOUSE = 0.8  # 80% chance to place character near lighthouse
+const ANIMATED_CHARACTER_DISTANCE_FROM_BUILDING = 3.0  # Distance from building to place character
+
 # Stone animal gravel area constants
 const GRAVEL_AREA_SEED_OFFSET = 99999  # Offset for gravel area placement seed
 const GRAVEL_AREA_PLACEMENT_RADIUS = 128.0  # Place gravel area at limited distance from spawn (4 chunks = 128 units)
@@ -171,6 +177,9 @@ var ocean_water_level: float = OCEAN_LEVEL
 # Lighthouse data
 var placed_lighthouses: Array = []  # Array of lighthouse MeshInstance3D
 
+# Animated characters data
+var placed_animated_characters: Array = []  # Array of animated character nodes
+
 # Fishing boat data
 var placed_fishing_boat: MeshInstance3D = null  # Single fishing boat if placed
 
@@ -217,6 +226,7 @@ var ocean_mesh_instance: MeshInstance3D = null  # Used for ocean
 
 # Cluster objects
 var placed_objects: Array = []  # Array of MeshInstance3D for trees/buildings
+var placed_buildings: Array = []  # Array of MeshInstance3D for buildings only
 var active_clusters: Array = []  # Clusters affecting this chunk
 
 # Crystal data
@@ -241,7 +251,8 @@ func _init(x: int, z: int, world_seed: int):
 
 ## Generates all terrain data and visuals for this chunk
 ## This is the main entry point called after chunk creation
-## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → caves → lighthouses → fishing boat → ambient sounds
+## 
+## Pipeline: noise → heightmap → walkability → metadata → markers → lake → ocean → mesh → objects → paths → caves → lighthouses → fishing boat → animated characters → ambient sounds
 func generate() -> void:
     _detect_unique_mountain()  # Check if this is the unique mountain chunk
     _detect_border_chunk()  # Check if this is a border chunk
@@ -262,6 +273,7 @@ func generate() -> void:
     _setup_wind_sound()  # Add wind ambient sound for mountain regions
     _place_fishing_boat_if_coastal()
     _place_gravel_area_with_stone_animals()  # Place unique gravel area with stone animals
+    _place_animated_characters()  # Place animated characters near buildings and lighthouses
     _generate_border_features()  # Generate border chunk features
     _setup_ambient_sounds()  # Setup ambient sounds for dense forests
 
@@ -1271,6 +1283,7 @@ func _place_settlement_objects(cluster: ClusterSystem.ClusterData) -> void:
         
         add_child(building_instance)
         placed_objects.append(building_instance)
+        placed_buildings.append(building_instance)
 
 ## Generate and visualize paths in this chunk
 func _generate_paths() -> void:
@@ -2009,6 +2022,70 @@ func _place_fishing_boat(pos: Vector3, rng: RandomNumberGenerator, ocean_directi
     placed_fishing_boat.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
     
     add_child(placed_fishing_boat)
+
+# ============================================================================
+# ANIMATED CHARACTER PLACEMENT SYSTEM
+# ============================================================================
+
+## Place animated characters near buildings and lighthouses
+func _place_animated_characters() -> void:
+    var rng = RandomNumberGenerator.new()
+    rng.seed = seed_value ^ hash(Vector2i(chunk_x, chunk_z)) ^ ANIMATED_CHARACTER_SEED_OFFSET
+    
+    # Place characters near buildings
+    var character_count = 0
+    for building in placed_buildings:
+        if rng.randf() < ANIMATED_CHARACTER_CHANCE_NEAR_BUILDING:
+            _place_character_near_object(building, rng)
+            character_count += 1
+            # Limit characters per chunk to avoid overcrowding
+            if character_count >= 3:
+                break
+    
+    # Place characters near lighthouses
+    for lighthouse in placed_lighthouses:
+        if rng.randf() < ANIMATED_CHARACTER_CHANCE_NEAR_LIGHTHOUSE:
+            _place_character_near_object(lighthouse, rng)
+
+## Place a single animated character near an object (building or lighthouse)
+func _place_character_near_object(object: Node3D, rng: RandomNumberGenerator) -> void:
+    # Get object position
+    var obj_pos = object.position
+    
+    # Place character near the object
+    var angle = rng.randf_range(0, TAU)
+    var distance = ANIMATED_CHARACTER_DISTANCE_FROM_BUILDING + rng.randf_range(-1.0, 1.0)
+    
+    var char_local_pos = Vector3(
+        obj_pos.x + cos(angle) * distance,
+        0,
+        obj_pos.z + sin(angle) * distance
+    )
+    
+    # Check if position is within chunk bounds
+    if char_local_pos.x < 0 or char_local_pos.x >= CHUNK_SIZE or char_local_pos.z < 0 or char_local_pos.z >= CHUNK_SIZE:
+        return
+    
+    # Check if position is walkable
+    var cell_x = int(char_local_pos.x / CELL_SIZE)
+    var cell_z = int(char_local_pos.z / CELL_SIZE)
+    if cell_x >= 0 and cell_x < RESOLUTION and cell_z >= 0 and cell_z < RESOLUTION:
+        if walkable_map[cell_z * RESOLUTION + cell_x] != 1:
+            return
+    
+    # Get world position for height
+    var world_x = chunk_x * CHUNK_SIZE + char_local_pos.x
+    var world_z = chunk_z * CHUNK_SIZE + char_local_pos.z
+    var height = get_height_at_world_pos(world_x, world_z)
+    
+    # Create character instance
+    var character_scene = load("res://scenes/characters/animated_character.tscn")
+    var character = character_scene.instantiate()
+    character.position = Vector3(char_local_pos.x, height, char_local_pos.z)
+    character.character_seed = rng.randi()
+    
+    add_child(character)
+    placed_animated_characters.append(character)
 
 # ============================================================================
 # STONE ANIMAL GRAVEL AREA SYSTEM
