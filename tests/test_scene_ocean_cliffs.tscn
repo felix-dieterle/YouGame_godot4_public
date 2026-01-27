@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://d9q7r2k4mvwxy"]
+
+[ext_resource type="Script" path="res://tests/test_ocean_cliffs.gd" id="1"]
+
+[node name="TestOceanCliffs" type="Node"]
+script = ExtResource("1")
