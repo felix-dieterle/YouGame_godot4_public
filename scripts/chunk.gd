@@ -456,10 +456,12 @@ func _calculate_ocean_cliff_offset(world_x: float, world_z: float) -> float:
         var cliff_noise = noise.get_noise_2d(world_x * 0.1, world_z * 0.1)
         var cliff_variation = cliff_noise * 5.0  # ±5 units variation
         
-        # Base cliff height increases as we get closer to ocean (15-25 units)
+        # Calculate base cliff height (15-25 units before transition curve)
         var base_cliff_height = 15.0 + transition_factor * 10.0
         
-        # Add variation and apply a curve to make it steeper near the edge
+        # Apply quadratic curve by multiplying with transition_factor
+        # This creates a smooth 0-30 unit cliff (including ±5 variation)
+        # Height starts at 0 near cliff_transition_start and increases to ~25-30 near ocean
         var cliff_height = (base_cliff_height + cliff_variation) * transition_factor
         
         return cliff_height

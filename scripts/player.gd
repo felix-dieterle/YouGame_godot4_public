@@ -125,7 +125,6 @@ var is_underwater: bool = false  # Track if player is currently underwater
 # Fall damage system
 @export var fall_damage_threshold: float = 5.0  # Minimum fall height before damage starts (in meters)
 @export var fall_damage_per_meter: float = 5.0  # Damage per meter fallen above threshold
-var previous_y_position: float = 0.0  # Track last Y position
 var is_falling: bool = false  # Track if player is in the air
 var fall_start_y: float = 0.0  # Y position where fall started
 
@@ -189,6 +188,8 @@ func _physics_process(delta) -> void:
     if jetpack_active:
         is_gliding = false
         was_jetpack_active = true
+        # Reset fall tracking when jetpack activates (jetpack negates fall damage)
+        is_falling = false
     elif was_jetpack_active:
         # Jetpack was just released - start gliding
         is_gliding = true
