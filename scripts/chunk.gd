@@ -25,6 +25,7 @@ const ClusterSystem = preload("res://scripts/cluster_system.gd")
 const ProceduralModels = preload("res://scripts/procedural_models.gd")
 const PathSystem = preload("res://scripts/path_system.gd")
 const CrystalSystem = preload("res://scripts/crystal_system.gd")
+const HerbSystem = preload("res://scripts/herb_system.gd")
 
 # ============================================================================
 # CONFIGURATION CONSTANTS
@@ -67,6 +68,10 @@ const CRYSTALS_PER_ROCK_MIN = 1
 const CRYSTALS_PER_ROCK_MAX = 1  # Only 1 crystal per rock for rarity
 const CRYSTAL_RARE_PREFERENCE_CHANCE = 0.6  # 60% chance to prefer rare crystals in unique mountain caves
 const CRYSTAL_FILTER_MAX_ATTEMPTS = 10  # Max attempts to filter out rare crystals before skipping
+
+# Herb placement constants
+const HERB_SEED_OFFSET = 67890  # Offset for herb placement seed
+const HERB_SPAWN_ATTEMPTS = 15  # Number of spawn attempts per dense forest chunk
 
 # Path bush placement constants
 const BUSH_SEED_OFFSET = 99999  # Offset for path bush placement seed differentiation
@@ -131,7 +136,9 @@ const MOUNTAIN_PATH_WIDTH = 1.5  # Narrower paths for mountain trails
 const CAVE_ENTRANCE_THRESHOLD = 0.3  # Dot product threshold for entrance opening
 
 # Border chunk constants (world boundary / "Rand chunks")
-const BORDER_START_DISTANCE = 256.0  # Distance from origin where border begins (~8 chunks = 256 units)
+const BORDER_START_DISTANCE_MIN = 256.0  # Minimum distance from origin where border can begin (~8 chunks = 256 units)
+const BORDER_START_DISTANCE_MAX = 512.0  # Maximum distance from origin where border can begin (~16 chunks = 512 units)
+const BORDER_TRANSITION_ZONE = 64.0  # Width of transition zone before full desert (2 chunks = 64 units)
 const BORDER_HEALTH_DRAIN_RATE = 2.0  # Health lost per second in border areas
 const BORDER_WARNING_SIGN_COUNT = 2  # Number of warning signs per border chunk
 const BORDER_DIRECTIONAL_SIGN_CHANCE = 0.3  # 30% chance for directional signs pointing to core
@@ -202,6 +209,8 @@ static var mountain_center_chunk_z: int = 999999  # Invalid position marker
 
 # Border chunk data
 var is_border: bool = false  # True if this is a border chunk
+var border_transition_factor: float = 0.0  # 0.0 = normal terrain, 1.0 = full desert (gradual transition)
+var border_distance_threshold: float = 0.0  # Distance threshold for this chunk's border (varies per direction)
 var border_warning_signs: Array = []  # Array of warning sign MeshInstance3D
 var border_directional_signs: Array = []  # Array of directional sign MeshInstance3D
 var border_skeletons: Array = []  # Array of skeleton MeshInstance3D
@@ -231,6 +240,9 @@ var active_clusters: Array = []  # Clusters affecting this chunk
 
 # Crystal data
 var placed_crystals: Array = []  # Array of crystal MeshInstance3D with metadata
+
+# Herb data
+var placed_herbs: Array = []  # Array of herb MeshInstance3D with metadata
 
 # Path data
 var path_segments: Array = []  # Array of PathSystem.PathSegment
@@ -267,6 +279,7 @@ func generate() -> void:
     _create_mesh()
     _place_rocks()  # Add rocks to terrain
     _place_cluster_objects()
+    _place_herbs()  # Place herbs in dense forests
     _generate_paths()
     _generate_caves_if_unique_mountain()  # Generate caves for unique mountain
     _place_lighthouses_if_coastal()
@@ -334,8 +347,22 @@ func _detect_border_chunk() -> void:
     var chunk_world_center = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
     var distance_from_origin = chunk_world_center.length()
     
-    # Border chunks appear beyond the border distance
-    if distance_from_origin >= BORDER_START_DISTANCE:
+    # Use a hash-based random value to vary the border distance per direction
+    # This creates irregular desert boundaries instead of perfect circles
+    var angle = atan2(chunk_world_center.y, chunk_world_center.x)
+    var direction_seed = int((angle + PI) / (PI / 8.0))  # Divide into 16 directional sectors
+    var direction_hash = (seed_value + direction_seed * 12345) % 1000
+    var border_variation = float(direction_hash) / 1000.0  # 0.0 to 1.0
+    
+    # Interpolate border distance between min and max based on direction
+    border_distance_threshold = lerp(BORDER_START_DISTANCE_MIN, BORDER_START_DISTANCE_MAX, border_variation)
+    
+    # Calculate transition factor (0.0 = normal terrain, 1.0 = full desert)
+    var distance_into_transition = distance_from_origin - (border_distance_threshold - BORDER_TRANSITION_ZONE)
+    border_transition_factor = clamp(distance_into_transition / BORDER_TRANSITION_ZONE, 0.0, 1.0)
+    
+    # Mark as border chunk if fully in desert zone
+    if distance_from_origin >= border_distance_threshold:
         is_border = true
 
 func _setup_noise() -> void:
@@ -545,6 +572,21 @@ func _create_mesh() -> void:
                 # Grassland - green-brown earthy color
                 var height_factor = clamp((avg_height + 5.0) / 10.0, 0.3, 0.8)
                 base_color = Color(0.4 * height_factor, 0.5 * height_factor, 0.3 * height_factor)
+            
+            # Apply gradual desert transition if in transition zone
+            if border_transition_factor > 0.0 and not is_border:
+                # Transition colors: grassland -> gray rocky -> sandy desert
+                var desert_color = Color(0.76, 0.70, 0.50)  # Sandy desert color
+                var gray_stone_color = Color(0.55, 0.52, 0.48)  # Gray stone transition color
+                
+                # First half of transition: grassland to gray stone
+                # Second half: gray stone to sandy desert
+                if border_transition_factor < 0.5:
+                    var transition_factor = border_transition_factor * 2.0  # 0.0 to 1.0
+                    base_color = base_color.lerp(gray_stone_color, transition_factor)
+                else:
+                    var transition_factor = (border_transition_factor - 0.5) * 2.0  # 0.0 to 1.0
+                    base_color = gray_stone_color.lerp(desert_color, transition_factor)
             
             # Optional: Tint non-walkable areas slightly (for subtle indication)
             var is_walkable = walkable_map[z * RESOLUTION + x] == 1
@@ -1417,6 +1459,97 @@ func _play_endpoint_sound(segment) -> void:
     # audio_player.stream = load("res://assets/sounds/path_endpoint.ogg")
     # audio_player.position = Vector3(segment.end_pos.x, get_height_at_world_pos(...), segment.end_pos.y)
     # add_child(audio_player)
+
+## Place herbs in dense forests
+func _place_herbs() -> void:
+    # Don't place herbs in border chunks, ocean chunks, or unique mountain
+    if is_border or is_ocean or is_unique_mountain:
+        return
+    
+    # Calculate average forest density for this chunk
+    var chunk_pos = Vector2(chunk_x * CHUNK_SIZE, chunk_z * CHUNK_SIZE)
+    var forest_clusters = ClusterSystem.get_clusters_for_chunk(chunk_pos, seed_value)
+    
+    if forest_clusters.is_empty():
+        return
+    
+    # Calculate average forest density
+    var total_density = 0.0
+    for cluster in forest_clusters:
+        total_density += cluster.density
+    var avg_forest_density = total_density / forest_clusters.size()
+    
+    # Only spawn herbs in dense forests
+    if not HerbSystem.can_spawn_in_forest(avg_forest_density):
+        return
+    
+    # Create RNG for herb placement
+    var herb_rng = RandomNumberGenerator.new()
+    herb_rng.seed = seed_value + HERB_SEED_OFFSET
+    
+    # Attempt to place herbs
+    for i in range(HERB_SPAWN_ATTEMPTS):
+        # Random chance check
+        if herb_rng.randf() > HerbSystem.HERB_SPAWN_CHANCE:
+            continue
+        
+        # Random position in chunk
+        var local_x = herb_rng.randf_range(2.0, CHUNK_SIZE - 2.0)
+        var local_z = herb_rng.randf_range(2.0, CHUNK_SIZE - 2.0)
+        var world_x = chunk_x * CHUNK_SIZE + local_x
+        var world_z = chunk_z * CHUNK_SIZE + local_z
+        
+        # Check if position is walkable
+        var cell_x = int(local_x / CELL_SIZE)
+        var cell_z = int(local_z / CELL_SIZE)
+        if cell_x >= 0 and cell_x < RESOLUTION and cell_z >= 0 and cell_z < RESOLUTION:
+            if walkable_map[cell_z * RESOLUTION + cell_x] != 1:
+                continue
+        
+        # Get terrain height
+        var height = get_height_at_world_pos(world_x, world_z)
+        
+        # Skip if in lake
+        if has_lake:
+            var dist_to_lake = Vector2(local_x, local_z).distance_to(lake_center)
+            if dist_to_lake < lake_radius:
+                continue
+        
+        # Check forest influence at this position
+        var max_forest_influence = 0.0
+        for cluster in forest_clusters:
+            var influence = ClusterSystem.get_cluster_influence_at_pos(Vector2(world_x, world_z), cluster)
+            max_forest_influence = max(max_forest_influence, influence)
+        
+        # Only place if there's significant forest influence
+        if max_forest_influence < 0.3:
+            continue
+        
+        # Create herb instance
+        var size_scale = herb_rng.randf_range(0.8, 1.2)
+        var herb_instance = MeshInstance3D.new()
+        herb_instance.mesh = HerbSystem.create_herb_mesh(size_scale, herb_rng.randi())
+        herb_instance.material_override = HerbSystem.create_herb_material()
+        herb_instance.position = Vector3(local_x, height, local_z)
+        herb_instance.rotation.y = herb_rng.randf_range(0, TAU)  # Random rotation
+        herb_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # Small plants don't cast shadows
+        
+        # Add metadata for collection
+        herb_instance.set_meta("is_herb", true)
+        
+        # Add collision for clicking/tapping
+        var static_body = StaticBody3D.new()
+        var collision_shape = CollisionShape3D.new()
+        var shape = CylinderShape3D.new()
+        shape.radius = 0.15
+        shape.height = 0.3
+        collision_shape.shape = shape
+        collision_shape.position = Vector3(0, 0.15, 0)  # Center at herb height
+        static_body.add_child(collision_shape)
+        herb_instance.add_child(static_body)
+        
+        add_child(herb_instance)
+        placed_herbs.append(herb_instance)
 
 ## Place bushes along path edges for natural decoration
 func _place_path_bushes() -> void:
