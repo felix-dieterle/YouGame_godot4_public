@@ -741,7 +741,7 @@ func _try_collect_crystal(screen_pos: Vector2) -> void:
     var space_state = get_world_3d().direct_space_state
     var query = PhysicsRayQueryParameters3D.create(from, to)
     query.collide_with_areas = true
-    query.collide_with_bodies = false
+    query.collide_with_bodies = true  # Changed to true to detect herb collision bodies
     
     var result = space_state.intersect_ray(query)
     
@@ -752,6 +752,11 @@ func _try_collect_crystal(screen_pos: Vector2) -> void:
             var crystal_node = collider.get_parent()
             if crystal_node and crystal_node.has_meta("is_crystal") and crystal_node.get_meta("is_crystal"):
                 _collect_crystal(crystal_node)
+        # Check if we hit a herb's collision body
+        elif collider is StaticBody3D:
+            var herb_node = collider.get_parent()
+            if herb_node and herb_node.has_meta("is_herb") and herb_node.get_meta("is_herb"):
+                _collect_herb(herb_node)
 
 ## Collect a crystal and add to inventory
 func _collect_crystal(crystal_node: Node3D) -> void:
@@ -777,6 +782,29 @@ func _collect_crystal(crystal_node: Node3D) -> void:
     tween.finished.connect(func(): crystal_node.queue_free())
     
     # Play collection sound effect using reusable player
+    if crystal_collect_player:
+        crystal_collect_player.play()
+
+## Collect a herb and restore health
+func _collect_herb(herb_node: Node3D) -> void:
+    if not herb_node.has_meta("is_herb"):
+        return
+    
+    # Restore health by 30% of max health
+    var health_restore = max_health * 0.30
+    current_health = min(max_health, current_health + health_restore)
+    
+    # Update UI
+    _update_air_health_ui()
+    
+    # Remove the herb from the scene with a small animation
+    var tween = create_tween()
+    tween.set_parallel(true)
+    tween.tween_property(herb_node, "scale", Vector3.ZERO, 0.3)
+    tween.tween_property(herb_node, "position", herb_node.position + Vector3(0, 0.5, 0), 0.3)
+    tween.finished.connect(func(): herb_node.queue_free())
+    
+    # Play collection sound effect using reusable player (reuse crystal sound)
     if crystal_collect_player:
         crystal_collect_player.play()
 

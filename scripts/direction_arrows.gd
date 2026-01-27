@@ -89,8 +89,9 @@ func _draw() -> void:
 	if nearest_water_pos != Vector3.ZERO:
 		_draw_arrow_to_target(nearest_water_pos, WATER_ARROW_COLOR, screen_center, "Wasser")
 	
-	if nearest_crystal_pos != Vector3.ZERO:
-		_draw_arrow_to_target(nearest_crystal_pos, CRYSTAL_ARROW_COLOR, screen_center, "Kristall")
+	# Crystal arrows are disabled (removed per user request)
+	# if nearest_crystal_pos != Vector3.ZERO:
+	#     _draw_arrow_to_target(nearest_crystal_pos, CRYSTAL_ARROW_COLOR, screen_center, "Kristall")
 	
 	if mountain_pos != Vector3.ZERO:
 		_draw_arrow_to_target(mountain_pos, MOUNTAIN_ARROW_COLOR, screen_center, "Berg")

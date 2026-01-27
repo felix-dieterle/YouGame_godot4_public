@@ -431,11 +431,11 @@ func _create_crystal_counter_panel() -> void:
         var hbox = HBoxContainer.new()
         hbox.add_theme_constant_override("separation", 5)
         
-        # Crystal icon (colored square)
-        var icon = ColorRect.new()
-        icon.custom_minimum_size = Vector2(16, 16)
-        icon.color = CrystalSystem.get_crystal_color(crystal_type)
-        hbox.add_child(icon)
+        # Crystal icon (colored square) - REMOVED per user request
+        # var icon = ColorRect.new()
+        # icon.custom_minimum_size = Vector2(16, 16)
+        # icon.color = CrystalSystem.get_crystal_color(crystal_type)
+        # hbox.add_child(icon)
         
         # Crystal name and count label
         var label = Label.new()
