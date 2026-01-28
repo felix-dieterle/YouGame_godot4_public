@@ -20,21 +20,58 @@ var error_logs: Array[String] = []
 const MAX_LOGS_PER_CATEGORY: int = 500
 
 # File paths for exports
-const EXPORT_BASE_PATH: String = "user://logs/"
+# On Android, use Downloads/yougame-exports so files are visible
+# On Desktop, use user://logs/ for backward compatibility
+var export_base_path: String = ""
 
 # Singleton instance
 static var instance = null
 
 func _ready() -> void:
 	instance = self
+	_setup_export_path()
 	_ensure_log_directory()
+
+# Setup the export path based on the platform
+func _setup_export_path() -> void:
+	# On Android, use Downloads/yougame-exports folder so files are accessible
+	# Note: On Android 10+, this may require MANAGE_EXTERNAL_STORAGE permission
+	# or use of Storage Access Framework. However, Godot's OS.get_system_dir()
+	# should return a path that works with the app's granted permissions.
+	if OS.get_name() == "Android":
+		var downloads_dir = OS.get_system_dir(OS.SYSTEM_DIR_DOWNLOADS)
+		if downloads_dir != "":
+			export_base_path = downloads_dir + "/yougame-exports/"
+		else:
+			# Fallback to user:// if system dir not available
+			export_base_path = "user://logs/"
+	else:
+		# On desktop platforms, use user://logs/ directory
+		export_base_path = "user://logs/"
 
 # Ensure the log directory exists
 func _ensure_log_directory() -> void:
-	var dir = DirAccess.open("user://")
-	if dir:
-		if not dir.dir_exists("logs"):
-			dir.make_dir("logs")
+	# Handle both absolute paths (Android Downloads) and virtual paths (user://)
+	if export_base_path.begins_with("/"):
+		# Absolute path - create directory if it doesn't exist
+		var dir = DirAccess.open("/")
+		if dir:
+			if not dir.dir_exists(export_base_path):
+				var err = dir.make_dir_recursive(export_base_path)
+				if err != OK:
+					push_error("Failed to create export directory: %s (Error: %d)" % [export_base_path, err])
+					# Fallback to user:// directory if creation fails
+					export_base_path = "user://logs/"
+					# Ensure the fallback directory exists
+					var fallback_dir = DirAccess.open("user://")
+					if fallback_dir and not fallback_dir.dir_exists("logs"):
+						fallback_dir.make_dir("logs")
+	else:
+		# Virtual path (user://) - use the old logic
+		var dir = DirAccess.open("user://")
+		if dir:
+			if not dir.dir_exists("logs"):
+				dir.make_dir("logs")
 
 # Add a log entry to a specific category
 static func add_log(log_type: LogType, message: String) -> void:
@@ -105,7 +142,7 @@ func _export_logs_internal(log_type: LogType) -> String:
 			logs_array = error_logs
 			filename = "error_logs_%s.log" % Time.get_datetime_string_from_system().replace(":", "-")
 	
-	var filepath = EXPORT_BASE_PATH + filename
+	var filepath = export_base_path + filename
 	
 	# Create file header
 	var header = "=== YouGame Debug Logs ===\n"
@@ -122,8 +159,8 @@ func _export_logs_internal(log_type: LogType) -> String:
 	if file:
 		file.store_string(content)
 		file.close()
-		# Convert virtual path to absolute filesystem path for display
-		var absolute_path = ProjectSettings.globalize_path(filepath)
+		# For absolute paths, return as-is; for virtual paths, convert to absolute
+		var absolute_path = filepath if filepath.begins_with("/") else ProjectSettings.globalize_path(filepath)
 		print("Logs exported to: %s" % absolute_path)
 		return absolute_path
 	else:
@@ -200,7 +237,7 @@ func _export_all_logs_as_zip_internal() -> String:
 	
 	var timestamp_str = Time.get_datetime_string_from_system().replace(":", "-")
 	var zip_filename = "yougame_debug_logs_%s.zip" % timestamp_str
-	var zip_path = EXPORT_BASE_PATH + zip_filename
+	var zip_path = export_base_path + zip_filename
 	
 	# Create ZIP packer
 	var packer = ZIPPacker.new()
@@ -247,8 +284,8 @@ func _export_all_logs_as_zip_internal() -> String:
 	# Close the ZIP
 	packer.close()
 	
-	# Convert virtual path to absolute filesystem path for display
-	var absolute_path = ProjectSettings.globalize_path(zip_path)
+	# For absolute paths, return as-is; for virtual paths, convert to absolute
+	var absolute_path = zip_path if zip_path.begins_with("/") else ProjectSettings.globalize_path(zip_path)
 	print("All logs exported to ZIP: %s" % absolute_path)
 	return absolute_path
 

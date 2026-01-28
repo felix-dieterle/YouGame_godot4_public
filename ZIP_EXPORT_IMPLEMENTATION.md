@@ -139,9 +139,9 @@ A new export button has been implemented that packages all debug logs into a sin
 2. Click the 📦 button in the top-left corner (6th button from left)
 3. A ZIP file will be created in the logs directory
 4. Find the file:
+   - **Android**: Downloads folder > yougame-exports (accessible from Files app)
    - **Windows**: `%APPDATA%\Godot\app_userdata\YouGame\logs\`
    - **Linux**: `~/.local/share/godot/app_userdata/YouGame/logs/`
-   - **Android**: `/storage/emulated/0/Android/data/com.yougame.godot4/files/logs/`
 
 ### For Developers:
 
