@@ -50,7 +50,8 @@ var is_locked_out: bool = false
 var lockout_end_time: float = 0.0  # Unix timestamp when lockout ends
 var day_count: int = 1  # Track number of days passed
 var night_start_time: float = 0.0  # Unix timestamp when night began
-var last_log_time: float = 0.0  # Track last time we logged for throttling
+var last_log_time: float = 0.0  # Track last time we logged for throttling (DebugLogOverlay)
+var last_sun_log_time: float = 0.0  # Track last time we logged sun/lighting data for throttling
 
 # Warning states
 var warning_2min_shown: bool = false
@@ -380,7 +381,7 @@ func _update_lighting() -> void:
     # NOTE: This must be after ambient color is set to log the actual brightness values
     # Log more frequently to capture all states, not just when sun > 80°
     # Throttle to every 10 seconds to avoid spam but still capture enough data
-    var should_log = (current_time - last_log_time >= 10.0) or display_angle > 80.0
+    var should_log = (current_time - last_sun_log_time >= 10.0) or display_angle > 80.0
     if should_log:
         var ambient_brightness = _calculate_ambient_brightness()
         # Total brightness is a simplified debugging metric combining directional + ambient
@@ -390,6 +391,7 @@ func _update_lighting() -> void:
             display_angle, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness, current_time, DAY_CYCLE_DURATION
         ]
         LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
+        last_sun_log_time = current_time  # Update throttle timer
     
     # Update moon position
     _update_moon_position()

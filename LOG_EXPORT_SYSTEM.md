@@ -9,7 +9,7 @@ The log export system allows developers to capture and export specific types of 
 ## Log Types
 
 ### 1. Sun Lighting Issue Logs
-**Purpose:** Captures logs related to the sun degree lighting problem where the game stays dark even when sun degree is > 80°, then at 180° suddenly gets bright for very short and then dark again.
+**Purpose:** Captures logs related to the sun degree lighting problem where the game stays dark even when sun degree is > 80°, then at 180° suddenly gets bright very briefly and then dark again.
 
 **What it logs:**
 - Sun position in degrees
