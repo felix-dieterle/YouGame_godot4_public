@@ -25,7 +25,7 @@ From left to right:
    - The file path will be displayed (e.g., `user://logs/sun_lighting_issue_2026-01-22T19-16-36.log`)
 
 3. Find the exported file:
-   - **Android**: `/storage/emulated/0/Download/yougame-exports/` (accessible from Files app)
+   - **Android**: Downloads folder > yougame-exports (accessible from Files app)
    - **Windows**: `%APPDATA%\Godot\app_userdata\YouGame\logs\`
    - **Linux**: `~/.local/share/godot/app_userdata/YouGame/logs/`
 

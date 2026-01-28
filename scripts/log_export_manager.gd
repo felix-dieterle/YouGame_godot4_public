@@ -35,6 +35,9 @@ func _ready() -> void:
 # Setup the export path based on the platform
 func _setup_export_path() -> void:
 	# On Android, use Downloads/yougame-exports folder so files are accessible
+	# Note: On Android 10+, this may require MANAGE_EXTERNAL_STORAGE permission
+	# or use of Storage Access Framework. However, Godot's OS.get_system_dir()
+	# should return a path that works with the app's granted permissions.
 	if OS.get_name() == "Android":
 		var downloads_dir = OS.get_system_dir(OS.SYSTEM_DIR_DOWNLOADS)
 		if downloads_dir != "":
@@ -57,6 +60,12 @@ func _ensure_log_directory() -> void:
 				var err = dir.make_dir_recursive(export_base_path)
 				if err != OK:
 					push_error("Failed to create export directory: %s (Error: %d)" % [export_base_path, err])
+					# Fallback to user:// directory if creation fails
+					export_base_path = "user://logs/"
+					# Ensure the fallback directory exists
+					var fallback_dir = DirAccess.open("user://")
+					if fallback_dir and not fallback_dir.dir_exists("logs"):
+						fallback_dir.make_dir("logs")
 	else:
 		# Virtual path (user://) - use the old logic
 		var dir = DirAccess.open("user://")
