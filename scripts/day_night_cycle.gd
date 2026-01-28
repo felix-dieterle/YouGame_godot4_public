@@ -50,7 +50,8 @@ var is_locked_out: bool = false
 var lockout_end_time: float = 0.0  # Unix timestamp when lockout ends
 var day_count: int = 1  # Track number of days passed
 var night_start_time: float = 0.0  # Unix timestamp when night began
-var last_log_time: float = 0.0  # Track last time we logged for throttling
+var last_log_time: float = 0.0  # Track last time we logged for throttling (DebugLogOverlay)
+var last_sun_log_time: float = 0.0  # Track last time we logged sun/lighting data for throttling
 
 # Warning states
 var warning_2min_shown: bool = false
@@ -112,6 +113,9 @@ func _ready() -> void:
     # Notify UI of loaded time scale
     _notify_time_scale_changed()
     
+    # Log initial environment state for debugging
+    _log_environment_state("GAME_START")
+    
     # Check if we need to show sunrise animation
     if is_locked_out:
         DebugLogOverlay.add_log("=== DayNightCycle: Player is locked out ===", "yellow")
@@ -119,6 +123,17 @@ func _ready() -> void:
         DebugLogOverlay.add_log("Current unix time: %.2f" % current_unix_time, "yellow")
         DebugLogOverlay.add_log("Lockout end time: %.2f" % lockout_end_time, "yellow")
         DebugLogOverlay.add_log("Time remaining: %.2f sec" % (lockout_end_time - current_unix_time), "yellow")
+        
+        # Log sleep state details
+        var log_msg = LogExportManager.format_sleep_state_log(
+            "READY_LOCKED_OUT",
+            is_locked_out,
+            lockout_end_time,
+            current_time,
+            day_count,
+            night_start_time
+        )
+        LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
         
         if debug_skip_lockout or current_unix_time >= lockout_end_time:
             # Lockout expired: start new day with sunrise animation and increment day counter
@@ -130,6 +145,17 @@ func _ready() -> void:
             day_count += 1
             _disable_player_input()
             _show_day_message()
+            
+            # Log state change
+            log_msg = LogExportManager.format_sleep_state_log(
+                "LOCKOUT_EXPIRED",
+                is_locked_out,
+                lockout_end_time,
+                current_time,
+                day_count,
+                night_start_time
+            )
+            LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
         else:
             # Still in lockout, show night screen
             DebugLogOverlay.add_log("Still locked out, showing night screen", "yellow")
@@ -140,6 +166,18 @@ func _ready() -> void:
         # Normal day start
         DebugLogOverlay.add_log("=== DayNightCycle: Normal day start ===", "green")
         DebugLogOverlay.add_log("Starting current_time: %.2f" % current_time, "green")
+        
+        # Log normal day start state
+        var log_msg = LogExportManager.format_sleep_state_log(
+            "NORMAL_DAY_START",
+            is_locked_out,
+            lockout_end_time,
+            current_time,
+            day_count,
+            night_start_time
+        )
+        LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
+        
         _update_lighting()
 
 func _process(delta) -> void:
@@ -184,6 +222,10 @@ func _process(delta) -> void:
             # Sunrise complete
             is_animating_sunrise = false
             sunrise_animation_time = 0.0
+            
+            # Log completing sunrise
+            _log_environment_state("SUNRISE_COMPLETE")
+            
             _enable_player_input()
         else:
             _animate_sunrise(progress)
@@ -202,6 +244,19 @@ func _process(delta) -> void:
             is_locked_out = true
             night_start_time = Time.get_unix_time_from_system()  # Record when night began
             lockout_end_time = night_start_time + SLEEP_LOCKOUT_DURATION
+            
+            # Log entering night/sleep mode
+            _log_environment_state("ENTERING_NIGHT")
+            var log_msg = LogExportManager.format_sleep_state_log(
+                "ENTERING_SLEEP_MODE",
+                is_locked_out,
+                lockout_end_time,
+                current_time,
+                day_count,
+                night_start_time
+            )
+            LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
+            
             _save_state()
             _save_game_state()  # Save game state when bedtime starts
             if ui_manager and ui_manager.has_method("show_message"):
@@ -236,6 +291,38 @@ func _process(delta) -> void:
             warning_1min_shown = false
         else:
             _update_lighting()
+
+func _notification(what: int) -> void:
+    # Handle app lifecycle events for debugging sleep/resume issues
+    match what:
+        NOTIFICATION_APPLICATION_PAUSED:
+            # App is being paused (going to background on mobile)
+            var log_msg = "APP_PAUSED | Time: %.2f | Night: %s | Locked: %s" % [
+                current_time, str(is_night), str(is_locked_out)
+            ]
+            LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
+            _log_environment_state("APP_PAUSED")
+        
+        NOTIFICATION_APPLICATION_RESUMED:
+            # App is being resumed (coming back from background on mobile)
+            var current_unix_time = Time.get_unix_time_from_system()
+            var log_msg = LogExportManager.format_sleep_state_log(
+                "APP_RESUMED",
+                is_locked_out,
+                lockout_end_time,
+                current_time,
+                day_count,
+                night_start_time
+            )
+            LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
+            _log_environment_state("APP_RESUMED")
+            
+            # Check if lockout should be ended
+            if is_locked_out and current_unix_time >= lockout_end_time:
+                var resume_log = "APP_RESUMED: Lockout expired during background, time_diff: %.2f" % (
+                    current_unix_time - lockout_end_time
+                )
+                LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, resume_log)
 
 func _update_lighting() -> void:
     if not directional_light:
@@ -290,17 +377,21 @@ func _update_lighting() -> void:
             var color_warmth = lerp(0.2, 0.0, intensity_curve)  # More orange at sunrise/sunset
             env.ambient_light_color = Color(1.0, 1.0 - color_warmth, 1.0 - color_warmth * 1.5)
     
-    # Log sun degree and lighting data for debugging lighting issues near noon and sunset
+    # Log sun degree and lighting data for debugging lighting issues
     # NOTE: This must be after ambient color is set to log the actual brightness values
-    if display_angle > 80.0:
+    # Log more frequently to capture all states, not just when sun > 80°
+    # Throttle to every 10 seconds to avoid spam but still capture enough data
+    var should_log = (current_time - last_sun_log_time >= 10.0) or display_angle > 80.0
+    if should_log:
         var ambient_brightness = _calculate_ambient_brightness()
         # Total brightness is a simplified debugging metric combining directional + ambient
         var total_brightness = directional_light.light_energy + ambient_brightness
         
-        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
-            display_angle, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
+        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f | Time: %.2f/%.2f" % [
+            display_angle, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness, current_time, DAY_CYCLE_DURATION
         ]
         LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
+        last_sun_log_time = current_time  # Update throttle timer
     
     # Update moon position
     _update_moon_position()
@@ -646,6 +737,47 @@ func _calculate_ambient_brightness() -> float:
         # Multiply by ambient energy to get actual brightness contribution
         return color_luminance * world_environment.environment.ambient_light_energy
     return 0.0
+
+# Log comprehensive environment state for debugging
+func _log_environment_state(context: String) -> void:
+    var sun_pos = get_sun_position_degrees()
+    var ambient_brightness = _calculate_ambient_brightness()
+    var light_energy = directional_light.light_energy if directional_light else 0.0
+    var total_brightness = light_energy + ambient_brightness
+    
+    # Log sun/lighting state
+    var sun_log = "%s | Sun: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total: %.2f | Time: %.2f/%.2f | Day: %d" % [
+        context,
+        sun_pos,
+        light_energy,
+        ambient_brightness,
+        total_brightness,
+        current_time,
+        DAY_CYCLE_DURATION,
+        day_count
+    ]
+    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, sun_log)
+    
+    # Log additional environment details
+    if world_environment and world_environment.environment:
+        var env = world_environment.environment
+        var env_log = "%s | Ambient Source: %d | Ambient Energy: %.2f | Sky Enabled: %s" % [
+            context,
+            env.ambient_light_source,
+            env.ambient_light_energy,
+            str(env.background_mode == Environment.BG_SKY)
+        ]
+        LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, env_log)
+    
+    # Log animation states
+    var state_log = "%s | Night: %s | Sunrise Anim: %s | Sunset Anim: %s | Locked: %s" % [
+        context,
+        str(is_night),
+        str(is_animating_sunrise),
+        str(is_animating_sunset),
+        str(is_locked_out)
+    ]
+    LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, state_log)
 
 # Update moon position based on time of day.
 func _update_moon_position() -> void:

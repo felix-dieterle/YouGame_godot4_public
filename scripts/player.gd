@@ -887,6 +887,16 @@ func _load_saved_state():
     if SaveGameManager.has_save_file():
         var player_data = SaveGameManager.get_player_data()
         
+        # Log player state being restored
+        var log_msg = "PLAYER_LOAD | Position: %s | Rotation: %.2f | FirstPerson: %s | Health: %.1f | Air: %.1f" % [
+            str(player_data["position"]),
+            player_data["rotation_y"],
+            str(player_data["is_first_person"]),
+            player_data.get("current_health", max_health),
+            player_data.get("current_air", max_air)
+        ]
+        LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
+        
         # Restore player position
         global_position = player_data["position"]
         
