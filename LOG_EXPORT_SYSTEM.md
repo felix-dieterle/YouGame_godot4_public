@@ -13,19 +13,28 @@ The log export system allows developers to capture and export specific types of 
 
 **What it logs:**
 - Sun position in degrees
-- Sun angle
-- Light energy level
-- Time ratio in the day cycle
-- Current time in the cycle
+- Light rotation angle
+- Directional light energy level
+- Ambient brightness (calculated from ambient light color and energy)
+- Total brightness (directional + ambient)
+- Current time in the day/night cycle
+- Day count
+- Ambient light source type
+- Environment background mode (sky enabled/disabled)
+- Animation states (sunrise, sunset, night)
 
 **Logged during:**
-- When sun position > 80° (to capture the "staying dark" issue)
-- When sun position is near 180° (±10°) (to capture the brief brightness)
+- Game start (initial environment state)
+- Every 10 seconds during normal day progression (to capture all lighting states)
+- When sun position > 80° (more frequently for critical angles)
 - During sunrise animation
 - During sunset animation
+- When entering night mode
+- When sunrise completes
+- On app pause/resume events
 
 ### 2. Sleep State Issue Logs
-**Purpose:** Captures logs related to the problematic state after loading a save game where the player was in the sleeping phase.
+**Purpose:** Captures logs related to the problematic state after loading a save game where the player was in the sleeping phase, and when the app is paused/resumed.
 
 **What it logs:**
 - is_locked_out status
@@ -35,10 +44,20 @@ The log export system allows developers to capture and export specific types of 
 - current_time in the day cycle
 - day_count
 - night_start_time
+- Animation states (night, sunrise, sunset, locked)
+- Player position, rotation, health, and air when loading save
+- App lifecycle events (pause/resume)
 
 **Logged during:**
+- Game start (if locked out or normal day start)
 - When save game is loaded (in SaveGameManager)
 - When day/night cycle loads state from SaveGameManager
+- When player state is loaded
+- When lockout expires
+- When entering sleep mode (sunset complete)
+- When app is paused (going to background)
+- When app is resumed (coming from background)
+- During sunrise completion
 
 ### 3. Error Logs
 **Purpose:** Captures error messages and exceptions that occur during gameplay.
