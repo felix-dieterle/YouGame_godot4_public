@@ -53,6 +53,7 @@ func _ready():
 		
 		print("\n=== Test Complete ===")
 		print("Check the log file at: %s" % zip_path)
+		print("On Android: /storage/emulated/0/Download/yougame-exports/")
 		print("On Linux: ~/.local/share/godot/app_userdata/YouGame/logs/")
 		print("On Windows: %%APPDATA%%\\Godot\\app_userdata\\YouGame\\logs\\")
 	else:
