@@ -596,9 +596,11 @@ func test_time_progression_to_930am():
 	var light_energy = light.light_energy
 	print("    Light energy: %.2f" % light_energy)
 	
-	# At 25% into the day cycle, intensity curve = 1.0 - abs(0.25 - 0.5) * 2.0 = 0.5
-	# Light energy = lerp(0.8, 2.0, 0.5) = 1.4
-	var expected_light_energy = 1.4
+	# At 25% into the day cycle, sun angle = 45°
+	# noon_distance = abs(45 - 90) / 90 = 0.5
+	# With quadratic curve: intensity_curve = 1.0 - (0.5^2) = 0.75
+	# Light energy = lerp(1.2, 3.0, 0.75) = 2.55
+	var expected_light_energy = 2.55
 	var light_tolerance = 0.2
 	
 	assert_true(abs(light_energy - expected_light_energy) <= light_tolerance,

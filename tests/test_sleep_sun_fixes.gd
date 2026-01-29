@@ -29,31 +29,29 @@ func test_night_overlay_hidden_when_lockout_expires_on_load():
 	var test_scene = Node3D.new()
 	add_child(test_scene)
 	
-	# Create mock UI manager
+	# Create mock UI manager that properly implements the methods
 	var ui_manager = Node.new()
 	ui_manager.name = "UIManager"
-	var night_overlay_hidden = false
 	
-	# Mock show_night_overlay
-	ui_manager.set_script(GDScript.new())
-	ui_manager.get_script().source_code = """
-	extends Node
-	var show_night_overlay_called = false
-	var hide_night_overlay_called = false
-	
-	func show_night_overlay(lockout_end_time: float):
-		show_night_overlay_called = true
-	
-	func hide_night_overlay():
-		hide_night_overlay_called = true
-	
-	func has_method(method_name):
-		return method_name in ["show_night_overlay", "hide_night_overlay", "show_message"]
-	
-	func show_message(msg: String, duration: float = 3.0):
-		pass
-	"""
-	ui_manager.get_script().reload()
+	# Create a simple script with method tracking
+	var ui_script = GDScript.new()
+	ui_script.source_code = """
+extends Node
+
+var show_night_overlay_called = false
+var hide_night_overlay_called = false
+
+func show_night_overlay(lockout_end_time: float):
+	show_night_overlay_called = true
+
+func hide_night_overlay():
+	hide_night_overlay_called = true
+
+func show_message(msg: String, duration: float = 3.0):
+	pass
+"""
+	ui_script.reload()
+	ui_manager.set_script(ui_script)
 	test_scene.add_child(ui_manager)
 	
 	# Create day/night cycle
