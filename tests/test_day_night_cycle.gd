@@ -535,6 +535,12 @@ func test_time_progression_to_930am():
 	# Add day/night cycle to scene
 	test_scene.add_child(day_night)
 	
+	# Add test_scene to scene tree to trigger _ready()
+	get_tree().root.call_deferred("add_child", test_scene)
+	
+	# Wait for next frame to ensure _ready() has been called
+	await get_tree().process_frame
+	
 	# Start with sunrise animation (simulates 6:00-7:00 AM)
 	day_night.is_animating_sunrise = true
 	day_night.sunrise_animation_time = 0.0
@@ -642,6 +648,7 @@ func test_time_progression_to_930am():
 	print("  ✓ Time progression test complete: Bright daylight and blue sky confirmed at 9:30 AM")
 	
 	# Cleanup
+	get_tree().root.call_deferred("remove_child", test_scene)
 	test_scene.queue_free()
 
 # Helper functions
