@@ -1,50 +1,108 @@
 # Scripts Architecture
 
-## Quick Reference - All Scripts (23 files)
+## Directory Structure (31 files)
 
-### Core Systems (6 files)
-- **world_manager.gd** - Chunk loading/unloading manager (WorldManager class)
-- **chunk.gd** - Procedural terrain generation (Chunk class)
-- **cluster_system.gd** - Cross-chunk object placement (ClusterSystem class)
-- **path_system.gd** - Path network generation (PathSystem class)
-- **starting_location.gd** - Player spawn point manager (StartingLocation class)
-- **crystal_system.gd** - Crystal collection system (CrystalSystem class)
+```
+scripts/
+├── systems/                    # Core game mechanics (18 files)
+│   ├── collection/            # Resource collection (4 files)
+│   │   ├── crystal_system.gd
+│   │   ├── herb_system.gd
+│   │   ├── torch_system.gd
+│   │   └── campfire_system.gd
+│   ├── world/                 # World generation (5 files)
+│   │   ├── world_manager.gd
+│   │   ├── chunk.gd
+│   │   ├── cluster_system.gd
+│   │   ├── path_system.gd
+│   │   └── procedural_models.gd
+│   ├── character/             # Player & NPCs (3 files)
+│   │   ├── player.gd
+│   │   ├── npc.gd
+│   │   └── animated_character.gd
+│   ├── environment/           # Atmosphere (2 files)
+│   │   ├── day_night_cycle.gd
+│   │   └── weather_system.gd
+│   └── quest/                 # Narrative (3 files)
+│       ├── quest_hook_system.gd
+│       ├── narrative_marker.gd
+│       └── narrative_demo.gd
+├── ui/                        # User interface (6 files)
+│   ├── ui_manager.gd
+│   ├── pause_menu.gd
+│   ├── mobile_controls.gd
+│   ├── minimap_overlay.gd
+│   ├── ruler_overlay.gd
+│   └── direction_arrows.gd
+├── debug/                     # Development tools (3 files)
+│   ├── debug_log_overlay.gd  # Autoload
+│   ├── debug_visualization.gd
+│   └── debug_narrative_ui.gd
+├── utilities/                 # Data management (3 files)
+│   ├── save_game_manager.gd  # Autoload
+│   ├── log_export_manager.gd # Autoload
+│   └── save_game_widget_exporter.gd # Autoload
+└── starting_location.gd       # Player spawn (1 file)
+```
 
-### Player & Controls (2 files)
-- **player.gd** - Player character controller with dual camera (Player class)
-- **mobile_controls.gd** - On-screen joystick controls for mobile
+## Quick Reference by Category
 
-### NPC & Narrative (4 files)
-- **npc.gd** - NPC AI with state machine (NPC class)
-- **narrative_marker.gd** - Points of interest markers (NarrativeMarker class)
-- **quest_hook_system.gd** - Dynamic quest generation (QuestHookSystem class)
+### Collection Systems (systems/collection/)
+- **crystal_system.gd** - 6 crystal types with procedural meshes
+- **herb_system.gd** - Health restoration herbs (30% heal)
+- **torch_system.gd** - Placeable torches (light: 5.0, range: 30m)
+- **campfire_system.gd** - Campfires (light: 8.0, range: 40m)
+
+### World Generation (systems/world/)
+- **world_manager.gd** - Chunk loading/unloading manager
+- **chunk.gd** - Procedural terrain generation (largest file ~4000 lines)
+- **cluster_system.gd** - Cross-chunk object placement
+- **path_system.gd** - Path network generation
+- **procedural_models.gd** - Runtime 3D model generation
+
+### Character Systems (systems/character/)
+- **player.gd** - Player controller with dual camera
+- **npc.gd** - NPC AI with state machine
+- **animated_character.gd** - Character animation states
+
+### Environment (systems/environment/)
+- **day_night_cycle.gd** - Time of day and lighting
+- **weather_system.gd** - Weather effects
+
+### Quest/Narrative (systems/quest/)
+- **quest_hook_system.gd** - Dynamic quest generation
+- **narrative_marker.gd** - Points of interest markers
 - **narrative_demo.gd** - Narrative system demo/test
 
-### Environment (3 files)
-- **day_night_cycle.gd** - Time of day and lighting (DayNightCycle class)
-- **weather_system.gd** - Weather effects (WeatherSystem class)
-- **procedural_models.gd** - Runtime 3D model generation (ProceduralModels class)
-
-### UI & Debug (7 files)
+### UI (ui/)
 - **ui_manager.gd** - Main UI controller
 - **pause_menu.gd** - Pause menu system
-- **direction_arrows.gd** - Navigation arrows to water/crystals/mountain (DirectionArrows class)
+- **mobile_controls.gd** - On-screen joystick controls
+- **minimap_overlay.gd** - Minimap display
+- **ruler_overlay.gd** - Distance measurement tool
+- **direction_arrows.gd** - Navigation arrows to POIs
+
+### Debug Tools (debug/)
 - **debug_log_overlay.gd** - Debug logging UI (Autoload)
 - **debug_visualization.gd** - Visual debugging tools
 - **debug_narrative_ui.gd** - Narrative system debug UI
-- **ruler_overlay.gd** - Distance measurement tool
 
-### Save/Load (1 file)
+### Utilities (utilities/)
 - **save_game_manager.gd** - Save/load system (Autoload)
+- **log_export_manager.gd** - Log export functionality (Autoload)
+- **save_game_widget_exporter.gd** - Android widget integration (Autoload)
+
+### Root Level
+- **starting_location.gd** - Player spawn point manager
 
 ## Key Constants by File
 
-### world_manager.gd
+### systems/world/world_manager.gd
 - `CHUNK_SIZE = 32` - World units per chunk side
 - `VIEW_DISTANCE = 3` - Chunks to load in each direction
 - `WORLD_SEED = 12345` - Default world generation seed
 
-### chunk.gd
+### systems/world/chunk.gd
 - `CHUNK_SIZE = 32` - Same as WorldManager
 - `RESOLUTION = 32` - Grid cells per chunk side (1 cell = 1 world unit)
 - `CELL_SIZE = 1.0` - World units per cell
@@ -52,7 +110,7 @@
 - `MIN_WALKABLE_PERCENTAGE = 0.8` - Minimum required walkable area
 - `HEIGHT_RANGE = 10.0` - Maximum height variation (±10 units)
 
-### npc.gd
+### systems/character/npc.gd
 - `WALK_SPEED = 2.0` - NPC movement speed
 - `IDLE_TIME_MIN/MAX` - Random idle duration range
 
@@ -60,44 +118,54 @@
 
 These scripts are globally accessible:
 
-**DebugLogOverlay** (`debug_log_overlay.gd`)
+**DebugLogOverlay** (`debug/debug_log_overlay.gd`)
 ```gdscript
 DebugLogOverlay.log_message("Your debug message")
 ```
 
-**SaveGameManager** (`save_game_manager.gd`)
+**SaveGameManager** (`utilities/save_game_manager.gd`)
 ```gdscript
 SaveGameManager.save_game()
 SaveGameManager.load_game()
+```
+
+**LogExportManager** (`utilities/log_export_manager.gd`)
+```gdscript
+LogExportManager.export_logs()
+```
+
+**SaveGameWidgetExporter** (`utilities/save_game_widget_exporter.gd`)
+```gdscript
+SaveGameWidgetExporter.update_widget_data()
 ```
 
 ## Scene Hierarchy
 
 ```
 Main Scene (scenes/main.tscn)
-├── WorldManager (world_manager.gd)
-│   ├── Chunk_0_0 (chunk.gd) - dynamically loaded
+├── WorldManager (systems/world/world_manager.gd)
+│   ├── Chunk_0_0 (systems/world/chunk.gd) - dynamically loaded
 │   │   ├── MeshInstance3D (terrain)
 │   │   ├── MeshInstance3D (water) [optional]
 │   │   ├── MeshInstance3D (paths) [optional]
 │   │   └── StaticBody3D[] (rocks, trees)
 │   └── StartingLocation (starting_location.gd)
-├── Player (player.gd)
+├── Player (systems/character/player.gd)
 │   ├── Camera3D (third person, always active)
 │   └── Camera3D (first person, toggled)
-├── ClusterSystem (cluster_system.gd)
-├── PathSystem (path_system.gd)
-├── QuestHookSystem (quest_hook_system.gd)
-├── DayNightCycle (day_night_cycle.gd)
+├── ClusterSystem (systems/world/cluster_system.gd)
+├── PathSystem (systems/world/path_system.gd)
+├── QuestHookSystem (systems/quest/quest_hook_system.gd)
+├── DayNightCycle (systems/environment/day_night_cycle.gd)
 │   ├── DirectionalLight3D (sun)
 │   └── WorldEnvironment (sky)
-├── WeatherSystem (weather_system.gd)
-├── UIManager (ui_manager.gd)
+├── WeatherSystem (systems/environment/weather_system.gd)
+├── UIManager (ui/ui_manager.gd)
 │   ├── Version Label
 │   ├── Loading Message
 │   ├── Time Speed Controls
-│   └── Pause Menu (pause_menu.gd)
-└── MobileControls (mobile_controls.gd)
+│   └── Pause Menu (ui/pause_menu.gd)
+└── MobileControls (ui/mobile_controls.gd)
     ├── Left Joystick
     └── Right Joystick
 ```
@@ -111,7 +179,7 @@ Calculate required chunks → Load missing chunks →
 Each Chunk generates terrain → Unload distant chunks
 ```
 
-### 2. Terrain Generation Pipeline (chunk.gd)
+### 2. Terrain Generation Pipeline (systems/world/chunk.gd)
 ```
 _setup_noise() → _generate_heightmap() → 
 _calculate_walkability() → _ensure_walkable_area() → 

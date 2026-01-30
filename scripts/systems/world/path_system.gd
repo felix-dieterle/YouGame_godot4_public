@@ -11,7 +11,7 @@ class_name PathSystem
 ## - Can end with placeholder endpoints
 
 # Preload dependencies
-const ClusterSystem = preload("res://scripts/cluster_system.gd")
+const ClusterSystem = preload("res://scripts/systems/world/cluster_system.gd")
 
 # Path types
 enum PathType {

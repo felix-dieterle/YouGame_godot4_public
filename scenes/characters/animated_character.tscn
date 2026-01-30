@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://d3abcd1234567"]
 
-[ext_resource type="Script" path="res://scripts/animated_character.gd" id="1_animated"]
+[ext_resource type="Script" path="res://scripts/systems/character/animated_character.gd" id="1_animated"]
 
 [node name="AnimatedCharacter" type="Node3D"]
 script = ExtResource("1_animated")

@@ -20,12 +20,12 @@ class_name Chunk
 # ============================================================================
 
 # Preload dependencies
-const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
-const ClusterSystem = preload("res://scripts/cluster_system.gd")
-const ProceduralModels = preload("res://scripts/procedural_models.gd")
-const PathSystem = preload("res://scripts/path_system.gd")
-const CrystalSystem = preload("res://scripts/crystal_system.gd")
-const HerbSystem = preload("res://scripts/herb_system.gd")
+const NarrativeMarker = preload("res://scripts/systems/quest/narrative_marker.gd")
+const ClusterSystem = preload("res://scripts/systems/world/cluster_system.gd")
+const ProceduralModels = preload("res://scripts/systems/world/procedural_models.gd")
+const PathSystem = preload("res://scripts/systems/world/path_system.gd")
+const CrystalSystem = preload("res://scripts/systems/collection/crystal_system.gd")
+const HerbSystem = preload("res://scripts/systems/collection/herb_system.gd")
 
 # ============================================================================
 # CONFIGURATION CONSTANTS
