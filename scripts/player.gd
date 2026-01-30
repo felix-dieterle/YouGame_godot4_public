@@ -352,8 +352,9 @@ func _physics_process(delta) -> void:
         var height_above_terrain = global_position.y - terrain_level
         var is_airborne = _is_jetpack_active() or is_gliding or height_above_terrain > 0.5
         
-        # Detect when player starts falling (goes airborne without jetpack)
-        if is_airborne and not is_falling and not _is_jetpack_active():
+        # Detect when player starts falling (goes airborne without jetpack or gliding)
+        # Gliding is excluded because it's a controlled descent from jetpack and should not cause fall damage
+        if is_airborne and not is_falling and not _is_jetpack_active() and not is_gliding:
             is_falling = true
             fall_start_y = global_position.y
         
