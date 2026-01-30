@@ -53,8 +53,9 @@ for test_info in "${tests[@]}"; do
     echo "-----------------------------------"
     
     # Run test with timeout
-    timeout $TIMEOUT_SECONDS $GODOT_CMD "$test_scene" 2>&1
-    exit_code=$?
+    # Filter out harmless rendering errors from headless mode
+    timeout $TIMEOUT_SECONDS $GODOT_CMD "$test_scene" 2>&1 | grep -v "mesh_get_surface_count" | grep -v "Parameter \"m\" is null"
+    exit_code=${PIPESTATUS[0]}
     
     if [ $exit_code -eq 124 ]; then
         echo -e "${RED}✗ TIMEOUT${NC}: $test_name exceeded ${TIMEOUT_SECONDS}s limit"

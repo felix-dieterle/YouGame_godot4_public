@@ -144,6 +144,7 @@ func _ready() -> void:
             current_time = 0.0  # Start of new day
             day_count += 1
             _disable_player_input()
+            _hide_night_screen()  # Hide night overlay since lockout has expired
             _show_day_message()
             
             # Log state change
@@ -362,7 +363,9 @@ func _update_lighting() -> void:
     # Adjust light intensity based on sun position
     # Brightest at noon (90°), dimmer at sunrise (0°) and sunset (180°)
     var noon_distance = abs(display_angle - 90.0) / 90.0  # 0 at noon, 1 at sunrise/sunset
-    var intensity_curve = 1.0 - noon_distance  # 1 at noon, 0 at edges
+    # Use quadratic curve for more realistic atmospheric brightness
+    # This creates faster brightening in early morning and slower changes near noon
+    var intensity_curve = 1.0 - (noon_distance * noon_distance)  # Quadratic: 1 at noon, 0 at edges
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, MAX_LIGHT_ENERGY, intensity_curve)
     
     # Keep ambient light color white when using Sky as ambient source
