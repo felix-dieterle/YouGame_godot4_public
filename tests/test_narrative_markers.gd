@@ -1,9 +1,9 @@
 extends Node
 
 # Preload dependencies
-const Chunk = preload("res://scripts/chunk.gd")
-const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
-const QuestHookSystem = preload("res://scripts/quest_hook_system.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
+const NarrativeMarker = preload("res://scripts/systems/quest/narrative_marker.gd")
+const QuestHookSystem = preload("res://scripts/systems/quest/quest_hook_system.gd")
 
 # Test the narrative marker generation and quest hook system
 

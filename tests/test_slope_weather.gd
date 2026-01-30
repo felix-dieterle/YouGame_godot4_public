@@ -1,8 +1,8 @@
 extends Node
 
 # Test suite for new features (slope restriction and weather)
-const CHUNK = preload("res://scripts/chunk.gd")
-const WorldManager = preload("res://scripts/world_manager.gd")
+const CHUNK = preload("res://scripts/systems/world/chunk.gd")
+const WorldManager = preload("res://scripts/systems/world/world_manager.gd")
 
 func _ready():
 	print("=== Starting Slope and Weather Tests ===")

@@ -8,8 +8,8 @@ extends Node
 ## 3. Lighthouses are placed at coastal positions
 ## 4. Distance-based ocean detection works correctly
 
-const Chunk = preload("res://scripts/chunk.gd")
-const ProceduralModels = preload("res://scripts/procedural_models.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
+const ProceduralModels = preload("res://scripts/systems/world/procedural_models.gd")
 
 func _ready():
 	print("=== Ocean and Lighthouse Test ===")

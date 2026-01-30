@@ -7,7 +7,7 @@ var ui_manager: Control
 
 func before_each():
 	# Create UI manager instance
-	var ui_manager_script = load("res://scripts/ui_manager.gd")
+	var ui_manager_script = load("res://scripts/ui/ui_manager.gd")
 	ui_manager = Control.new()
 	ui_manager.set_script(ui_manager_script)
 	add_child(ui_manager)

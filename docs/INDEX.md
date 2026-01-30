@@ -46,11 +46,16 @@ Deep dives into each major system:
 
 ## 💻 Code Documentation
 
-- **[scripts/README.md](../scripts/README.md)** - Complete guide to all 21 scripts
+- **[scripts/README.md](../scripts/README.md)** - Complete guide to all 31 scripts
+  - Organized directory structure
   - Quick reference by category
   - Key algorithms explained
   - Code patterns and examples
   - Common extension patterns
+- **[SCRIPT_REORGANIZATION.md](SCRIPT_REORGANIZATION.md)** - Script consolidation guide
+  - Before/after structure comparison
+  - Migration guide for path changes
+  - System categorization details
 
 ## 🛠️ Supporting Documentation (docs/)
 
@@ -110,16 +115,17 @@ Implementation notes and historical context from previous development. Useful fo
 
 | System | Script Files | Documentation |
 |--------|-------------|---------------|
-| **World/Terrain** | world_manager.gd, chunk.gd | [TERRAIN_RENDERING.md](systems/TERRAIN_RENDERING.md) |
-| **Objects** | cluster_system.gd, procedural_models.gd | [CLUSTER_SYSTEM.md](systems/CLUSTER_SYSTEM.md) |
-| **Paths** | path_system.gd | [PATH_SYSTEM.md](systems/PATH_SYSTEM.md) |
-| **Narrative** | narrative_marker.gd, quest_hook_system.gd | [NARRATIVE_SYSTEM.md](systems/NARRATIVE_SYSTEM.md) |
-| **Player** | player.gd, mobile_controls.gd | [DEVELOPMENT.md](../DEVELOPMENT.md) |
-| **NPCs** | npc.gd | [DEVELOPMENT.md](../DEVELOPMENT.md) |
-| **Day/Night** | day_night_cycle.gd, weather_system.gd | [DAY_NIGHT_CYCLE.md](systems/DAY_NIGHT_CYCLE.md) |
-| **UI** | ui_manager.gd, pause_menu.gd | [MOBILE_MENU.md](MOBILE_MENU.md) |
-| **Debug** | debug_log_overlay.gd, debug_visualization.gd | [DEBUG_OVERLAY_SYSTEM.md](systems/DEBUG_OVERLAY_SYSTEM.md) |
-| **Save/Load** | save_game_manager.gd | [SAVE_LOAD_SYSTEM.md](systems/SAVE_LOAD_SYSTEM.md) |
+| **World/Terrain** | systems/world/world_manager.gd, systems/world/chunk.gd | [TERRAIN_RENDERING.md](systems/TERRAIN_RENDERING.md) |
+| **Objects** | systems/world/cluster_system.gd, systems/world/procedural_models.gd | [CLUSTER_SYSTEM.md](systems/CLUSTER_SYSTEM.md) |
+| **Paths** | systems/world/path_system.gd | [PATH_SYSTEM.md](systems/PATH_SYSTEM.md) |
+| **Narrative** | systems/quest/narrative_marker.gd, systems/quest/quest_hook_system.gd | [NARRATIVE_SYSTEM.md](systems/NARRATIVE_SYSTEM.md) |
+| **Player** | systems/character/player.gd, ui/mobile_controls.gd | [DEVELOPMENT.md](../DEVELOPMENT.md) |
+| **NPCs** | systems/character/npc.gd | [DEVELOPMENT.md](../DEVELOPMENT.md) |
+| **Day/Night** | systems/environment/day_night_cycle.gd, systems/environment/weather_system.gd | [DAY_NIGHT_CYCLE.md](systems/DAY_NIGHT_CYCLE.md) |
+| **UI** | ui/ui_manager.gd, ui/pause_menu.gd | [MOBILE_MENU.md](MOBILE_MENU.md) |
+| **Debug** | debug/debug_log_overlay.gd, debug/debug_visualization.gd | [DEBUG_OVERLAY_SYSTEM.md](systems/DEBUG_OVERLAY_SYSTEM.md) |
+| **Save/Load** | utilities/save_game_manager.gd | [SAVE_LOAD_SYSTEM.md](systems/SAVE_LOAD_SYSTEM.md) |
+| **Collection** | systems/collection/crystal_system.gd, systems/collection/herb_system.gd | [scripts/systems/collection/README.md](../scripts/systems/collection/README.md) |
 
 ### By Topic
 

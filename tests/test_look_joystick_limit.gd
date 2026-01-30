@@ -30,7 +30,7 @@ func test_player_camera_yaw_limit_exists():
 	print("\n--- Test: Player Camera Yaw Limit Exists ---")
 	
 	# Load and create player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		return
@@ -57,7 +57,7 @@ func test_player_camera_limits_applied():
 	print("\n--- Test: Player Camera Limits Applied ---")
 	
 	# Load and create player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		return
@@ -87,7 +87,7 @@ func test_mobile_controls_direction_indicator_exists():
 	print("\n--- Test: Mobile Controls Absolute Position Control Exists ---")
 	
 	# Load and create mobile controls
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if not mobile_controls_script:
 		assert_fail("Could not load mobile controls script")
 		return

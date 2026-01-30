@@ -1,7 +1,7 @@
 extends Node
 
 # Test suite for sky weather integration
-const WeatherSystem = preload("res://scripts/weather_system.gd")
+const WeatherSystem = preload("res://scripts/systems/environment/weather_system.gd")
 
 var test_failed = false
 

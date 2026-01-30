@@ -3,8 +3,8 @@ extends Node
 ## Test script for larger trees and improved tree algorithms
 ## Validates that trees are larger and use improved algorithms for both conifer and broadleaf types
 
-const ProceduralModels = preload("res://scripts/procedural_models.gd")
-const ClusterSystem = preload("res://scripts/cluster_system.gd")
+const ProceduralModels = preload("res://scripts/systems/world/procedural_models.gd")
+const ClusterSystem = preload("res://scripts/systems/world/cluster_system.gd")
 
 var test_results = []
 

@@ -6,7 +6,7 @@ var test_count: int = 0
 var passed_count: int = 0
 
 # Preload TorchSystem for testing
-const TorchSystem = preload("res://scripts/torch_system.gd")
+const TorchSystem = preload("res://scripts/systems/collection/torch_system.gd")
 
 func _ready() -> void:
     print("\n=== TORCH SYSTEM TEST ===")

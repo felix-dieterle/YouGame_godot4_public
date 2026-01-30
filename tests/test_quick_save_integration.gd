@@ -34,7 +34,7 @@ func test_save_on_night_begin():
 	var test_name = "Save triggered when night begins"
 	
 	# Check that DayNightCycle has _save_game_state method
-	var day_night_script = load("res://scripts/day_night_cycle.gd")
+	var day_night_script = load("res://scripts/systems/environment/day_night_cycle.gd")
 	var test_instance = day_night_script.new()
 	
 	if test_instance.has_method("_save_game_state"):
@@ -50,7 +50,7 @@ func test_save_on_menu_quit():
 	var test_name = "Save triggered when quitting via menu"
 	
 	# Check that PauseMenu has _save_game_state method
-	var pause_menu_script = load("res://scripts/pause_menu.gd")
+	var pause_menu_script = load("res://scripts/ui/pause_menu.gd")
 	var test_instance = pause_menu_script.new()
 	
 	if test_instance.has_method("_save_game_state"):

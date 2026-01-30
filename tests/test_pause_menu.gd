@@ -14,7 +14,7 @@ func test_pause_menu_exists():
 	print("\n--- Test: PauseMenu Script Exists ---")
 	
 	# Verify the pause menu script can be loaded
-	var pause_menu_script = load("res://scripts/pause_menu.gd")
+	var pause_menu_script = load("res://scripts/ui/pause_menu.gd")
 	if pause_menu_script:
 		print("  PASS: PauseMenu script loaded successfully")
 		
@@ -39,7 +39,7 @@ func test_player_group():
 	print("\n--- Test: Player Group Setup ---")
 	
 	# Load and instantiate player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if player_script:
 		var player = CharacterBody3D.new()
 		player.set_script(player_script)
@@ -80,7 +80,7 @@ func test_pause_input_action():
 func test_mobile_controls_improvements():
 	print("\n--- Test: Mobile Controls Improvements ---")
 	
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if mobile_controls_script:
 		var mobile_controls = Control.new()
 		mobile_controls.set_script(mobile_controls_script)

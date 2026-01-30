@@ -1,8 +1,8 @@
 extends Node
 
 # Test suite for woodpecker ambient sound system in dense forests
-const CHUNK = preload("res://scripts/chunk.gd")
-const ClusterSystem = preload("res://scripts/cluster_system.gd")
+const CHUNK = preload("res://scripts/systems/world/chunk.gd")
+const ClusterSystem = preload("res://scripts/systems/world/cluster_system.gd")
 
 func _ready():
 	print("=== Starting Woodpecker Sound Tests ===")

@@ -5,8 +5,8 @@ extends Node3D
 ## to demonstrate how the path generation system works across chunks
 
 const ScreenshotHelper = preload("res://tests/screenshot_helper.gd")
-const PathSystem = preload("res://scripts/path_system.gd")
-const Chunk = preload("res://scripts/chunk.gd")
+const PathSystem = preload("res://scripts/systems/world/path_system.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
 
 var screenshot_count = 0
 var world_seed = 12345

@@ -14,7 +14,7 @@ func test_ruler_overlay_exists():
 	print("\n--- Test: RulerOverlay Script Exists ---")
 	
 	# Verify the ruler overlay script can be loaded
-	var ruler_script = load("res://scripts/ruler_overlay.gd")
+	var ruler_script = load("res://scripts/ui/ruler_overlay.gd")
 	if ruler_script:
 		print("  PASS: RulerOverlay script loaded successfully")
 		
@@ -38,7 +38,7 @@ func test_ruler_overlay_exists():
 func test_ruler_overlay_methods():
 	print("\n--- Test: RulerOverlay Methods ---")
 	
-	var ruler_script = load("res://scripts/ruler_overlay.gd")
+	var ruler_script = load("res://scripts/ui/ruler_overlay.gd")
 	if ruler_script:
 		var ruler = ruler_script.new()
 		
@@ -84,7 +84,7 @@ func test_ruler_overlay_methods():
 func test_ruler_overlay_constants():
 	print("\n--- Test: RulerOverlay Constants ---")
 	
-	var ruler_script = load("res://scripts/ruler_overlay.gd")
+	var ruler_script = load("res://scripts/ui/ruler_overlay.gd")
 	if ruler_script:
 		var ruler = ruler_script.new()
 		

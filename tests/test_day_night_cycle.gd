@@ -1,7 +1,7 @@
 extends Node
 
 # Test for DayNightCycle system
-const DayNightCycle = preload("res://scripts/day_night_cycle.gd")
+const DayNightCycle = preload("res://scripts/systems/environment/day_night_cycle.gd")
 
 # Environment constants matching main.tscn configuration
 # These should be kept in sync with scenes/main.tscn to ensure tests reflect production

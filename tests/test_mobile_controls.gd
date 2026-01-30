@@ -53,7 +53,7 @@ func test_mobile_controls_script_exists():
 	print("\n--- Test: MobileControls Script Exists ---")
 	
 	# Verify the mobile controls script can be loaded
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if mobile_controls_script:
 		assert_pass("MobileControls script loaded successfully")
 		

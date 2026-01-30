@@ -6,7 +6,7 @@ var test_count: int = 0
 var passed_count: int = 0
 
 # Preload CampfireSystem for testing
-const CampfireSystem = preload("res://scripts/campfire_system.gd")
+const CampfireSystem = preload("res://scripts/systems/collection/campfire_system.gd")
 
 func _ready() -> void:
     print("\n=== CAMPFIRE SYSTEM TEST ===")
@@ -41,7 +41,7 @@ func test_player_initial_flint_stone_count() -> void:
         pass_test(test_name)
     else:
         # Alternative check - see if we can access it
-        var player_script = load("res://scripts/player.gd")
+        var player_script = load("res://scripts/systems/character/player.gd")
         var script_text = player_script.source_code
         if "flint_stone_count" in script_text:
             pass_test(test_name)
@@ -52,7 +52,7 @@ func test_player_initial_mushroom_count() -> void:
     test_count += 1
     var test_name = "Player has mushroom_count property"
     
-    var player_script = load("res://scripts/player.gd")
+    var player_script = load("res://scripts/systems/character/player.gd")
     var script_text = player_script.source_code
     if "mushroom_count" in script_text:
         pass_test(test_name)
@@ -63,7 +63,7 @@ func test_player_initial_bottle_fill_level() -> void:
     test_count += 1
     var test_name = "Player has bottle_fill_level property"
     
-    var player_script = load("res://scripts/player.gd")
+    var player_script = load("res://scripts/systems/character/player.gd")
     var script_text = player_script.source_code
     if "bottle_fill_level" in script_text:
         pass_test(test_name)

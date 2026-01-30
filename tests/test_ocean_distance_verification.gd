@@ -5,7 +5,7 @@ extends Node
 ## This script creates a grid of chunks and prints which ones are ocean
 ## to visually verify that ocean appears at the expected distance
 
-const Chunk = preload("res://scripts/chunk.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
 
 func _ready():
 	print("=== Ocean Distance Verification ===")
