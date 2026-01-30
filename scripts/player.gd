@@ -378,10 +378,8 @@ func _physics_process(delta) -> void:
                 _safe_snap_to_terrain(terrain_level)
                 velocity.y = 0.0
                 
-                # Check for fall damage from gliding descent
-                if is_falling:
-                    _handle_fall_damage()
-                    is_falling = false
+                # Reset fall state - gliding is a controlled descent from jetpack and should not cause fall damage
+                is_falling = false
     
     # Update air and health bars
     _update_air_and_health(delta)

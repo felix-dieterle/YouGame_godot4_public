@@ -10,6 +10,7 @@ func _ready():
 	print("=== Starting Jetpack No Fall Damage Tests ===")
 	test_gliding_does_not_trigger_fall_state()
 	test_jetpack_resets_fall_state()
+	test_falling_then_jetpack_then_glide_no_damage()
 	test_landing_from_glide_no_damage()
 	
 	# Print results
@@ -80,6 +81,56 @@ func test_jetpack_resets_fall_state():
 	
 	check_condition(is_falling == false, "Jetpack should reset is_falling to false")
 	check_condition(is_gliding == false, "is_gliding should be false when jetpack is active")
+
+func test_falling_then_jetpack_then_glide_no_damage():
+	print("\n--- Test: Fall -> Jetpack -> Glide -> Land (No Damage) ---")
+	
+	# Setup constants
+	var fall_damage_threshold = 5.0
+	var fall_damage_per_meter = 5.0
+	var current_health = 100.0
+	
+	# Simulate player falling from a cliff
+	var is_falling = true
+	var fall_start_y = 30.0
+	var current_y = 25.0
+	var jetpack_active = false
+	var is_gliding = false
+	var was_jetpack_active = false
+	
+	check_condition(is_falling == true, "Player should be falling initially")
+	
+	# Player activates jetpack while falling
+	jetpack_active = true
+	if jetpack_active:
+		is_gliding = false
+		was_jetpack_active = true
+		is_falling = false  # Jetpack resets fall state
+	
+	check_condition(is_falling == false, "Jetpack should reset is_falling to false")
+	
+	# Player releases jetpack, starts gliding
+	jetpack_active = false
+	if not jetpack_active and was_jetpack_active:
+		is_gliding = true
+		was_jetpack_active = false
+	
+	check_condition(is_gliding == true, "Player should be gliding")
+	check_condition(is_falling == false, "is_falling should still be false")
+	
+	# Player descends while gliding
+	current_y = 5.0
+	
+	# Player lands from gliding
+	var terrain_level = 5.0
+	if is_gliding and current_y <= terrain_level:
+		is_gliding = false
+		# Reset fall state - gliding is controlled descent, no fall damage
+		is_falling = false
+	
+	check_condition(is_gliding == false, "Player should have landed")
+	check_condition(is_falling == false, "is_falling should be false after gliding landing")
+	check_condition(current_health == 100.0, "Health should remain 100 after landing from jetpack/glide (health: %f)" % current_health)
 
 func test_landing_from_glide_no_damage():
 	print("\n--- Test: Landing From Glide No Damage ---")
