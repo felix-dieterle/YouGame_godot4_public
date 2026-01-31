@@ -363,16 +363,27 @@ func _update_lighting() -> void:
         return
     
     # Convert display angle to light rotation
-    # Limited to ±50° to ensure light always reaches ground effectively
-    # 0° (sunrise) -> +50° rotation (light from east, 64% effective)
-    # 90° (noon) -> 0° rotation (light from overhead, 100% effective)
-    # 180° (sunset) -> -50° rotation (light from west, 64% effective)
-    # This fixes the issue where horizontal light (±90°) didn't illuminate the ground
-    var light_rotation = lerp(MAX_LIGHT_ANGLE, -MAX_LIGHT_ANGLE, display_angle / 180.0)
+    # The sun moves from East (0°) → Overhead (90°) → West (180°)
+    # We need both azimuth (Y rotation) and elevation (X rotation)
+    
+    # Calculate azimuth angle (east-west direction)
+    # 0° (sunrise) -> 90° azimuth (from east)
+    # 90° (noon) -> 180° azimuth (from overhead/south)
+    # 180° (sunset) -> 270° azimuth (from west)
+    var azimuth_angle = 90.0 + display_angle
+    
+    # Calculate elevation angle (how high the sun is)
+    # Limited to ±50° at horizon to ensure light reaches ground effectively
+    # 0° (sunrise) -> +50° pitch (light from low east, 64% effective)
+    # 90° (noon) -> 0° pitch (light from overhead, 100% effective)
+    # 180° (sunset) -> -50° pitch (light from low west, 64% effective)
+    var elevation_angle = lerp(MAX_LIGHT_ANGLE, -MAX_LIGHT_ANGLE, display_angle / 180.0)
     
     # Apply rotation to directional light
-    # Rotate around X axis for sun elevation
-    directional_light.rotation_degrees.x = light_rotation
+    # Y axis controls azimuth (east-west direction)
+    # X axis controls elevation (pitch angle from horizon)
+    directional_light.rotation_degrees.y = azimuth_angle
+    directional_light.rotation_degrees.x = elevation_angle
     
     # Adjust light intensity based on sun position
     # Brightest at noon (90°), dimmer at sunrise (0°) and sunset (180°)
@@ -404,8 +415,8 @@ func _update_lighting() -> void:
         # Total brightness is a simplified debugging metric combining directional + ambient
         var total_brightness = directional_light.light_energy + ambient_brightness
         
-        var log_msg = "Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f | Time: %.2f/%.2f" % [
-            display_angle, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness, current_time, DAY_CYCLE_DURATION
+        var log_msg = "Sun Position: %.2f° | Azimuth: %.2f° | Elevation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f | Time: %.2f/%.2f" % [
+            display_angle, directional_light.rotation_degrees.y, directional_light.rotation_degrees.x, directional_light.light_energy, ambient_brightness, total_brightness, current_time, DAY_CYCLE_DURATION
         ]
         LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
         last_sun_log_time = current_time  # Update throttle timer
@@ -446,10 +457,12 @@ func _animate_sunrise(progress: float) -> void:
     
     # Animate from night (below horizon) to day (at horizon, 0°)
     # During sunrise, sun goes from below horizon to 0° display angle
-    # Light rotation: from below horizon (+70°) to sunrise position (+50°)
+    # Azimuth: starts at 90° (east direction)
+    # Elevation: from below horizon (+70°) to sunrise position (+50°)
     # Using MAX_LIGHT_ANGLE ensures consistent lighting with daytime calculations
-    var light_rotation = lerp(70.0, MAX_LIGHT_ANGLE, progress)
-    directional_light.rotation_degrees.x = light_rotation
+    directional_light.rotation_degrees.y = 90.0  # East direction
+    var elevation_angle = lerp(70.0, MAX_LIGHT_ANGLE, progress)
+    directional_light.rotation_degrees.x = elevation_angle
     
     # Fade in light to match the start-of-day intensity
     directional_light.light_energy = lerp(0.0, MIN_LIGHT_ENERGY, progress)
@@ -471,8 +484,8 @@ func _animate_sunrise(progress: float) -> void:
     # Total brightness is a simplified debugging metric combining directional + ambient
     var total_brightness = directional_light.light_energy + ambient_brightness
     
-    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
-        progress, sun_position_deg, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
+    var log_msg = "SUNRISE - Progress: %.2f | Sun Position: %.2f° | Azimuth: %.2f° | Elevation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
+        progress, sun_position_deg, directional_light.rotation_degrees.y, directional_light.rotation_degrees.x, directional_light.light_energy, ambient_brightness, total_brightness
     ]
     LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
@@ -495,10 +508,12 @@ func _animate_sunset(progress: float) -> void:
     
     # Animate from day to night (sun going below horizon)
     # During sunset, sun goes from 180° display angle to below horizon
-    # Light rotation: from sunset position (-50°) to below horizon (-70°)
+    # Azimuth: ends at 270° (west direction)
+    # Elevation: from sunset position (-50°) to below horizon (-70°)
     # Using -MAX_LIGHT_ANGLE ensures consistent lighting with daytime calculations
-    var light_rotation = lerp(-MAX_LIGHT_ANGLE, -70.0, progress)
-    directional_light.rotation_degrees.x = light_rotation
+    directional_light.rotation_degrees.y = 270.0  # West direction
+    var elevation_angle = lerp(-MAX_LIGHT_ANGLE, -70.0, progress)
+    directional_light.rotation_degrees.x = elevation_angle
     
     # Fade out light from end-of-day intensity to darkness
     directional_light.light_energy = lerp(MIN_LIGHT_ENERGY, 0.0, progress)
@@ -520,8 +535,8 @@ func _animate_sunset(progress: float) -> void:
     # Total brightness is a simplified debugging metric combining directional + ambient
     var total_brightness = directional_light.light_energy + ambient_brightness
     
-    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Light Rotation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
-        progress, sun_position_deg, light_rotation, directional_light.light_energy, ambient_brightness, total_brightness
+    var log_msg = "SUNSET - Progress: %.2f | Sun Position: %.2f° | Azimuth: %.2f° | Elevation: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total Brightness: %.2f" % [
+        progress, sun_position_deg, directional_light.rotation_degrees.y, directional_light.rotation_degrees.x, directional_light.light_energy, ambient_brightness, total_brightness
     ]
     LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, log_msg)
     
@@ -544,6 +559,8 @@ func _set_night_lighting() -> void:
         return
     
     # Set sun below horizon (below -90° or above +90°)
+    # Keep it in the east where it will rise from
+    directional_light.rotation_degrees.y = 90.0  # East direction
     directional_light.rotation_degrees.x = 120.0  # Below horizon on the east side
     directional_light.light_energy = 0.0
     
@@ -852,15 +869,18 @@ func _update_sun_position():
         return
     
     # Position sun in sky using display angle
-    # 0° = horizon (sunrise), 90° = zenith (noon), 180° = horizon (sunset)
-    # Convert to elevation angle for positioning
+    # 0° = horizon (sunrise/east), 90° = zenith (noon), 180° = horizon (sunset/west)
+    # Sun moves in an east-to-west arc
     var elevation_angle = display_angle
     var angle_rad = deg_to_rad(elevation_angle)
     
-    # Calculate position on arc
-    sun.position.x = 0
+    # Calculate position on East-West arc
+    # At 0°: East horizon (x=+2000, y=0)
+    # At 90°: Overhead (x=0, y=+2000)
+    # At 180°: West horizon (x=-2000, y=0)
+    sun.position.x = cos(angle_rad) * CELESTIAL_DISTANCE
     sun.position.y = sin(angle_rad) * CELESTIAL_DISTANCE
-    sun.position.z = -cos(angle_rad) * CELESTIAL_DISTANCE
+    sun.position.z = 0  # Stay in East-West plane
     
     # Show/hide sun based on whether it's above horizon
     # Sun is visible when it's above the horizon (y > 0)
