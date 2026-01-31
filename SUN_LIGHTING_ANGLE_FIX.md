@@ -149,10 +149,10 @@ Three options were considered:
 ## Files Modified
 
 - `scripts/systems/environment/day_night_cycle.gd`
-  - Added `MAX_LIGHT_ANGLE` constant (line 51)
-  - Updated `_update_lighting()` light rotation calculation (line 366)
-  - Updated `_animate_sunrise()` rotation range (line 444)
-  - Updated `_animate_sunset()` rotation range (line 492)
+  - Added `MAX_LIGHT_ANGLE` constant (line 56)
+  - Updated `_update_lighting()` light rotation calculation (line 371)
+  - Updated `_animate_sunrise()` rotation range (line 450)
+  - Updated `_animate_sunset()` rotation range (line 499)
   - Updated overview documentation (lines 4-24)
 
 ## Testing Recommendations

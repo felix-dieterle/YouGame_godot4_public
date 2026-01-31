@@ -53,7 +53,7 @@ const MAX_LIGHT_ENERGY: float = 3.0        # Maximum light at noon (12:00 PM)
 # Light rotation configuration
 # Controls the angle range of the DirectionalLight3D to ensure proper ground illumination
 # Using ±50° instead of ±90° ensures light reaches ground effectively even at sunrise/sunset
-const MAX_LIGHT_ANGLE: float = 50.0        # Maximum rotation from vertical (0° = straight down)
+const MAX_LIGHT_ANGLE: float = 50.0        # Maximum rotation from noon position (0° = overhead)
 
 # Color constants for sunset warmth effect
 const SUNSET_WARMTH_FACTOR: float = 0.7    # How quickly warmth builds during sunset
