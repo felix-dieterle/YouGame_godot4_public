@@ -1054,18 +1054,3 @@ func _save_game_state():
     SaveGameManager.save_game()
 #endregion
 
-# Increase time scale (speed up time)
-func increase_time_scale() -> void:
-    time_scale = min(time_scale * 2.0, 32.0)  # Double the speed, max 32x
-    _notify_time_scale_changed()
-
-# Decrease time scale (slow down time)
-func decrease_time_scale() -> void:
-    time_scale = max(time_scale / 2.0, 0.25)  # Half the speed, min 0.25x
-    _notify_time_scale_changed()
-
-# Notify UI of time scale change
-func _notify_time_scale_changed():
-    if ui_manager and ui_manager.has_method("update_time_scale"):
-        ui_manager.update_time_scale(time_scale)
-
