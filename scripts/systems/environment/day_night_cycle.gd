@@ -17,9 +17,10 @@ class_name DayNightCycle
 #   - Brightness follows quadratic curve: intensity = 1.0 - (distance_from_noon)²
 #   - Night: Complete darkness (0.0 light energy)
 #
-# SUN POSITION:
+# SUN POSITION & LIGHTING:
 #   - Display angle: 0° (sunrise/7AM) → 90° (noon/12PM) → 180° (sunset/5PM)
-#   - Light rotation: 90° (sunrise) → 0° (noon) → -90° (sunset)
+#   - Light rotation: +50° (sunrise) → 0° (noon) → -50° (sunset)
+#   - Limited to ±50° to ensure light reaches ground (64% effective at sunrise/sunset)
 #   - Position during night: -1 (not visible)
 #endregion
 
@@ -48,6 +49,11 @@ const SAVE_FILE_PATH: String = "user://day_night_save.cfg"
 # - MIN at sunrise (7:00 AM) → MAX at noon (12:00 PM) → MIN at sunset (5:00 PM)
 const MIN_LIGHT_ENERGY: float = 1.2        # Minimum light at sunrise/sunset (7 AM / 5 PM)
 const MAX_LIGHT_ENERGY: float = 3.0        # Maximum light at noon (12:00 PM)
+
+# Light rotation configuration
+# Controls the angle range of the DirectionalLight3D to ensure proper ground illumination
+# Using ±50° instead of ±90° ensures light reaches ground effectively even at sunrise/sunset
+const MAX_LIGHT_ANGLE: float = 50.0        # Maximum rotation from noon position (0° = overhead)
 
 # Color constants for sunset warmth effect
 const SUNSET_WARMTH_FACTOR: float = 0.7    # How quickly warmth builds during sunset
@@ -357,10 +363,12 @@ func _update_lighting() -> void:
         return
     
     # Convert display angle to light rotation
-    # 0° (sunrise) -> +90° rotation (light from east)
-    # 90° (noon) -> 0° rotation (light from overhead)
-    # 180° (sunset) -> -90° rotation (light from west)
-    var light_rotation = 90.0 - display_angle
+    # Limited to ±50° to ensure light always reaches ground effectively
+    # 0° (sunrise) -> +50° rotation (light from east, 64% effective)
+    # 90° (noon) -> 0° rotation (light from overhead, 100% effective)
+    # 180° (sunset) -> -50° rotation (light from west, 64% effective)
+    # This fixes the issue where horizontal light (±90°) didn't illuminate the ground
+    var light_rotation = lerp(MAX_LIGHT_ANGLE, -MAX_LIGHT_ANGLE, display_angle / 180.0)
     
     # Apply rotation to directional light
     # Rotate around X axis for sun elevation
@@ -438,8 +446,9 @@ func _animate_sunrise(progress: float) -> void:
     
     # Animate from night (below horizon) to day (at horizon, 0°)
     # During sunrise, sun goes from below horizon to 0° display angle
-    # Light rotation: from below horizon (+120°) to sunrise position (+90°)
-    var light_rotation = lerp(120.0, 90.0, progress)
+    # Light rotation: from below horizon (+70°) to sunrise position (+50°)
+    # Using MAX_LIGHT_ANGLE ensures consistent lighting with daytime calculations
+    var light_rotation = lerp(70.0, MAX_LIGHT_ANGLE, progress)
     directional_light.rotation_degrees.x = light_rotation
     
     # Fade in light to match the start-of-day intensity
@@ -486,8 +495,9 @@ func _animate_sunset(progress: float) -> void:
     
     # Animate from day to night (sun going below horizon)
     # During sunset, sun goes from 180° display angle to below horizon
-    # Light rotation: from sunset position (-90°) to below horizon (-120°)
-    var light_rotation = lerp(-90.0, -120.0, progress)
+    # Light rotation: from sunset position (-50°) to below horizon (-70°)
+    # Using -MAX_LIGHT_ANGLE ensures consistent lighting with daytime calculations
+    var light_rotation = lerp(-MAX_LIGHT_ANGLE, -70.0, progress)
     directional_light.rotation_degrees.x = light_rotation
     
     # Fade out light from end-of-day intensity to darkness
