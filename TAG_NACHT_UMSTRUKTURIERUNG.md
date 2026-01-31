@@ -20,7 +20,7 @@ Dies machte es schwierig zu verstehen:
 ## Lösung: Code-Organisation mit Regionen
 
 ### Erstellte Regionen
-Der Code wurde in 15 logische Regionen umstrukturiert:
+Der Code wurde in 16 logische Regionen umstrukturiert:
 
 1. **TAG/NACHT-ZYKLUS ÜBERSICHT** (Zeilen 4-24)
    - Umfassende Dokumentation des gesamten Systems

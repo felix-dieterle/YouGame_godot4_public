@@ -528,8 +528,8 @@ func _animate_sunset(progress: float) -> void:
     if ui_manager and ui_manager.has_method("update_sun_position"):
         ui_manager.update_sun_position(get_sun_position_degrees())
 
+# Set lighting for night period (complete darkness with moon and stars).
 func _set_night_lighting() -> void:
-    """Set lighting for night period (complete darkness with moon and stars)."""
     if not directional_light:
         return
     
