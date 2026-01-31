@@ -22,7 +22,7 @@ Dies machte es schwierig zu verstehen:
 ### Erstellte Regionen
 Der Code wurde in 16 logische Regionen umstrukturiert:
 
-1. **TAG/NACHT-ZYKLUS ÜBERSICHT** (Zeilen 4-24)
+1. **TAG/NACHT-ZYKLUS ÜBERSICHT** (Zeilen 4-24, 21 Zeilen)
    - Umfassende Dokumentation des gesamten Systems
    - Tag-Zyklus-Timing (7:00 - 17:00 Uhr)
    - Erklärung der Helligkeitsentwicklung

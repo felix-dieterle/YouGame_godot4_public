@@ -22,7 +22,7 @@ This made it difficult to understand:
 ### 16 Regions Created
 The code has been reorganized into 16 logical regions:
 
-1. **DAY/NIGHT CYCLE OVERVIEW** (Lines 4-24)
+1. **DAY/NIGHT CYCLE OVERVIEW** (Lines 4-24, 21 lines)
    - Comprehensive documentation of the entire system
    - Day cycle timing (7:00 AM - 5:00 PM)
    - Brightness progression explanation
