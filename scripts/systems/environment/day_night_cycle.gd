@@ -1,69 +1,100 @@
 extends Node3D
 class_name DayNightCycle
 
-# Day/night cycle configuration
+#region ===== DAY/NIGHT CYCLE OVERVIEW =====
+# This system manages the complete day/night cycle including:
+# 
+# DAY CYCLE TIMING (7:00 AM - 5:00 PM = 10 game hours):
+#   - Day begins at 7:00 AM with sunrise animation (60 seconds)
+#   - Sun rises from horizon (0°) to zenith at noon (90°)
+#   - Sun sets from zenith to horizon (180°) at 5:00 PM
+#   - Day ends at 5:00 PM with sunset animation (60 seconds)
+#   - Night period enforces 4-hour lockout before next day
+#
+# BRIGHTNESS PROGRESSION:
+#   - Darkest: At sunrise (7:00 AM) and sunset (5:00 PM) - MIN_LIGHT_ENERGY (1.2)
+#   - Brightest: At noon (12:00 PM) - MAX_LIGHT_ENERGY (3.0)
+#   - Brightness follows quadratic curve: intensity = 1.0 - (distance_from_noon)²
+#   - Night: Complete darkness (0.0 light energy)
+#
+# SUN POSITION:
+#   - Display angle: 0° (sunrise/7AM) → 90° (noon/12PM) → 180° (sunset/5PM)
+#   - Light rotation: 90° (sunrise) → 0° (noon) → -90° (sunset)
+#   - Position during night: -1 (not visible)
+#endregion
+
+#region ===== TIME CONFIGURATION =====
+# Core timing constants that define the day/night cycle structure
 const DAY_CYCLE_DURATION: float = 90.0 * 60.0  # 90 minutes in seconds (3x longer for player)
-const SUNRISE_DURATION: float = 60.0  # 1 minute sunrise animation
-const SUNSET_DURATION: float = 60.0  # 1 minute sunset animation
-const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
-const WARNING_TIME_2MIN: float = 2.0 * 60.0  # 2 minutes before sunset
-const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
 const DAY_DURATION_HOURS: float = 10.0  # Day cycle represents 10 game hours (7 AM to 5 PM)
 const INITIAL_TIME_OFFSET_HOURS: float = 0.0  # Hours to advance sun position at game start (0.0 = start at sunrise, 7:00 AM)
 
-# Sun angle constants (DEPRECATED - kept for backwards compatibility)
-# These constants were used in the old sun positioning system where the sun
-# only traveled from -20° to +20° (40° arc). The new system uses display angles
-# (0-180°) directly for proper visual arc from horizon to horizon.
-const SUNRISE_START_ANGLE: float = -120.0  # Below horizon at start (deprecated)
-const SUNRISE_END_ANGLE: float = -20.0     # Sunrise position (deprecated)
-const SUNSET_START_ANGLE: float = 20.0     # Sunset position (deprecated)
-const SUNSET_END_ANGLE: float = 120.0      # Below horizon at end (deprecated)
-const NIGHT_SUN_ANGLE: float = 120.0       # Sun position during night (deprecated)
+# Transition timing
+const SUNRISE_DURATION: float = 60.0  # 1 minute sunrise animation (7:00 AM)
+const SUNSET_DURATION: float = 60.0  # 1 minute sunset animation (5:00 PM)
 
-# Celestial object distance constants
-const CELESTIAL_DISTANCE: float = 2000.0   # Distance for sun and moon
+# Night lockout and warnings
+const SLEEP_LOCKOUT_DURATION: float = 4.0 * 60.0 * 60.0  # 4 hours in seconds
+const WARNING_TIME_2MIN: float = 2.0 * 60.0  # 2 minutes before sunset
+const WARNING_TIME_1MIN: float = 1.0 * 60.0  # 1 minute before sunset
+
+# Save file path
+const SAVE_FILE_PATH: String = "user://day_night_save.cfg"
+#endregion
+
+#region ===== BRIGHTNESS & LIGHTING CONFIGURATION =====
+# Lighting intensity constants that control brightness throughout the day
+# The brightness follows a quadratic curve from sunrise to sunset:
+# - MIN at sunrise (7:00 AM) → MAX at noon (12:00 PM) → MIN at sunset (5:00 PM)
+const MIN_LIGHT_ENERGY: float = 1.2        # Minimum light at sunrise/sunset (7 AM / 5 PM)
+const MAX_LIGHT_ENERGY: float = 3.0        # Maximum light at noon (12:00 PM)
+
+# Color constants for sunset warmth effect
+const SUNSET_WARMTH_FACTOR: float = 0.7    # How quickly warmth builds during sunset
+const SUNSET_COLOR_INTENSITY: float = 1.5  # Intensity of warm colors during sunset
+#endregion
+
+#region ===== CELESTIAL OBJECTS CONFIGURATION =====
+# Distance constants for positioning sun, moon, and stars in the sky
+const CELESTIAL_DISTANCE: float = 2000.0   # Distance for sun and moon from player
 const MOON_ZENITH_HEIGHT: float = 1500.0   # Moon height at zenith during night
 const STAR_DISTANCE: float = 1800.0        # Distance for stars (closer than sun/moon)
+#endregion
 
-# Lighting intensity constants
-const MIN_LIGHT_ENERGY: float = 1.2        # Minimum light at sunrise/sunset (increased for much brighter days)
-const MAX_LIGHT_ENERGY: float = 3.0        # Maximum light at noon (increased for much brighter days)
-# Note: SUNRISE_LIGHT_ENERGY was removed - sunrise/sunset now use MIN_LIGHT_ENERGY for smooth transitions
-
-# Color constants
-const SUNSET_WARMTH_FACTOR: float = 0.7    # How quickly warmth builds during sunset
-const SUNSET_COLOR_INTENSITY: float = 1.5  # Intensity of warm colors
-
+#region ===== DEBUG & DEVELOPMENT =====
 # Debug mode for faster testing
 @export var debug_mode: bool = false  # When true, time runs 60x faster
 @export var debug_skip_lockout: bool = false  # When true, skip the 4-hour lockout
+#endregion
 
-# Time scaling and offset
-var time_scale: float = 2.0  # Multiplier for time progression (2.0 = default, faster initial progression)
-var sun_time_offset_hours: float = 0.0  # Offset in hours to adjust displayed time (negative = earlier, positive = later)
-
-# Time tracking
+#region ===== STATE VARIABLES =====
+# Time tracking variables
 var current_time: float = 0.0  # Current time in the day cycle (0 to DAY_CYCLE_DURATION)
+var time_scale: float = 2.0  # Multiplier for time progression (2.0 = default)
+var sun_time_offset_hours: float = 0.0  # Offset in hours to adjust displayed time
+
+# Day/Night state
 var is_night: bool = false
 var is_locked_out: bool = false
 var lockout_end_time: float = 0.0  # Unix timestamp when lockout ends
 var day_count: int = 1  # Track number of days passed
 var night_start_time: float = 0.0  # Unix timestamp when night began
-var last_log_time: float = 0.0  # Track last time we logged for throttling (DebugLogOverlay)
-var last_sun_log_time: float = 0.0  # Track last time we logged sun/lighting data for throttling
 
-# Warning states
-var warning_2min_shown: bool = false
-var warning_1min_shown: bool = false
-
-# Animation states
+# Transition animation states
 var is_animating_sunrise: bool = false
 var sunrise_animation_time: float = 0.0
 var is_animating_sunset: bool = false
 var sunset_animation_time: float = 0.0
 
-# References
+# Warning states
+var warning_2min_shown: bool = false
+var warning_1min_shown: bool = false
+
+# Logging throttle
+var last_log_time: float = 0.0  # Track last time we logged for throttling (DebugLogOverlay)
+var last_sun_log_time: float = 0.0  # Track last time we logged sun/lighting data for throttling
+
+# Scene references
 var directional_light: DirectionalLight3D
 var world_environment: WorldEnvironment
 var ui_manager: Node
@@ -71,10 +102,9 @@ var player: Node3D
 var moon: Node3D
 var sun: Node3D
 var stars: Node3D
+#endregion
 
-# Save file path
-const SAVE_FILE_PATH: String = "user://day_night_save.cfg"
-
+#region ===== LIFECYCLE & INITIALIZATION =====
 func _ready() -> void:
     # Add to DayNightCycle group so other systems can find this node
     add_to_group("DayNightCycle")
@@ -292,38 +322,14 @@ func _process(delta) -> void:
             warning_1min_shown = false
         else:
             _update_lighting()
+#endregion
 
-func _notification(what: int) -> void:
-    # Handle app lifecycle events for debugging sleep/resume issues
-    match what:
-        NOTIFICATION_APPLICATION_PAUSED:
-            # App is being paused (going to background on mobile)
-            var log_msg = "APP_PAUSED | Time: %.2f | Night: %s | Locked: %s" % [
-                current_time, str(is_night), str(is_locked_out)
-            ]
-            LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
-            _log_environment_state("APP_PAUSED")
-        
-        NOTIFICATION_APPLICATION_RESUMED:
-            # App is being resumed (coming back from background on mobile)
-            var current_unix_time = Time.get_unix_time_from_system()
-            var log_msg = LogExportManager.format_sleep_state_log(
-                "APP_RESUMED",
-                is_locked_out,
-                lockout_end_time,
-                current_time,
-                day_count,
-                night_start_time
-            )
-            LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
-            _log_environment_state("APP_RESUMED")
-            
-            # Check if lockout should be ended
-            if is_locked_out and current_unix_time >= lockout_end_time:
-                var resume_log = "APP_RESUMED: Lockout expired during background, time_diff: %.2f" % (
-                    current_unix_time - lockout_end_time
-                )
-                LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, resume_log)
+#region ===== BRIGHTNESS & LIGHTING SYSTEM =====
+# These functions control the brightness throughout the day cycle.
+# The brightness follows a quadratic curve:
+#   - Darkest at sunrise (7:00 AM, 0°) and sunset (5:00 PM, 180°): MIN_LIGHT_ENERGY = 1.2
+#   - Brightest at noon (12:00 PM, 90°): MAX_LIGHT_ENERGY = 3.0
+#   - Formula: intensity = lerp(MIN, MAX, 1.0 - (distance_from_noon)²)
 
 func _update_lighting() -> void:
     if not directional_light:
@@ -404,6 +410,27 @@ func _update_lighting() -> void:
     
     # Update stars visibility
     _update_stars_visibility()
+
+# Calculate perceived brightness from ambient light color using standard luminance formula
+# Note: This is a simplified metric for debugging/logging purposes that combines
+# ambient color luminance with the ambient energy multiplier
+func _calculate_ambient_brightness() -> float:
+    if world_environment and world_environment.environment:
+        var ambient_color = world_environment.environment.ambient_light_color
+        # Calculate perceived luminance from RGB (using standard formula)
+        var color_luminance = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
+        # Multiply by ambient energy to get actual brightness contribution
+        return color_luminance * world_environment.environment.ambient_light_energy
+    return 0.0
+#endregion
+
+#region ===== SUNRISE & SUNSET TRANSITIONS =====
+# These functions manage the sunrise (7:00 AM) and sunset (5:00 PM) animations.
+# Each transition takes 60 seconds and smoothly animates:
+#   - Light rotation (sun moving from/to below horizon)
+#   - Light intensity (fading in/out)
+#   - Ambient colors (warm colors at transitions)
+#   - Celestial object visibility (sun/moon/stars)
 
 func _animate_sunrise(progress: float) -> void:
     if not directional_light:
@@ -502,6 +529,7 @@ func _animate_sunset(progress: float) -> void:
         ui_manager.update_sun_position(get_sun_position_degrees())
 
 func _set_night_lighting() -> void:
+    """Set lighting for night period (complete darkness with moon and stars)."""
     if not directional_light:
         return
     
@@ -531,7 +559,9 @@ func _set_night_lighting() -> void:
     # Update UI sun position display (sun not visible during night)
     if ui_manager and ui_manager.has_method("update_sun_position"):
         ui_manager.update_sun_position(get_sun_position_degrees())
+#endregion
 
+#region ===== UI & USER NOTIFICATIONS =====
 func _show_warning(message: String) -> void:
     if ui_manager and ui_manager.has_method("show_message"):
         ui_manager.show_message(message, 5.0)
@@ -560,7 +590,9 @@ func _disable_player_input() -> void:
 func _enable_player_input() -> void:
     if player and player.has_method("set_input_enabled"):
         player.set_input_enabled(true)
+#endregion
 
+#region ===== STATE MANAGEMENT & SAVE/LOAD =====
 func _save_state() -> void:
     var config = ConfigFile.new()
     config.set_value("day_night", "is_locked_out", is_locked_out)
@@ -638,58 +670,21 @@ func _load_state() -> void:
     
     # Initialize last_log_time to avoid immediate logging on first frame
     last_log_time = current_time
+#endregion
 
+#region ===== SUN POSITION CALCULATION =====
+# Get sun position in 0-180 degree range for display.
+# This is the core function that determines where the sun appears in the sky:
+#   - 0° = Sunrise (7:00 AM) - Sun at eastern horizon
+#   - 90° = Noon (12:00 PM) - Sun at zenith (highest point)
+#   - 180° = Sunset (5:00 PM) - Sun at western horizon
+#   - -1 = Night (not visible)
+#
+# The sun position drives:
+#   - Light rotation (90° - sun_position for directional light)
+#   - Brightness calculation (quadratic curve based on distance from 90°)
+#   - UI display (shown to player as game time)
 
-
-# Create a moon that appears during night.
-func _create_moon() -> void:
-    # Don't create moon in headless mode (e.g., during tests or script validation)
-    if DisplayServer.get_name() == "headless":
-        return
-    
-    moon = Node3D.new()
-    moon.name = "Moon"
-    add_child(moon)
-    
-    # Create mesh instance for moon
-    var mesh_instance = MeshInstance3D.new()
-    var sphere_mesh = SphereMesh.new()
-    sphere_mesh.radius = 50.0  # Large moon
-    sphere_mesh.height = 100.0
-    mesh_instance.mesh = sphere_mesh
-    
-    # Create moon material with emission
-    var material = StandardMaterial3D.new()
-    material.albedo_color = Color(0.9, 0.9, 0.85)  # Slightly yellowish white
-    material.emission_enabled = true
-    material.emission = Color(0.8, 0.8, 0.7)  # Soft glow
-    material.emission_energy_multiplier = 0.5
-    mesh_instance.material_override = material
-    
-    moon.add_child(mesh_instance)
-    moon.visible = false  # Start hidden
-
-# DEPRECATED: Calculate current sun angle based on animation/time state.
-# This function is kept for backwards compatibility but is no longer used.
-# The new system uses get_sun_position_degrees() and display angles (0-180°) directly.
-func _calculate_current_sun_angle() -> float:
-    if is_animating_sunrise:
-        var progress = sunrise_animation_time / SUNRISE_DURATION
-        return lerp(SUNRISE_START_ANGLE, SUNRISE_END_ANGLE, progress)
-    elif is_animating_sunset:
-        var progress = sunset_animation_time / SUNSET_DURATION
-        return lerp(SUNSET_START_ANGLE, SUNSET_END_ANGLE, progress)
-    elif is_night:
-        return NIGHT_SUN_ANGLE
-    else:
-        # Normal day progression - sun offset is NOT applied to sun position
-        # Offset only affects displayed time to prevent discontinuities
-        var time_ratio = current_time / DAY_CYCLE_DURATION
-        return lerp(SUNRISE_END_ANGLE, SUNSET_START_ANGLE, time_ratio)
-
-# Get sun position in 0-180 degree range for display
-# 0° = game start (displayed sunrise), 90° = zenith/noon, 180° = sunset
-# Returns -1 during night when sun is not visible
 func get_sun_position_degrees() -> float:
     # During night, return -1 to indicate sun is not visible
     if is_night and not is_animating_sunrise:
@@ -728,59 +723,40 @@ func get_sun_position_degrees() -> float:
     # Map 0.0-1.0 ratio to 0-180 degrees
     # 0.0 (game start) -> 0°, 0.5 (midpoint of playable day) -> 90°, 1.0 (sunset) -> 180°
     return time_ratio * 180.0
+#endregion
 
-# Calculate perceived brightness from ambient light color using standard luminance formula
-# Note: This is a simplified metric for debugging/logging purposes that combines
-# ambient color luminance with the ambient energy multiplier
-func _calculate_ambient_brightness() -> float:
-    if world_environment and world_environment.environment:
-        var ambient_color = world_environment.environment.ambient_light_color
-        # Calculate perceived luminance from RGB (using standard formula)
-        var color_luminance = 0.299 * ambient_color.r + 0.587 * ambient_color.g + 0.114 * ambient_color.b
-        # Multiply by ambient energy to get actual brightness contribution
-        return color_luminance * world_environment.environment.ambient_light_energy
-    return 0.0
+#region ===== CELESTIAL OBJECTS (SUN, MOON, STARS) =====
+# These functions create and manage the visual celestial objects in the sky.
+# The sun, moon, and stars are created as 3D meshes with emission materials.
+# Their visibility and position changes based on the time of day.
 
-# Log comprehensive environment state for debugging
-func _log_environment_state(context: String) -> void:
-    var sun_pos = get_sun_position_degrees()
-    var ambient_brightness = _calculate_ambient_brightness()
-    var light_energy = directional_light.light_energy if directional_light else 0.0
-    var total_brightness = light_energy + ambient_brightness
+# Create a moon that appears during night.
+func _create_moon() -> void:
+    # Don't create moon in headless mode (e.g., during tests or script validation)
+    if DisplayServer.get_name() == "headless":
+        return
     
-    # Log sun/lighting state
-    var sun_log = "%s | Sun: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total: %.2f | Time: %.2f/%.2f | Day: %d" % [
-        context,
-        sun_pos,
-        light_energy,
-        ambient_brightness,
-        total_brightness,
-        current_time,
-        DAY_CYCLE_DURATION,
-        day_count
-    ]
-    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, sun_log)
+    moon = Node3D.new()
+    moon.name = "Moon"
+    add_child(moon)
     
-    # Log additional environment details
-    if world_environment and world_environment.environment:
-        var env = world_environment.environment
-        var env_log = "%s | Ambient Source: %d | Ambient Energy: %.2f | Sky Enabled: %s" % [
-            context,
-            env.ambient_light_source,
-            env.ambient_light_energy,
-            str(env.background_mode == Environment.BG_SKY)
-        ]
-        LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, env_log)
+    # Create mesh instance for moon
+    var mesh_instance = MeshInstance3D.new()
+    var sphere_mesh = SphereMesh.new()
+    sphere_mesh.radius = 50.0  # Large moon
+    sphere_mesh.height = 100.0
+    mesh_instance.mesh = sphere_mesh
     
-    # Log animation states
-    var state_log = "%s | Night: %s | Sunrise Anim: %s | Sunset Anim: %s | Locked: %s" % [
-        context,
-        str(is_night),
-        str(is_animating_sunrise),
-        str(is_animating_sunset),
-        str(is_locked_out)
-    ]
-    LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, state_log)
+    # Create moon material with emission
+    var material = StandardMaterial3D.new()
+    material.albedo_color = Color(0.9, 0.9, 0.85)  # Slightly yellowish white
+    material.emission_enabled = true
+    material.emission = Color(0.8, 0.8, 0.7)  # Soft glow
+    material.emission_energy_multiplier = 0.5
+    mesh_instance.material_override = material
+    
+    moon.add_child(mesh_instance)
+    moon.visible = false  # Start hidden
 
 # Update moon position based on time of day.
 func _update_moon_position() -> void:
@@ -935,7 +911,101 @@ func _update_stars_visibility():
         stars.visible = true
     else:
         stars.visible = false
+#endregion
 
+#region ===== DEBUGGING & LOGGING =====
+# Log comprehensive environment state for debugging
+func _log_environment_state(context: String) -> void:
+    var sun_pos = get_sun_position_degrees()
+    var ambient_brightness = _calculate_ambient_brightness()
+    var light_energy = directional_light.light_energy if directional_light else 0.0
+    var total_brightness = light_energy + ambient_brightness
+    
+    # Log sun/lighting state
+    var sun_log = "%s | Sun: %.2f° | Light Energy: %.2f | Ambient: %.2f | Total: %.2f | Time: %.2f/%.2f | Day: %d" % [
+        context,
+        sun_pos,
+        light_energy,
+        ambient_brightness,
+        total_brightness,
+        current_time,
+        DAY_CYCLE_DURATION,
+        day_count
+    ]
+    LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, sun_log)
+    
+    # Log additional environment details
+    if world_environment and world_environment.environment:
+        var env = world_environment.environment
+        var env_log = "%s | Ambient Source: %d | Ambient Energy: %.2f | Sky Enabled: %s" % [
+            context,
+            env.ambient_light_source,
+            env.ambient_light_energy,
+            str(env.background_mode == Environment.BG_SKY)
+        ]
+        LogExportManager.add_log(LogExportManager.LogType.SUN_LIGHTING_ISSUE, env_log)
+    
+    # Log animation states
+    var state_log = "%s | Night: %s | Sunrise Anim: %s | Sunset Anim: %s | Locked: %s" % [
+        context,
+        str(is_night),
+        str(is_animating_sunrise),
+        str(is_animating_sunset),
+        str(is_locked_out)
+    ]
+    LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, state_log)
+
+func _notification(what: int) -> void:
+    # Handle app lifecycle events for debugging sleep/resume issues
+    match what:
+        NOTIFICATION_APPLICATION_PAUSED:
+            # App is being paused (going to background on mobile)
+            var log_msg = "APP_PAUSED | Time: %.2f | Night: %s | Locked: %s" % [
+                current_time, str(is_night), str(is_locked_out)
+            ]
+            LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
+            _log_environment_state("APP_PAUSED")
+        
+        NOTIFICATION_APPLICATION_RESUMED:
+            # App is being resumed (coming back from background on mobile)
+            var current_unix_time = Time.get_unix_time_from_system()
+            var log_msg = LogExportManager.format_sleep_state_log(
+                "APP_RESUMED",
+                is_locked_out,
+                lockout_end_time,
+                current_time,
+                day_count,
+                night_start_time
+            )
+            LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, log_msg)
+            _log_environment_state("APP_RESUMED")
+            
+            # Check if lockout should be ended
+            if is_locked_out and current_unix_time >= lockout_end_time:
+                var resume_log = "APP_RESUMED: Lockout expired during background, time_diff: %.2f" % (
+                    current_unix_time - lockout_end_time
+                )
+                LogExportManager.add_log(LogExportManager.LogType.SLEEP_STATE_ISSUE, resume_log)
+#endregion
+
+#region ===== TIME SCALE CONTROL =====
+# Increase time scale (speed up time)
+func increase_time_scale() -> void:
+    time_scale = min(time_scale * 2.0, 32.0)  # Double the speed, max 32x
+    _notify_time_scale_changed()
+
+# Decrease time scale (slow down time)
+func decrease_time_scale() -> void:
+    time_scale = max(time_scale / 2.0, 0.25)  # Half the speed, min 0.25x
+    _notify_time_scale_changed()
+
+# Notify UI of time scale change
+func _notify_time_scale_changed():
+    if ui_manager and ui_manager.has_method("update_time_scale"):
+        ui_manager.update_time_scale(time_scale)
+#endregion
+
+#region ===== GAME STATE INTEGRATION =====
 func _save_game_state():
     # Save the game state when bedtime/pause starts
     var player = get_tree().get_first_node_in_group("Player")
@@ -982,6 +1052,7 @@ func _save_game_state():
     SaveGameManager.update_settings_data(master_volume, ruler_visible)
     
     SaveGameManager.save_game()
+#endregion
 
 # Increase time scale (speed up time)
 func increase_time_scale() -> void:
