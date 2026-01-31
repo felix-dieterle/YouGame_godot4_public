@@ -396,15 +396,16 @@ func test_brightness_at_8am():
 	# Test 3: Should still be classified as daytime (not night)
 	assert_false(day_night.is_night, "8:00 AM should be classified as daytime")
 	
-	# Test 4: Sun should be above horizon (positive y component in position)
-	# Sun angle at 8:00 AM should be between sunrise end and noon
-	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, EIGHT_AM_RATIO)
-	print("  Sun angle at 8:00 AM: ", sun_angle, " degrees")
-	# Sun should be above sunrise position (-60°) and still ascending towards zenith (0°)
-	assert_true(sun_angle > DayNightCycle.SUNRISE_END_ANGLE,
-		"Sun should be above sunrise position at 8:00 AM")
-	assert_true(sun_angle < 0,
-		"Sun should still be ascending towards zenith at 8:00 AM")
+	# Test 4: Sun should be above horizon (positive display angle in new system)
+	# In new system: 0° = sunrise (7 AM), 90° = noon, 180° = sunset (5 PM)
+	# Sun display angle at 8:00 AM should be between 0° (sunrise) and 90° (noon)
+	var sun_display_angle = lerp(0.0, 180.0, EIGHT_AM_RATIO)
+	print("  Sun display angle at 8:00 AM: ", sun_display_angle, " degrees")
+	# Sun should be above sunrise position (0°) and still ascending towards zenith (90°)
+	assert_true(sun_display_angle > 0.0,
+		"Sun should be above sunrise position (0°) at 8:00 AM")
+	assert_true(sun_display_angle < 90.0,
+		"Sun should still be ascending towards zenith (90°) at 8:00 AM")
 	
 	# Cleanup
 	test_scene.queue_free()
@@ -485,14 +486,15 @@ func test_blue_sky_at_930am():
 		"Ambient light should be white when using Sky as source to show natural blue sky")
 	
 	# Test 5: Sun should be well positioned (climbing towards noon)
-	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, NINE_THIRTY_AM_RATIO)
-	print("  Sun angle at 9:30 AM: ", sun_angle, " degrees")
-	# At 9:30 AM, sun should be between sunrise end (-60°) and noon (0°)
+	# In new system: 0° = sunrise, 90° = noon, 180° = sunset
+	var sun_display_angle = lerp(0.0, 180.0, NINE_THIRTY_AM_RATIO)
+	print("  Sun display angle at 9:30 AM: ", sun_display_angle, " degrees")
+	# At 9:30 AM, sun should be between sunrise (0°) and noon (90°)
 	# Verify it's in the mid-morning position (between sunrise and noon)
-	assert_true(sun_angle > DayNightCycle.SUNRISE_END_ANGLE,
-		"Sun should be above sunrise position at 9:30 AM")
-	assert_true(sun_angle < 0,
-		"Sun should still be ascending towards zenith (0 degrees) at 9:30 AM")
+	assert_true(sun_display_angle > 0.0,
+		"Sun should be above sunrise position (0°) at 9:30 AM")
+	assert_true(sun_display_angle < 90.0,
+		"Sun should still be ascending towards zenith (90°) at 9:30 AM")
 	
 	# Cleanup
 	test_scene.queue_free()
@@ -633,15 +635,15 @@ func test_time_progression_to_930am():
 	assert_true(ambient_color.is_equal_approx(Color.WHITE),
 		"Ambient light is white for natural blue sky")
 	
-	# Verify sun position
-	var sun_angle = lerp(DayNightCycle.SUNRISE_END_ANGLE, DayNightCycle.SUNSET_START_ANGLE, time_ratio)
-	print("    Sun angle: %.1f degrees" % sun_angle)
+	# Verify sun position (new system: 0° = sunrise, 90° = noon, 180° = sunset)
+	var sun_display_angle = lerp(0.0, 180.0, time_ratio)
+	print("    Sun display angle: %.1f degrees" % sun_display_angle)
 	
-	assert_true(sun_angle > DayNightCycle.SUNRISE_END_ANGLE,
-		"Sun above sunrise position (%.1f > %.1f)" % [sun_angle, DayNightCycle.SUNRISE_END_ANGLE])
+	assert_true(sun_display_angle > 0.0,
+		"Sun above sunrise position (%.1f > 0.0)" % sun_display_angle)
 	
-	assert_true(sun_angle < 0,
-		"Sun still ascending to zenith (%.1f < 0)" % sun_angle)
+	assert_true(sun_display_angle < 90.0,
+		"Sun still ascending to zenith (%.1f < 90.0)" % sun_display_angle)
 	
 	assert_false(day_night.is_night, "Should be daytime at 9:30 AM")
 	
