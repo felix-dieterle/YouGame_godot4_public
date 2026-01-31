@@ -366,22 +366,24 @@ func _update_lighting() -> void:
     # The sun moves from East (0°) → Overhead (90°) → West (180°)
     # We need both azimuth (Y rotation) and elevation (X rotation)
     
-    # Calculate azimuth angle (east-west direction)
-    # 0° (sunrise) -> 90° azimuth (from east)
-    # 90° (noon) -> 180° azimuth (from overhead/south)
-    # 180° (sunset) -> 270° azimuth (from west)
+    # Calculate azimuth angle (horizontal compass direction)
+    # The azimuth determines which horizontal direction the light points
+    # 0° (sunrise) -> 90° azimuth (light points west, sun in east)
+    # 90° (noon) -> 180° azimuth (light points north, sun overhead from south)
+    # 180° (sunset) -> 270° azimuth (light points east, sun in west)
+    # Note: At noon, the elevation is 0° (straight down), so azimuth has minimal effect
     var azimuth_angle = 90.0 + display_angle
     
-    # Calculate elevation angle (how high the sun is)
+    # Calculate elevation angle (how high the sun is above horizon)
     # Limited to ±50° at horizon to ensure light reaches ground effectively
-    # 0° (sunrise) -> +50° pitch (light from low east, 64% effective)
-    # 90° (noon) -> 0° pitch (light from overhead, 100% effective)
-    # 180° (sunset) -> -50° pitch (light from low west, 64% effective)
+    # 0° (sunrise) -> +50° elevation (light angled from east, 64% effective)
+    # 90° (noon) -> 0° elevation (light straight down from overhead, 100% effective)
+    # 180° (sunset) -> -50° elevation (light angled from west, 64% effective)
     var elevation_angle = lerp(MAX_LIGHT_ANGLE, -MAX_LIGHT_ANGLE, display_angle / 180.0)
     
     # Apply rotation to directional light
-    # Y axis controls azimuth (east-west direction)
-    # X axis controls elevation (pitch angle from horizon)
+    # Y axis controls azimuth (horizontal compass direction)
+    # X axis controls elevation (vertical pitch angle)
     directional_light.rotation_degrees.y = azimuth_angle
     directional_light.rotation_degrees.x = elevation_angle
     
@@ -870,14 +872,17 @@ func _update_sun_position():
     
     # Position sun in sky using display angle
     # 0° = horizon (sunrise/east), 90° = zenith (noon), 180° = horizon (sunset/west)
-    # Sun moves in an east-to-west arc
+    # Sun moves in an east-to-west arc (using +X as east, -X as west in Godot coordinates)
     var elevation_angle = display_angle
     var angle_rad = deg_to_rad(elevation_angle)
     
-    # Calculate position on East-West arc
-    # At 0°: East horizon (x=+2000, y=0)
-    # At 90°: Overhead (x=0, y=+2000)
-    # At 180°: West horizon (x=-2000, y=0)
+    # Calculate position on East-West arc:
+    # - X coordinate: East-West position (+X = east/right, -X = west/left)
+    # - Y coordinate: Height above horizon (up)
+    # - Z coordinate: Fixed at 0 (stays in the east-west vertical plane)
+    # At 0° (sunrise): East horizon (x=+DIST, y=0)
+    # At 90° (noon): Overhead zenith (x=0, y=+DIST)
+    # At 180° (sunset): West horizon (x=-DIST, y=0)
     sun.position.x = cos(angle_rad) * CELESTIAL_DISTANCE
     sun.position.y = sin(angle_rad) * CELESTIAL_DISTANCE
     sun.position.z = 0  # Stay in East-West plane
