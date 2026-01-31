@@ -1,7 +1,7 @@
 extends Node
 
 # Test suite for wind sound and snow coverage in mountain regions
-const CHUNK = preload("res://scripts/chunk.gd")
+const CHUNK = preload("res://scripts/systems/world/chunk.gd")
 
 func _ready():
 	print("=== Starting Wind and Snow Tests ===")

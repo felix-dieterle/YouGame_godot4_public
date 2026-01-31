@@ -19,9 +19,9 @@ class_name WorldManager
 # ============================================================================
 
 # Preload dependencies
-const Chunk = preload("res://scripts/chunk.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
 const StartingLocation = preload("res://scripts/starting_location.gd")
-const TorchSystem = preload("res://scripts/torch_system.gd")
+const TorchSystem = preload("res://scripts/systems/collection/torch_system.gd")
 
 # ============================================================================
 # CONFIGURATION

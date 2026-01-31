@@ -1,7 +1,7 @@
 extends Node
 
 # Test suite for new features: biomes, terrain materials, mobile controls
-const CHUNK = preload("res://scripts/chunk.gd")
+const CHUNK = preload("res://scripts/systems/world/chunk.gd")
 
 func _ready():
 	print("=== Starting New Features Tests ===")

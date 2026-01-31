@@ -7,8 +7,8 @@ extends Node
 ## 2. Fishing boat is placed on coastal chunks near starting area
 ## 3. Boat is positioned half-buried in sand
 
-const Chunk = preload("res://scripts/chunk.gd")
-const ProceduralModels = preload("res://scripts/procedural_models.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
+const ProceduralModels = preload("res://scripts/systems/world/procedural_models.gd")
 
 func _ready():
 	print("=== Fishing Boat Test ===")

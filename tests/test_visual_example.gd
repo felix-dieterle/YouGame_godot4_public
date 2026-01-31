@@ -4,7 +4,7 @@ extends Node
 # This test creates a simple scene with visual elements and captures screenshots
 
 const ScreenshotHelper = preload("res://tests/screenshot_helper.gd")
-const CHUNK = preload("res://scripts/chunk.gd")
+const CHUNK = preload("res://scripts/systems/world/chunk.gd")
 
 var screenshot_count = 0
 

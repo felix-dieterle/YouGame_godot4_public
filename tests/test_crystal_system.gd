@@ -7,7 +7,7 @@ extends Node
 ## - Crystal material creation
 ## - Spawn probabilities
 
-const CrystalSystem = preload("res://scripts/crystal_system.gd")
+const CrystalSystem = preload("res://scripts/systems/collection/crystal_system.gd")
 
 var test_results: Array = []
 

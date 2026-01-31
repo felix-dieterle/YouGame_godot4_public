@@ -3,7 +3,7 @@ extends Node
 ## Test suite for path continuity across chunk boundaries
 ## This test verifies that paths properly continue from one chunk to another
 
-const PathSystem = preload("res://scripts/path_system.gd")
+const PathSystem = preload("res://scripts/systems/world/path_system.gd")
 
 func _ready():
 	print("=== Starting Path Continuity Tests ===")

@@ -2,7 +2,7 @@ extends Node
 class_name QuestHookSystem
 
 # Preload dependencies
-const NarrativeMarker = preload("res://scripts/narrative_marker.gd")
+const NarrativeMarker = preload("res://scripts/systems/quest/narrative_marker.gd")
 
 # Quest hooks and markers
 var available_markers: Array[NarrativeMarker] = []

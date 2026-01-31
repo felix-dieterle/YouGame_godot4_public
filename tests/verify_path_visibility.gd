@@ -8,7 +8,7 @@ extends Node
 ## - Main paths have correct width multiplier
 ## - Starting path meets minimum length requirements
 ## - Paths continue across chunk boundaries
-const PathSystem = preload("res://scripts/path_system.gd")
+const PathSystem = preload("res://scripts/systems/world/path_system.gd")
 
 # Test constants
 const POSITION_TOLERANCE = 0.1  # Tolerance for position comparisons

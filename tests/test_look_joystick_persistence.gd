@@ -33,7 +33,7 @@ func test_joystick_position_reflects_camera_rotation():
 	print("\n--- Test: Joystick Position Reflects Camera Rotation ---")
 	
 	# Create mobile controls
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if not mobile_controls_script:
 		assert_fail("Could not load mobile controls script")
 		return
@@ -47,7 +47,7 @@ func test_joystick_position_reflects_camera_rotation():
 	await get_tree().process_frame
 	
 	# Create a mock player with camera rotation
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		mobile_controls.queue_free()
@@ -94,7 +94,7 @@ func test_joystick_position_updates_continuously():
 	print("\n--- Test: Joystick Position Updates Continuously ---")
 	
 	# Create mobile controls
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if not mobile_controls_script:
 		assert_fail("Could not load mobile controls script")
 		return
@@ -108,7 +108,7 @@ func test_joystick_position_updates_continuously():
 	await get_tree().process_frame
 	
 	# Create a mock player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		mobile_controls.queue_free()
@@ -148,7 +148,7 @@ func test_joystick_position_not_updated_during_touch():
 	print("\n--- Test: Joystick Position Not Updated During Touch ---")
 	
 	# Create mobile controls
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if not mobile_controls_script:
 		assert_fail("Could not load mobile controls script")
 		return
@@ -162,7 +162,7 @@ func test_joystick_position_not_updated_during_touch():
 	await get_tree().process_frame
 	
 	# Create a mock player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		mobile_controls.queue_free()

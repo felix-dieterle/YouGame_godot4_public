@@ -5,7 +5,7 @@ extends Node3D
 ## Creates a test scene with chunks and camera to visually verify
 ## the fishing boat placement on coastal areas near spawn
 
-const Chunk = preload("res://scripts/chunk.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
 const ScreenshotHelper = preload("res://tests/screenshot_helper.gd")
 
 # Configuration

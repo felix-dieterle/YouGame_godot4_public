@@ -36,7 +36,7 @@ func test_joystick_position_maps_to_target_angles():
 	print("\n--- Test: Joystick Position Maps to Target Angles ---")
 	
 	# Create mobile controls
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if not mobile_controls_script:
 		assert_fail("Could not load mobile controls script")
 		return
@@ -50,7 +50,7 @@ func test_joystick_position_maps_to_target_angles():
 	await get_tree().process_frame
 	
 	# Create a mock player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		mobile_controls.queue_free()
@@ -87,7 +87,7 @@ func test_joystick_edge_maps_to_max_angle():
 	print("\n--- Test: Joystick Edge Maps to Max Angle ---")
 	
 	# Create mobile controls
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if not mobile_controls_script:
 		assert_fail("Could not load mobile controls script")
 		return
@@ -101,7 +101,7 @@ func test_joystick_edge_maps_to_max_angle():
 	await get_tree().process_frame
 	
 	# Create a mock player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		mobile_controls.queue_free()
@@ -140,7 +140,7 @@ func test_player_uses_absolute_positioning():
 	print("\n--- Test: Player Uses Absolute Positioning ---")
 	
 	# Create mobile controls
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if not mobile_controls_script:
 		assert_fail("Could not load mobile controls script")
 		return
@@ -154,7 +154,7 @@ func test_player_uses_absolute_positioning():
 	await get_tree().process_frame
 	
 	# Create player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		mobile_controls.queue_free()
@@ -208,7 +208,7 @@ func test_stick_stays_where_pushed():
 	print("\n--- Test: Stick Stays Where Pushed ---")
 	
 	# Create mobile controls
-	var mobile_controls_script = load("res://scripts/mobile_controls.gd")
+	var mobile_controls_script = load("res://scripts/ui/mobile_controls.gd")
 	if not mobile_controls_script:
 		assert_fail("Could not load mobile controls script")
 		return
@@ -222,7 +222,7 @@ func test_stick_stays_where_pushed():
 	await get_tree().process_frame
 	
 	# Create player
-	var player_script = load("res://scripts/player.gd")
+	var player_script = load("res://scripts/systems/character/player.gd")
 	if not player_script:
 		assert_fail("Could not load player script")
 		mobile_controls.queue_free()

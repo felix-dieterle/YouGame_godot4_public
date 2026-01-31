@@ -4,8 +4,8 @@ extends Node
 # Demonstrates ocean chunks with coastal lighthouses
 
 const ScreenshotHelper = preload("res://tests/screenshot_helper.gd")
-const CHUNK = preload("res://scripts/chunk.gd")
-const WorldManager = preload("res://scripts/world_manager.gd")
+const CHUNK = preload("res://scripts/systems/world/chunk.gd")
+const WorldManager = preload("res://scripts/systems/world/world_manager.gd")
 
 var screenshot_count = 0
 

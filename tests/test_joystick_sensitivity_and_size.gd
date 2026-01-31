@@ -10,7 +10,7 @@ var test_passed: int = 0
 var test_failed: int = 0
 
 # Test configuration constants
-const MOBILE_CONTROLS_SCRIPT_PATH = "res://scripts/mobile_controls.gd"
+const MOBILE_CONTROLS_SCRIPT_PATH = "res://scripts/ui/mobile_controls.gd"
 const TEST_TOLERANCE = 0.05  # Tolerance for floating-point comparisons
 
 func _ready():

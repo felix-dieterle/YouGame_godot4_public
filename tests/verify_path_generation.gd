@@ -3,7 +3,7 @@ extends Node
 ## Manual verification script for path generation
 ## This script demonstrates that paths are now being generated correctly
 
-const PathSystem = preload("res://scripts/path_system.gd")
+const PathSystem = preload("res://scripts/systems/world/path_system.gd")
 
 func _ready():
 	print("=== Path Generation Verification ===\n")

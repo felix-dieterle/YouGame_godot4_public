@@ -10,9 +10,9 @@ extends Node3D
 ## - Player health drains in border chunks
 
 # Preload dependencies
-const Chunk = preload("res://scripts/chunk.gd")
-const WorldManager = preload("res://scripts/world_manager.gd")
-const Player = preload("res://scripts/player.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
+const WorldManager = preload("res://scripts/systems/world/world_manager.gd")
+const Player = preload("res://scripts/systems/character/player.gd")
 
 var world_manager: WorldManager
 var player: Player

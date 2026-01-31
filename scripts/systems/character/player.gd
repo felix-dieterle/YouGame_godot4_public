@@ -2,10 +2,10 @@ extends CharacterBody3D
 class_name Player
 
 # Preload dependencies
-const CrystalSystem = preload("res://scripts/crystal_system.gd")
-const TorchSystem = preload("res://scripts/torch_system.gd")
-const CampfireSystem = preload("res://scripts/campfire_system.gd")
-const Chunk = preload("res://scripts/chunk.gd")
+const CrystalSystem = preload("res://scripts/systems/collection/crystal_system.gd")
+const TorchSystem = preload("res://scripts/systems/collection/torch_system.gd")
+const CampfireSystem = preload("res://scripts/systems/collection/campfire_system.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
 
 # Torch placement settings
 @export var torch_placement_offset: float = 0.5  # Height offset when placing torch

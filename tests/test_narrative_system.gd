@@ -1,9 +1,9 @@
 extends Node
 
 # Test suite for narrative marker system
-const CHUNK = preload("res://scripts/chunk.gd")
-const NARRATIVE_MARKER = preload("res://scripts/narrative_marker.gd")
-const QUEST_HOOK_SYSTEM = preload("res://scripts/quest_hook_system.gd")
+const CHUNK = preload("res://scripts/systems/world/chunk.gd")
+const NARRATIVE_MARKER = preload("res://scripts/systems/quest/narrative_marker.gd")
+const QUEST_HOOK_SYSTEM = preload("res://scripts/systems/quest/quest_hook_system.gd")
 
 func _ready():
 	print("=== Starting Narrative Marker Tests ===")

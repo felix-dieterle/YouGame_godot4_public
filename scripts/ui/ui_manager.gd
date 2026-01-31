@@ -377,7 +377,7 @@ func update_game_time(time_seconds: float, cycle_duration: float, sun_offset_hou
 ## Create crystal counter panel
 func _create_crystal_counter_panel() -> void:
     # Preload CrystalSystem for crystal names and colors
-    const CrystalSystem = preload("res://scripts/crystal_system.gd")
+    const CrystalSystem = preload("res://scripts/systems/collection/crystal_system.gd")
     
     # Create panel container
     crystal_counter_panel = PanelContainer.new()
@@ -457,7 +457,7 @@ func _create_crystal_counter_panel() -> void:
 
 ## Update crystal count display
 func update_crystal_count(inventory: Dictionary) -> void:
-    const CrystalSystem = preload("res://scripts/crystal_system.gd")
+    const CrystalSystem = preload("res://scripts/systems/collection/crystal_system.gd")
     
     for crystal_type in inventory:
         if crystal_type in crystal_labels:

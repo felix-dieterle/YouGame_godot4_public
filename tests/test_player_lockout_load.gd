@@ -57,7 +57,7 @@ func test_player_input_disabled_when_loading_during_lockout():
 	save_manager.load_game()
 	
 	# Create a player instance (like what happens in main.tscn)
-	var player_scene = load("res://scripts/player.gd")
+	var player_scene = load("res://scripts/systems/character/player.gd")
 	player = CharacterBody3D.new()
 	player.set_script(player_scene)
 	add_child(player)
@@ -103,7 +103,7 @@ func test_player_input_enabled_when_loading_after_lockout_expires():
 	save_manager.load_game()
 	
 	# Create a player instance
-	var player_scene = load("res://scripts/player.gd")
+	var player_scene = load("res://scripts/systems/character/player.gd")
 	player = CharacterBody3D.new()
 	player.set_script(player_scene)
 	add_child(player)
@@ -148,7 +148,7 @@ func test_player_input_enabled_when_no_lockout():
 	save_manager.load_game()
 	
 	# Create a player instance
-	var player_scene = load("res://scripts/player.gd")
+	var player_scene = load("res://scripts/systems/character/player.gd")
 	player = CharacterBody3D.new()
 	player.set_script(player_scene)
 	add_child(player)

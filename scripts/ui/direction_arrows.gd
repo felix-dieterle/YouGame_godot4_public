@@ -9,8 +9,8 @@ class_name DirectionArrows
 ## - The unique mountain
 
 # Preload dependencies
-const CrystalSystem = preload("res://scripts/crystal_system.gd")
-const Chunk = preload("res://scripts/chunk.gd")
+const CrystalSystem = preload("res://scripts/systems/collection/crystal_system.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
 
 # References
 var player: Node3D = null

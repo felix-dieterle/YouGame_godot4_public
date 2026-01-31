@@ -3,8 +3,8 @@ extends Node
 ## Test script for cluster system
 ## Validates that forests and settlements generate consistently across chunks
 
-const ClusterSystem = preload("res://scripts/cluster_system.gd")
-const Chunk = preload("res://scripts/chunk.gd")
+const ClusterSystem = preload("res://scripts/systems/world/cluster_system.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
 
 var test_results = []
 

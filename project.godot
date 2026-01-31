@@ -18,10 +18,10 @@ run/main_scene="res://scenes/main.tscn"
 
 [autoload]
 
-DebugLogOverlay="*res://scripts/debug_log_overlay.gd"
-SaveGameManager="*res://scripts/save_game_manager.gd"
-SaveGameWidgetExporter="*res://scripts/save_game_widget_exporter.gd"
-LogExportManager="*res://scripts/log_export_manager.gd"
+DebugLogOverlay="*res://scripts/debug/debug_log_overlay.gd"
+SaveGameManager="*res://scripts/utilities/save_game_manager.gd"
+SaveGameWidgetExporter="*res://scripts/utilities/save_game_widget_exporter.gd"
+LogExportManager="*res://scripts/utilities/log_export_manager.gd"
 
 [display]
 

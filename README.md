@@ -137,15 +137,23 @@ YouGame_godot4_public/
 │   └── workflows/          # CI/CD
 ├── scenes/                 # Godot scene files
 │   └── main.tscn          # Main game scene
-├── scripts/               # GDScript source (21 files)
-│   ├── world_manager.gd   # Chunk loading/unloading
-│   ├── chunk.gd           # Terrain generation
-│   └── ...                # See scripts/README.md
+├── scripts/               # GDScript source (31 files organized)
+│   ├── systems/           # Core game mechanics
+│   │   ├── collection/   # Resource collection (crystals, herbs, etc.)
+│   │   ├── world/        # World generation (chunks, terrain)
+│   │   ├── character/    # Player & NPCs
+│   │   ├── environment/  # Day/night, weather
+│   │   └── quest/        # Narrative & quests
+│   ├── ui/               # User interface
+│   ├── debug/            # Development tools
+│   ├── utilities/        # Data management
+│   └── README.md        # Complete architecture guide
 ├── assets/               # 3D models, textures, audio
 ├── tests/               # Automated tests
 ├── docs/                # Documentation
 │   ├── systems/         # System-specific docs
 │   ├── archive/         # Historical notes
+│   ├── SCRIPT_REORGANIZATION.md  # Consolidation guide
 │   └── INDEX.md        # Documentation index
 ├── project.godot        # Project configuration
 ├── export_presets.cfg   # Android export settings

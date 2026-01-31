@@ -2,8 +2,8 @@ extends Node3D
 class_name DebugVisualization
 
 # Preload dependencies
-const ClusterSystem = preload("res://scripts/cluster_system.gd")
-const Chunk = preload("res://scripts/chunk.gd")
+const ClusterSystem = preload("res://scripts/systems/world/cluster_system.gd")
+const Chunk = preload("res://scripts/systems/world/chunk.gd")
 
 var show_chunk_borders: bool = true
 var show_walkability: bool = false
