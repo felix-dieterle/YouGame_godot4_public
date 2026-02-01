@@ -4,12 +4,17 @@
 Users reported that the YouGame widget showed an error "widget kann nicht geladen werden" (widget cannot be loaded) when trying to add it to their Android home screen.
 
 ## Root Cause
-The widget application was missing essential launcher icon resources. The `AndroidManifest.xml` referenced `@mipmap/ic_launcher` and the adaptive icon XML existed, but the actual PNG fallback icons required for all Android versions were missing.
+The widget application was missing essential launcher icon resources. The `AndroidManifest.xml` referenced `@mipmap/ic_launcher` and `@mipmap/ic_launcher_round`, but critical resources were missing.
 
-### Missing Resources
+### Missing Resources (Initial Issue)
 - Standard launcher icons (ic_launcher.png) in densities: mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi
 - Round launcher icons (ic_launcher_round.png) in all densities
 - Preview image for widget picker (Android 12+)
+
+### Missing Resource (Recent Fix - Jan 2026)
+- **Adaptive round icon XML**: `mipmap-anydpi-v26/ic_launcher_round.xml` was missing
+- While PNG fallback icons existed, Android 8.0+ (API 26+) devices with adaptive icon support tried to use the adaptive icon XML for round icons
+- Without this file, the widget failed to initialize on modern Android devices
 
 ## Solution Implemented
 
@@ -43,6 +48,17 @@ Created a simple preview drawable matching the widget's visual style.
 
 Added `android:roundIcon="@mipmap/ic_launcher_round"` to support round icons on compatible devices.
 
+### 5. Added Adaptive Round Icon XML (Jan 2026)
+**File**: `widget_app/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml`
+
+Created the missing adaptive icon XML for round icons. This file is required for Android 8.0+ (API 26+) devices to properly initialize the widget when using adaptive icons. It references the same background color and foreground drawable as the standard launcher icon:
+```xml
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+</adaptive-icon>
+```
+
 ## Files Changed
 
 ### Modified Files
@@ -63,6 +79,9 @@ Added `android:roundIcon="@mipmap/ic_launcher_round"` to support round icons on 
    - `mipmap-xxhdpi/ic_launcher.png` and `ic_launcher_round.png`
    - `mipmap-xxxhdpi/ic_launcher.png` and `ic_launcher_round.png`
 
+5. `widget_app/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml` (Jan 2026)
+   - Adaptive icon XML for round icons on Android 8.0+ devices
+
 ## Technical Details
 
 ### Icon Generation
@@ -74,9 +93,22 @@ Icons were generated using a Python script with PIL/Pillow library to ensure con
 
 ### Android Compatibility
 These changes ensure compatibility with:
-- **All Android versions** (API 21+): Standard launcher icons
-- **Android 7.1+** (API 25+): Round launcher icons
+- **All Android versions** (API 21+): Standard launcher icons (PNG fallbacks)
+- **Android 7.1+** (API 25+): Round launcher icons (PNG fallbacks)
+- **Android 8.0+** (API 26+): Adaptive icons for both standard and round icons
 - **Android 12+** (API 31+): Widget preview in widget picker
+
+### Adaptive Icon System (Android 8.0+)
+Android 8.0 (API 26) introduced adaptive icons, which consist of:
+- **Background layer**: A solid color or drawable
+- **Foreground layer**: The icon's main visual element
+- **Shape masking**: The system applies different shapes (circle, square, squircle, etc.) based on device OEM
+
+For apps that declare both `android:icon` and `android:roundIcon` in their manifest, Android needs adaptive icon XMLs for both:
+- `mipmap-anydpi-v26/ic_launcher.xml` - For standard icon
+- `mipmap-anydpi-v26/ic_launcher_round.xml` - For round icon (previously missing)
+
+When these adaptive icon XMLs are missing, Android 8.0+ devices fail to initialize the widget properly, leading to the "widget kann nicht geladen werden" error.
 
 ## Testing Recommendations
 
