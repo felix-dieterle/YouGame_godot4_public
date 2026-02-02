@@ -12,7 +12,7 @@ var walk_speed: float = 2.0
 var walk_direction: Vector3 = Vector3.ZERO
 
 # References
-var world_manager: WorldManager
+var world_manager  # WorldManager - type annotation removed for headless compatibility
 
 func _ready() -> void:
     # Create a simple visual representation
