@@ -33,6 +33,10 @@ tests=(
     "res://tests/test_scene_mobile_controls.tscn|Mobile Controls Tests"
     "res://tests/test_scene_day_night_cycle.tscn|Day Night Cycle Tests"
     "res://tests/test_scene_path_visual.tscn|Path Visual Tests"
+    "res://tests/test_scene_world_manager.tscn|World Manager Tests"
+    "res://tests/test_scene_npc.tscn|NPC System Tests"
+    "res://tests/test_scene_quest_hook_system.tscn|Quest Hook System Tests"
+    "res://tests/test_scene_herb_system.tscn|Herb System Tests"
 )
 
 echo "========================================="
@@ -129,6 +133,46 @@ else
 fi
 
 echo ""
+
+# Generate test results log for CI
+echo "Generating test results log..."
+cat > test_results.log <<EOF
+## Summary
+
+- ✅ Passed: ${#passed_tests[@]}
+- ❌ Failed: ${#failed_tests[@]}
+- ⏱️  Timeout: ${#timeout_tests[@]}
+- 📊 Total: $((${#passed_tests[@]} + ${#failed_tests[@]} + ${#timeout_tests[@]}))
+
+EOF
+
+if [ ${#passed_tests[@]} -gt 0 ]; then
+    echo "## Passed Tests" >> test_results.log
+    echo "" >> test_results.log
+    for test in "${passed_tests[@]}"; do
+        echo "- ✅ $test" >> test_results.log
+    done
+    echo "" >> test_results.log
+fi
+
+if [ ${#failed_tests[@]} -gt 0 ]; then
+    echo "## Failed Tests" >> test_results.log
+    echo "" >> test_results.log
+    for test in "${failed_tests[@]}"; do
+        echo "- ❌ $test" >> test_results.log
+    done
+    echo "" >> test_results.log
+fi
+
+if [ ${#timeout_tests[@]} -gt 0 ]; then
+    echo "## Timed Out Tests" >> test_results.log
+    echo "" >> test_results.log
+    for test in "${timeout_tests[@]}"; do
+        echo "- ⏱️ $test" >> test_results.log
+    done
+fi
+
+echo "Test results saved to test_results.log"
 
 # Exit with non-zero if any tests failed or timed out
 if [ ${#failed_tests[@]} -gt 0 ] || [ ${#timeout_tests[@]} -gt 0 ]; then

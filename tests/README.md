@@ -2,6 +2,11 @@
 
 This directory contains automated tests for the YouGame Godot 4 project.
 
+## Quick Links
+
+- **[Testing Guide](../docs/TESTING_GUIDE.md)** - Complete guide for writing and running tests
+- **[Test Strategy](../docs/TEST_STRATEGY.md)** - Overall testing strategy and coverage goals
+
 ## Test Files
 
 ### Unit Tests
@@ -79,6 +84,15 @@ Tests run automatically on PRs and pushes. Screenshots are uploaded as artifacts
 4. (Optional) Use `ScreenshotHelper` for visual tests
 
 See `test_visual_example.gd` for a complete example.
+
+## CI/Headless Testing Limitations
+
+Some tests require resources (textures, models) that are only available when the project is imported in the Godot editor. These tests are automatically skipped in CI/headless mode:
+
+- **WorldManager integration tests** - Tests that instantiate WorldManager and trigger chunk generation are skipped because chunks require texture imports. These tests can be run locally in the editor.
+- **Tests marked with "SKIP"** - Tests that show `⚠ SKIP` in output are intentionally skipped in headless mode and count as passed.
+
+Unit tests that don't require scene instantiation or resource loading work fine in CI.
 
 ## Documentation
 
