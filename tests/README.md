@@ -2,6 +2,11 @@
 
 This directory contains automated tests for the YouGame Godot 4 project.
 
+## Quick Links
+
+- **[Testing Guide](../docs/TESTING_GUIDE.md)** - Complete guide for writing and running tests
+- **[Test Strategy](../docs/TEST_STRATEGY.md)** - Overall testing strategy and coverage goals
+
 ## Test Files
 
 ### Unit Tests

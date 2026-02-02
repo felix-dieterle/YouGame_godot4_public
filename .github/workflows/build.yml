@@ -52,12 +52,34 @@ jobs:
         chmod +x tests/run_tests.sh
         ./tests/run_tests.sh
     
+    - name: Generate test report
+      if: always()
+      run: |
+        echo "# Test Execution Report" > test_report.md
+        echo "" >> test_report.md
+        echo "**Date:** $(date)" >> test_report.md
+        echo "" >> test_report.md
+        echo "## Test Results" >> test_report.md
+        if [ -f test_results.log ]; then
+          cat test_results.log >> test_report.md
+        else
+          echo "No test results found" >> test_report.md
+        fi
+    
     - name: Upload test screenshots
       uses: actions/upload-artifact@v4
       if: always()  # Upload screenshots even if tests fail
       with:
         name: test-screenshots
         path: test_screenshots/*.png
+        if-no-files-found: ignore
+    
+    - name: Upload test report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-report
+        path: test_report.md
         if-no-files-found: ignore
 
   build-android:
