@@ -51,9 +51,7 @@ func test_marker_registration() -> void:
 	var test_name = "Markers can be registered with QuestHookSystem"
 	
 	var qhs = QuestHookSystem.new()
-	var marker = NarrativeMarker.new()
-	marker.marker_type = "discovery"
-	marker.world_position = Vector3(10, 0, 10)
+	var marker = NarrativeMarker.new("test_marker", Vector2i(0, 0), Vector3(10, 0, 10), "discovery")
 	
 	qhs.register_marker(marker)
 	
@@ -70,9 +68,7 @@ func test_quest_creation_from_discovery_marker() -> void:
 	var test_name = "Quest can be created from discovery marker"
 	
 	var qhs = QuestHookSystem.new()
-	var marker = NarrativeMarker.new()
-	marker.marker_type = "discovery"
-	marker.world_position = Vector3(50, 0, 50)
+	var marker = NarrativeMarker.new("discovery_marker", Vector2i(1, 1), Vector3(50, 0, 50), "discovery")
 	
 	qhs.register_marker(marker)
 	var quest = qhs.create_quest_from_marker(marker)
@@ -101,9 +97,7 @@ func test_quest_creation_from_encounter_marker() -> void:
 	var test_name = "Quest can be created from encounter marker"
 	
 	var qhs = QuestHookSystem.new()
-	var marker = NarrativeMarker.new()
-	marker.marker_type = "encounter"
-	marker.world_position = Vector3(25, 0, 25)
+	var marker = NarrativeMarker.new("encounter_marker", Vector2i(0, 0), Vector3(25, 0, 25), "encounter")
 	
 	qhs.register_marker(marker)
 	var quest = qhs.create_quest_from_marker(marker)
@@ -126,9 +120,7 @@ func test_quest_creation_from_landmark_marker() -> void:
 	var test_name = "Quest can be created from landmark marker"
 	
 	var qhs = QuestHookSystem.new()
-	var marker = NarrativeMarker.new()
-	marker.marker_type = "landmark"
-	marker.world_position = Vector3(100, 0, 100)
+	var marker = NarrativeMarker.new("landmark_marker", Vector2i(3, 3), Vector3(100, 0, 100), "landmark")
 	
 	qhs.register_marker(marker)
 	var quest = qhs.create_quest_from_marker(marker)
@@ -151,9 +143,7 @@ func test_quest_objective_completion() -> void:
 	var test_name = "Quest objectives can be marked as completed"
 	
 	var qhs = QuestHookSystem.new()
-	var marker = NarrativeMarker.new()
-	marker.marker_type = "discovery"
-	marker.world_position = Vector3(10, 0, 10)
+	var marker = NarrativeMarker.new("completion_marker", Vector2i(0, 0), Vector3(10, 0, 10), "discovery")
 	
 	qhs.register_marker(marker)
 	var quest = qhs.create_quest_from_marker(marker)
@@ -180,9 +170,7 @@ func test_multiple_active_quests() -> void:
 	
 	# Create multiple markers and quests
 	for i in range(3):
-		var marker = NarrativeMarker.new()
-		marker.marker_type = "discovery"
-		marker.world_position = Vector3(i * 10, 0, i * 10)
+		var marker = NarrativeMarker.new("marker_%d" % i, Vector2i(i, i), Vector3(i * 10, 0, i * 10), "discovery")
 		qhs.register_marker(marker)
 		qhs.create_quest_from_marker(marker)
 	

@@ -1,7 +1,8 @@
 extends Node
 # Test script for NPC state machine and behavior
 
-const NPC = preload("res://scripts/systems/character/npc.gd")
+# Load NPC as a script reference (not class) to avoid type resolution issues
+var NPC = load("res://scripts/systems/character/npc.gd")
 
 var test_results: Array = []
 var test_count: int = 0
