@@ -11,12 +11,12 @@ var passed_count: int = 0
 func _ready() -> void:
 	print("\n=== NPC SYSTEM TEST ===")
 	
-	# Run tests
+	# Run tests sequentially with await
 	test_npc_creation()
-	test_state_machine_initialization()
-	test_idle_to_walk_transition()
+	await test_state_machine_initialization()
+	await test_idle_to_walk_transition()
 	test_walk_movement()
-	test_random_walk_direction()
+	await test_random_walk_direction()
 	
 	# Print summary
 	print("\n=== TEST SUMMARY ===")
