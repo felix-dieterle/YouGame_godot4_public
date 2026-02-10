@@ -6,20 +6,22 @@ class_name DayNightCycle
 # 
 # DAY CYCLE TIMING (7:00 AM - 5:00 PM = 10 game hours):
 #   - Day begins at 7:00 AM with sunrise animation (60 seconds)
-#   - Sun rises from horizon (0°) to zenith at noon (90°)
-#   - Sun sets from zenith to horizon (180°) at 5:00 PM
+#   - Game starts at 11:00 AM (INITIAL_TIME_OFFSET_HOURS = 4.0) for better brightness
+#   - Sun rises from horizon (0°/7AM) to zenith at noon (90°/12PM)
+#   - Sun sets from zenith to horizon (180°/5PM) at 5:00 PM
 #   - Day ends at 5:00 PM with sunset animation (60 seconds)
 #   - Night period enforces 4-hour lockout before next day
 #
 # BRIGHTNESS PROGRESSION:
 #   - Darkest: At sunrise (7:00 AM) and sunset (5:00 PM) - MIN_LIGHT_ENERGY (1.2)
+#   - Game start (11:00 AM): Good brightness - light energy (2.93, 97.6% of maximum)
 #   - Brightest: At noon (12:00 PM) - MAX_LIGHT_ENERGY (3.0)
 #   - Brightness follows quadratic curve: intensity = 1.0 - (distance_from_noon)²
 #   - Night: Complete darkness (0.0 light energy)
 #
 # SUN POSITION & LIGHTING:
-#   - Display angle: 0° (sunrise/7AM) → 90° (noon/12PM) → 180° (sunset/5PM)
-#   - Light rotation: +50° (sunrise) → 0° (noon) → -50° (sunset)
+#   - Display angle: 0° (sunrise/7AM) → 72° (game start/11AM) → 90° (noon/12PM) → 180° (sunset/5PM)
+#   - Light rotation: +50° (sunrise) → +20° (game start) → 0° (noon) → -50° (sunset)
 #   - Limited to ±50° to ensure light reaches ground (64% effective at sunrise/sunset)
 #   - Position during night: -1 (not visible)
 #endregion
@@ -28,7 +30,7 @@ class_name DayNightCycle
 # Core timing constants that define the day/night cycle structure
 const DAY_CYCLE_DURATION: float = 90.0 * 60.0  # 90 minutes in seconds (3x longer for player)
 const DAY_DURATION_HOURS: float = 10.0  # Day cycle represents 10 game hours (7 AM to 5 PM)
-const INITIAL_TIME_OFFSET_HOURS: float = 0.0  # Hours to advance sun position at game start (0.0 = start at sunrise, 7:00 AM)
+const INITIAL_TIME_OFFSET_HOURS: float = 4.0  # Hours to advance sun position at game start (0.0 = sunrise/7AM, 4.0 = mid-morning/11AM for better brightness)
 
 # Transition timing
 const SUNRISE_DURATION: float = 60.0  # 1 minute sunrise animation (7:00 AM)
@@ -690,8 +692,9 @@ func _load_state() -> void:
             DebugLogOverlay.add_log("DayNightCycle: Fresh start, no save file", "green")
             is_locked_out = false
             lockout_end_time = 0.0
-            # Start at sunrise (INITIAL_TIME_OFFSET_HOURS = 0.0)
-            # Display will show 7:00 AM and sun will be at sunrise position
+            # Start at the position specified by INITIAL_TIME_OFFSET_HOURS
+            # This directly sets where the sun begins in the sky for better starting brightness
+            # INITIAL_TIME_OFFSET_HOURS = 4.0 means sun starts 4 hours into the day (11:00 AM)
             current_time = DAY_CYCLE_DURATION * (INITIAL_TIME_OFFSET_HOURS / DAY_DURATION_HOURS)
             time_scale = 2.0  # Start with double speed time progression
             print("DayNightCycle: Set current_time to: ", current_time)
@@ -732,21 +735,16 @@ func get_sun_position_degrees() -> float:
         time_ratio = 1.0  # At end of day (180°) during sunset
     else:
         # Normal day progression
-        # Account for INITIAL_TIME_OFFSET_HOURS so that game start shows as 0°
-        # The initial offset makes the sun start higher for better brightness,
-        # but we want the display to show 0° at game start for intuitive UX
-        var initial_offset_time = DAY_CYCLE_DURATION * (INITIAL_TIME_OFFSET_HOURS / DAY_DURATION_HOURS)
-        var remaining_day_duration = DAY_CYCLE_DURATION - initial_offset_time
+        # Simple direct calculation: current_time maps directly to sun position
+        # INITIAL_TIME_OFFSET_HOURS advances the starting position for better brightness
+        # Examples:
+        #   - INITIAL_TIME_OFFSET_HOURS = 0: Game starts at sunrise (0°), display shows 7:00 AM
+        #   - INITIAL_TIME_OFFSET_HOURS = 4: Game starts at mid-morning (72°), display shows 11:00 AM
+        time_ratio = current_time / DAY_CYCLE_DURATION
         
-        # Prevent division by zero if offset equals full day duration
-        if remaining_day_duration > 0.0:
-            time_ratio = (current_time - initial_offset_time) / remaining_day_duration
-        else:
-            # Edge case: if offset >= day duration, just show end of day
-            time_ratio = 1.0
-        
-        # Clamp to 0.0-1.0 range to handle edge cases
-        # (e.g., current_time < initial_offset_time would give negative ratio, clamped to 0.0)
+        # Clamp to 0.0-1.0 range to handle edge cases:
+        # - current_time might exceed DAY_CYCLE_DURATION briefly before sunset animation starts
+        # - Prevents negative values if current_time is somehow negative
         time_ratio = clamp(time_ratio, 0.0, 1.0)
     
     # Map 0.0-1.0 ratio to 0-180 degrees
