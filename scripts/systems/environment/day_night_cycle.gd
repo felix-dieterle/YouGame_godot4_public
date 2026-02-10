@@ -14,7 +14,7 @@ class_name DayNightCycle
 #
 # BRIGHTNESS PROGRESSION:
 #   - Darkest: At sunrise (7:00 AM) and sunset (5:00 PM) - MIN_LIGHT_ENERGY (1.2)
-#   - Game start (11:00 AM): Good brightness - MIN_LIGHT_ENERGY (2.8)
+#   - Game start (11:00 AM): Good brightness - light energy (2.93, 97.6% of maximum)
 #   - Brightest: At noon (12:00 PM) - MAX_LIGHT_ENERGY (3.0)
 #   - Brightness follows quadratic curve: intensity = 1.0 - (distance_from_noon)²
 #   - Night: Complete darkness (0.0 light energy)
@@ -742,7 +742,9 @@ func get_sun_position_degrees() -> float:
         #   - INITIAL_TIME_OFFSET_HOURS = 4: Game starts at mid-morning (72°), display shows 11:00 AM
         time_ratio = current_time / DAY_CYCLE_DURATION
         
-        # Clamp to 0.0-1.0 range to handle edge cases
+        # Clamp to 0.0-1.0 range to handle edge cases:
+        # - current_time might exceed DAY_CYCLE_DURATION briefly before sunset animation starts
+        # - Prevents negative values if current_time is somehow negative
         time_ratio = clamp(time_ratio, 0.0, 1.0)
     
     # Map 0.0-1.0 ratio to 0-180 degrees
